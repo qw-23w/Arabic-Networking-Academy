@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 520" fill="none">
+<defs>
+<linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#14b8a6"/><stop offset="1" stop-color="#3b82f6"/></linearGradient>
+</defs>
+<!-- faint dotted grid -->
+<g fill="#3b82f6" opacity=".35"><circle cx="60" cy="60" r="2"/><circle cx="140" cy="260" r="2"/><circle cx="260" cy="40" r="2"/><circle cx="540" cy="30" r="2"/><circle cx="740" cy="250" r="2"/><circle cx="700" cy="480" r="2"/><circle cx="400" cy="490" r="2"/><circle cx="60" cy="490" r="2"/></g>
+<!-- links (animated dashes) -->
+<g stroke="url(#g)" stroke-width="3" stroke-linecap="round" stroke-dasharray="8 12">
+<path d="M400 260 170 125M400 260 630 125M400 260 165 400M400 260 635 395M170 125 60 60M630 125 740 250M165 400 60 490M635 395 700 480"/>
+<animate attributeName="stroke-dashoffset" from="0" to="-80" dur="4s" repeatCount="indefinite"/>
+</g>
+<!-- devices (outline only, no white fill) -->
+<g stroke="url(#g)" stroke-width="4" fill="#14b8a6" fill-opacity=".08">
+<rect x="95" y="70" width="150" height="110" rx="20"/>
+<rect x="555" y="70" width="150" height="110" rx="20"/>
+<rect x="90" y="345" width="150" height="110" rx="20"/>
+<rect x="560" y="340" width="150" height="110" rx="20"/>
+</g>
+<g stroke="url(#g)" stroke-width="6" stroke-linecap="round">
+<path d="M125 105h70M125 125h45M585 105h70M585 125h45M120 380h70M120 400h45M590 375h70M590 395h45"/>
+</g>
+<!-- core router / globe -->
+<circle cx="400" cy="260" r="92" stroke="url(#g)" stroke-width="4" fill="#3b82f6" fill-opacity=".08"/>
+<circle cx="400" cy="260" r="68" stroke="url(#g)" stroke-width="3"/>
+<g stroke="url(#g)" stroke-width="3">
+<ellipse cx="400" cy="260" rx="27" ry="68"/>
+<path d="M332 260h136M345 225h110M345 295h110"/>
+</g>
+<!-- packets -->
+<circle r="8" fill="#14b8a6"><animateMotion dur="3s" repeatCount="indefinite" path="M400 260 170 125 400 260"/></circle>
+<circle r="8" fill="#3b82f6"><animateMotion dur="3.6s" repeatCount="indefinite" path="M400 260 630 125 400 260"/></circle>
+<circle r="8" fill="#14b8a6"><animateMotion dur="4s" repeatCount="indefinite" path="M400 260 165 400 400 260"/></circle>
+<circle r="8" fill="#3b82f6"><animateMotion dur="3.3s" repeatCount="indefinite" path="M400 260 635 395 400 260"/></circle>
+</svg>

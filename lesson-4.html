@@ -1,0 +1,488 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>الدرس 4: التوجيه — أكاديمية الشبكات العربية</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="assets/img/academy-icon.png">
+<script>try{var t=localStorage.getItem("ana_theme")||(matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light");document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<a class="skip" href="#main">تخطَّ إلى المحتوى</a>
+<div id="site-header"></div>
+<main id="main" class="container">
+<div class="lesson-layout">
+<nav class="toc" aria-label="قائمة الدروس والأقسام"><div class="course-sidebar-title">المنهج الدراسي</div><div id="lesson-navigation"></div><div class="original-toc" hidden>
+  <strong>محتويات الدرس</strong>
+  <ol>
+    <li><a href="#intro">مقدمة</a></li>
+    <li><a href="#objectives">الأهداف والمتطلبات</a></li>
+    <li><a href="#what">ما هو التوجيه؟</a></li>
+    <li><a href="#table">جدول التوجيه</a></li>
+    <li><a href="#lpm">كيف يختار الموجّه المسار؟</a></li>
+    <li><a href="#static">التوجيه الساكن</a></li>
+    <li><a href="#journey">رحلة الحزمة عبر الموجّهات</a></li>
+    <li><a href="#dynamic">التوجيه الديناميكي</a></li>
+    <li><a href="#trouble">استكشاف الأخطاء</a></li>
+    <li><a href="#mistakes">أخطاء شائعة</a></li>
+    <li><a href="#security">اعتبارات الأمن</a></li>
+    <li><a href="#summary">الملخص</a></li>
+    <li><a href="#glossary">المسرد</a></li>
+    <li><a href="#quiz">الاختبار</a></li>
+    <li><a href="#resources">مراجع والدرس التالي</a></li>
+  </ol></div>
+</nav>
+
+<article class="lesson">
+<div id="welcome" class="alert ok hidden"></div>
+
+<section id="intro">
+<h1>الدرس 4: التوجيه <span class="en">(Routing)</span></h1>
+<p>في الدرس السابق عرفنا أن الجهاز يقارن عنوان الوجهة بشبكته، فإن كانت الوجهة خارجها أرسل الحزمة إلى <b>البوابة</b>. لكن ماذا تفعل البوابة بعد ذلك؟ هي موجّه، ولديه سؤال واحد يكرره مع كل حزمة: «إلى أي جار أسلّم هذه الحزمة كي تقترب من وجهتها؟». في هذا الدرس نتعلم كيف يجيب الموجّه عن هذا السؤال: ما الذي يحتويه جدول التوجيه، وكيف يختار الموجّه سطرًا واحدًا من بين عشرات الأسطر، وكيف نكتب المسارات يدويًا أو ندع البروتوكولات تتعلمها.</p>
+</section>
+
+<section id="objectives">
+<h2>أهداف التعلم</h2>
+<ul>
+<li>شرح وظيفة الموجّه والفرق بين <b>التوجيه</b> <span class="en">(Routing)</span> و<b>التحويل</b> <span class="en">(Forwarding)</span>.</li>
+<li>قراءة جدول التوجيه وتفسير كل عمود فيه: الوجهة، والقفزة التالية، والواجهة، والمقياس.</li>
+<li>تطبيق قاعدة <b>أطول بادئة مطابقة</b> <span class="en">(Longest Prefix Match)</span> لتحديد المسار الذي سيُستخدم.</li>
+<li>كتابة مسارات ساكنة ومسار افتراضي، وتحديد المسار العائد المطلوب.</li>
+<li>وصف ما يتغير وما يبقى ثابتًا في الحزمة عند كل موجّه (MAC وTTL وIP).</li>
+<li>التفريق بين التوجيه الساكن والديناميكي، وبين RIP وOSPF وBGP، وفهم المسافة الإدارية والمقياس.</li>
+<li>تشخيص أعطال التوجيه الشائعة بأوامر <code>ping</code> و<code>traceroute</code> وجدول التوجيه.</li>
+</ul>
+<h3>المعرفة المسبقة</h3>
+<p>الدرس 2 (الطبقة 3 والفرق بين MAC وIP) والدرس 3 (العنوان والقناع وCIDR والبوابة). إن لم تكن تحسب عنوان الشبكة من عنوان وقناع بسهولة فراجع الدرس 3 أولًا، لأن التوجيه كله مبني عليه.</p>
+</section>
+
+<section id="what">
+<h2>1. ما هو التوجيه؟</h2>
+<p><b>التوجيه</b> هو عملية اختيار الطريق الذي تسلكه الحزمة بين شبكتين مختلفتين. الموجّه <span class="en">(Router)</span> جهاز له واجهتان على الأقل، كل واجهة على شبكة مختلفة، ومهمته نقل الحزم بينها. تذكّر من الدرس 1 أن المحوّل يربط الأجهزة داخل شبكة واحدة، وأن الموجّه يربط <b>الشبكات</b> ببعضها.</p>
+<p>تقوم الموجّه بعمليتين مختلفتين، وكثيرًا ما يخلط الناس بينهما:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>العملية</th><th>السؤال الذي تجيب عنه</th><th>متى تحدث</th></tr></thead>
+<tbody>
+<tr><td><b>التوجيه</b> <span class="en">(Control Plane)</span></td><td>ما المسارات المتاحة؟ وأيها الأفضل؟</td><td>في الخلفية: عند ضبط مسار ساكن أو عند تبادل المعلومات مع الموجّهات الأخرى. تنتج <b>جدول التوجيه</b>.</td></tr>
+<tr><td><b>التحويل</b> <span class="en">(Data Plane)</span></td><td>هذه الحزمة بعينها، إلى أين أرسلها الآن؟</td><td>مع كل حزمة تصل، وبأقصى سرعة، بالرجوع إلى جدول التوجيه الجاهز.</td></tr>
+</tbody></table></div>
+<div class="analogy"><b>تشبيه:</b> الموجّه مثل تقاطع طرق فيه لافتات. السائق (الحزمة) لا يعرف الطريق كله، لكنه عند كل تقاطع يقرأ اللافتة: «الرياض: يمينًا، جدة: يسارًا». لا يهم التقاطع من أين جاء السائق، ولا يحتاج إلى معرفة نهاية الرحلة، فقط الاتجاه التالي. اللافتات هنا هي جدول التوجيه، ومن وضعها (مهندس أو بروتوكول) هو التوجيه نفسه.</div>
+<p>مبدأ مهم: <b>كل موجّه يقرر وحده</b>. لا يعرف الموجّه الطريق الكامل إلى الوجهة، بل يعرف فقط «القفزة التالية» <span class="en">(Next Hop)</span>. إذا كانت جداول الموجّهات كلها متسقة وصلت الحزمة، وإذا اختلّ جدول واحد ضاعت الحزمة أو دارت في حلقة.</p>
+</section>
+
+<section id="table">
+<h2>2. جدول التوجيه</h2>
+<p><b>جدول التوجيه</b> <span class="en">(Routing Table)</span> قائمة أسطر، كل سطر يقول: «الحزم المتجهة إلى هذه الشبكة، أرسلها عبر هذه الواجهة، إلى هذا الجار». عناصر السطر الأساسية:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>العنصر</th><th>معناه</th><th>مثال</th></tr></thead>
+<tbody>
+<tr><td>البادئة <span class="en">(Prefix)</span></td><td>الشبكة الوجهة بصيغة CIDR</td><td><code>192.168.20.0/24</code></td></tr>
+<tr><td>القفزة التالية <span class="en">(Next Hop)</span></td><td>عنوان IP للموجّه المجاور الذي نسلّمه الحزمة. لا يوجد في الشبكات المتصلة مباشرة.</td><td><code>10.0.0.2</code></td></tr>
+<tr><td>الواجهة الخارجة <span class="en">(Interface)</span></td><td>أي منفذ في هذا الموجّه نُخرج منه الحزمة</td><td><code>eth1</code></td></tr>
+<tr><td>المصدر <span class="en">(Source)</span></td><td>كيف عرف الموجّه هذا المسار: متصل، أو ساكن، أو بروتوكول</td><td>C أو S أو O</td></tr>
+<tr><td>المقياس <span class="en">(Metric)</span></td><td>«تكلفة» المسار. يفاضل بين مسارين لنفس الوجهة من نفس المصدر. الأقل أفضل.</td><td><code>100</code></td></tr>
+</tbody></table></div>
+<p>من أين يأتي كل سطر؟ من ثلاثة مصادر:</p>
+<ul>
+<li><b>الشبكات المتصلة</b> <span class="en">(Connected)</span>: بمجرد أن تعطي الواجهة عنوانًا وتشغّلها، يضيف الموجّه شبكتها تلقائيًا. لذلك يعرف الموجّه شبكاته المجاورة دون أي ضبط.</li>
+<li><b>المسارات الساكنة</b> <span class="en">(Static)</span>: يكتبها المهندس يدويًا.</li>
+<li><b>المسارات الديناميكية</b> <span class="en">(Dynamic)</span>: يتعلمها الموجّه من موجّهات أخرى عبر بروتوكول مثل OSPF.</li>
+</ul>
+<p>هكذا يبدو جدول التوجيه في الموجّه R1 في الشكل 1 أدناه، على نظام Linux (الأمر <code>ip route</code>) وعلى أجهزة Cisco (الأمر <code>show ip route</code>):</p>
+<pre><code># Linux
+$ ip route
+10.0.0.0/30 dev eth1 proto kernel scope link src 10.0.0.1
+192.168.10.0/24 dev eth0 proto kernel scope link src 192.168.10.1
+192.168.20.0/24 via 10.0.0.2 dev eth1 proto static metric 100
+
+# Cisco IOS (مختصر)
+R1# show ip route
+C    10.0.0.0/30 is directly connected, GigabitEthernet0/1
+C    192.168.10.0/24 is directly connected, GigabitEthernet0/0
+S    192.168.20.0/24 [1/0] via 10.0.0.2</code></pre>
+<p>ما معنى <code>[1/0]</code> في سطر Cisco؟ الرقم الأول هو <b>المسافة الإدارية</b> (1 للمسار الساكن)، والثاني هو المقياس. سنفهمهما في قسم التوجيه الديناميكي.</p>
+<div class="note"><b>ملاحظة:</b> الحاسوب العادي له جدول توجيه أيضًا (جرّب <code>ip route</code> أو <code>route print</code> في Windows). ولا يحتوي عادةً إلا على شبكته المتصلة ومسار افتراضي واحد عبر البوابة، وهو بالضبط ما رأيناه في قرار الإرسال في الدرس 3.</div>
+</section>
+
+<section id="lpm">
+<h2>3. كيف يختار الموجّه المسار؟</h2>
+<p>قد يتطابق عنوان الوجهة مع أكثر من سطر في الجدول في الوقت نفسه. القاعدة التي يتبعها كل موجّه بالترتيب:</p>
+<ol>
+<li><b>أطول بادئة مطابقة:</b> السطر الأكثر تحديدًا (القناع الأكبر، مثل /24 مقابل /16) هو الفائز، مهما كان مصدره أو مقياسه.</li>
+<li><b>المسافة الإدارية:</b> إذا ظهرت <b>البادئة نفسها</b> من مصدرين مختلفين (ساكن وOSPF مثلًا) يُفضَّل المصدر الأكثر موثوقية (الرقم الأصغر).</li>
+<li><b>المقياس:</b> إذا ظهرت البادئة نفسها من البروتوكول نفسه بمسارين، يُفضَّل الأقل تكلفة. وإذا تساوى المساران يوزّع الموجّه الحركة بينهما <span class="en">(ECMP)</span>.</li>
+<li><b>لا مطابقة إطلاقًا:</b> تُسقط الحزمة ويُرسَل ICMP «الوجهة غير قابلة للوصول» إلى المرسل.</li>
+</ol>
+<figure>
+<svg viewBox="0 0 700 300" role="img" aria-labelledby="g1t g1d">
+<title id="g1t">أطول بادئة مطابقة للوجهة 10.1.5.9</title><desc id="g1d">جدول من خمسة مسارات. المسارات 10.0.0.0/8 و10.1.0.0/16 و10.1.5.0/24 والمسار الافتراضي كلها تطابق الوجهة. المسار 10.1.6.0/24 لا يطابق. يفوز المسار 10.1.5.0/24 لأن عدد البتات المتطابقة فيه 24 وهو الأكبر.</desc>
+<text x="350" y="22" text-anchor="middle" class="t-b">الوجهة: <tspan class="ltr mono">10.1.5.9</tspan></text>
+<g class="t-sm" text-anchor="middle"><text x="625" y="40">البادئة</text><text x="520" y="40">النتيجة</text><text x="366" y="40">البتات المتطابقة (من 32)</text><text x="140" y="40">القفزة التالية</text></g>
+<g>
+<rect rx="10" class="bx-amber" x="15" y="48" width="670" height="36"/>
+<rect rx="10" class="bx-amber" x="15" y="90" width="670" height="36"/>
+<rect rx="10" class="bx-green" x="15" y="132" width="670" height="36"/>
+<rect rx="10" class="bx-gray" x="15" y="174" width="670" height="36"/>
+<rect rx="10" class="bx-amber" x="15" y="216" width="670" height="36"/>
+</g>
+<g class="mono ltr" text-anchor="middle">
+<text x="625" y="71">10.0.0.0/8</text><text x="625" y="113">10.1.0.0/16</text><text x="625" y="155" class="t-b">10.1.5.0/24</text><text x="625" y="197">10.1.6.0/24</text><text x="625" y="239">0.0.0.0/0</text>
+<text x="140" y="71">via R-A</text><text x="140" y="113">via R-B</text><text x="140" y="155" class="t-b">via R-C</text><text x="140" y="197">via R-D</text><text x="140" y="239">via R-E</text>
+</g>
+<g text-anchor="middle">
+<text x="520" y="71">يطابق</text><text x="520" y="113">يطابق</text><text x="520" y="155" class="t-b">يطابق ✔ الفائز</text><text x="520" y="197">لا يطابق</text><text x="520" y="239">يطابق</text>
+</g>
+<g>
+<rect rx="10" class="bx" x="270" y="59" width="192" height="14"/><rect rx="10" class="bx-navy" x="270" y="59" width="48" height="14"/>
+<rect rx="10" class="bx" x="270" y="101" width="192" height="14"/><rect rx="10" class="bx-navy" x="270" y="101" width="96" height="14"/>
+<rect rx="10" class="bx" x="270" y="143" width="192" height="14"/><rect rx="10" class="bx-navy" x="270" y="143" width="144" height="14"/>
+<rect rx="10" class="bx" x="270" y="185" width="192" height="14"/><rect rx="10" class="bx-navy" x="270" y="185" width="132" height="14"/>
+<rect rx="10" class="bx" x="270" y="227" width="192" height="14"/>
+</g>
+<g class="t-sm ltr mono" text-anchor="end"><text x="262" y="70">8</text><text x="262" y="112">16</text><text x="262" y="154">24</text><text x="262" y="196">22</text><text x="262" y="238">0</text></g>
+<text x="350" y="278" text-anchor="middle" class="t-sm">يختار الموجّه من بين المطابِقات الأطول بادئة، ولا يهمّه ترتيب الأسطر في الجدول</text>
+<text x="350" y="294" text-anchor="middle" class="t-sm">السطر <tspan class="ltr mono">10.1.6.0/24</tspan> يتوقف عند الثمانية الثالثة (6 ≠ 5) فلا يطابق</text>
+</svg>
+<figcaption><b>الشكل 1:</b> الوجهة <code>10.1.5.9</code> تطابق أربعة أسطر من خمسة. الشريط يبيّن كم بتًا من البادئة تطابقت مع الوجهة. الأطول هو <code>/24</code> فتُرسَل الحزمة إلى R-C. لو كانت الوجهة <code>10.1.9.9</code> لفاز <code>/16</code>، ولو كانت <code>10.200.1.1</code> لفاز <code>/8</code>، ولو كانت <code>8.8.8.8</code> لما تطابق إلا المسار الافتراضي.</figcaption>
+</figure>
+<h3>المسار الافتراضي</h3>
+<p><b>المسار الافتراضي</b> <span class="en">(Default Route)</span> هو <code>0.0.0.0/0</code>: بادئة طولها صفر تطابق أي عنوان في العالم، وبسبب أنها الأقصر فهي دائمًا <b>آخر خيار</b>. معناه: «كل ما لا أعرف طريقه، أرسله إلى هذا الجار». هذا ما يضبطه راوتر بيتك: لا يعرف شبكات الإنترنت، بل يوجّه الكل إلى مزوّد الخدمة. وفي الاتجاه المقابل، لا تحتاج الموجّهات الكبرى في الإنترنت إلى مسار افتراضي لأنها تعرف مسارًا لكل شبكة (جدول الإنترنت الكامل يضم نحو مليون بادئة IPv4).</p>
+<h3>تلخيص المسارات</h3>
+<p>لأن الموجّه يطابق بالبادئة، يمكن جمع عدة شبكات متجاورة في سطر واحد <span class="en">(Summarization)</span> فيصغر الجدول. مثال: الشبكات <code>192.168.0.0/24</code> و<code>192.168.1.0/24</code> و<code>192.168.2.0/24</code> و<code>192.168.3.0/24</code> تتشارك أول 22 بتًا (الثمانية الثالثة من 0 إلى 3 تغيّر آخر بتين فقط)، فتُلخَّص في <code>192.168.0.0/22</code>. شرط التلخيص الصحيح أن تكون الكتلة متجاورة ومحاذية لحجمها، وإلا ادّعيت وجود شبكات ليست عندك.</p>
+</section>
+
+<section id="static">
+<h2>4. التوجيه الساكن</h2>
+<p>في <b>التوجيه الساكن</b> <span class="en">(Static Routing)</span> يكتب المهندس بيده كل سطر: «لبلوغ الشبكة X، أرسل إلى الجار Y». لا بروتوكول ولا حركة تحكم، وهو بسيط وقابل للتنبؤ وآمن، لكنه لا يتكيف وحده إذا انقطع رابط، ويصبح مرهقًا عندما تكثر الشبكات.</p>
+<p>نستخدم في هذا القسم التصميم الآتي، وسنبقى عليه في بقية الدرس:</p>
+<figure>
+<svg viewBox="0 0 700 340" role="img" aria-labelledby="g2t g2d">
+<title id="g2t">شبكتان محليتان يربطهما موجّهان</title><desc id="g2d">من اليمين: الحاسوب PC-A بعنوان 192.168.10.20 على الشبكة 192.168.10.0/24، ثم الموجّه R1، ثم وصلة بين الموجّهين 10.0.0.0/30، ثم الموجّه R2، ثم الخادم بعنوان 192.168.20.50 على الشبكة 192.168.20.0/24. تحت الموجّهين جدولا التوجيه.</desc>
+<g class="t-sm ltr mono" text-anchor="middle"><text x="625" y="80">192.168.10.0/24</text><text x="455" y="80">10.0.0.0/30</text><text x="285" y="80">10.0.0.0/30</text><text x="115" y="80">192.168.20.0/24</text></g>
+<path class="ln" d="M565 130H515M395 130H345M225 130H175"/>
+<rect rx="10" class="bx-green" x="565" y="100" width="120" height="60"/><text x="625" y="125" text-anchor="middle" class="t-b">PC-A</text><text x="625" y="146" text-anchor="middle" class="t-sm">الحاسوب</text>
+<rect rx="10" class="bx-amber" x="395" y="100" width="120" height="60"/><text x="455" y="125" text-anchor="middle" class="t-b">R1</text><text x="455" y="146" text-anchor="middle" class="t-sm">موجّه</text>
+<rect rx="10" class="bx-amber" x="225" y="100" width="120" height="60"/><text x="285" y="125" text-anchor="middle" class="t-b">R2</text><text x="285" y="146" text-anchor="middle" class="t-sm">موجّه</text>
+<rect rx="10" class="bx-green" x="55" y="100" width="120" height="60"/><text x="115" y="125" text-anchor="middle" class="t-b">Server</text><text x="115" y="146" text-anchor="middle" class="t-sm">الخادم</text>
+<g class="t-sm ltr mono" text-anchor="middle">
+<text x="625" y="182">192.168.10.20</text><text x="625" y="200">gw 192.168.10.1</text>
+<text x="455" y="182">e0 192.168.10.1</text><text x="455" y="200">e1 10.0.0.1</text>
+<text x="285" y="182">e1 10.0.0.2</text><text x="285" y="200">e0 192.168.20.1</text>
+<text x="115" y="182">192.168.20.50</text><text x="115" y="200">gw 192.168.20.1</text>
+</g>
+<rect rx="10" class="bx" x="360" y="218" width="325" height="112"/>
+<text x="522" y="240" text-anchor="middle" class="t-b">جدول التوجيه في R1</text>
+<g class="mono ltr t-sm" text-anchor="start" xml:space="preserve"><text x="374" y="266">192.168.10.0/24  C  e0</text><text x="374" y="288">10.0.0.0/30      C  e1</text><text x="374" y="310">192.168.20.0/24  S  via 10.0.0.2</text></g>
+<rect rx="10" class="bx" x="15" y="218" width="325" height="112"/>
+<text x="177" y="240" text-anchor="middle" class="t-b">جدول التوجيه في R2</text>
+<g class="mono ltr t-sm" text-anchor="start" xml:space="preserve"><text x="29" y="266">192.168.20.0/24  C  e0</text><text x="29" y="288">10.0.0.0/30      C  e1</text><text x="29" y="310">192.168.10.0/24  S  via 10.0.0.1</text></g>
+</svg>
+<figcaption><b>الشكل 2:</b> الشبكة التي نعمل عليها. <b>C</b> = متصل مباشرة (يظهر تلقائيًا)، و<b>S</b> = مسار ساكن كتبناه نحن. كل موجّه يعرف شبكتيه المتصلتين فقط، فيحتاج إلى سطر واحد ساكن يدلّه على الشبكة البعيدة. لاحظ أن الوصلة بين الموجّهين <code>10.0.0.0/30</code> فيها عنوانان صالحان فقط، وهذا كافٍ تمامًا لموجّهين.</figcaption>
+</figure>
+<p>الأوامر على أجهزة Cisco (الصيغة: الشبكة ثم القناع ثم القفزة التالية):</p>
+<pre><code>R1(config)# ip route 192.168.20.0 255.255.255.0 10.0.0.2
+R2(config)# ip route 192.168.10.0 255.255.255.0 10.0.0.1</code></pre>
+<p>والأوامر نفسها على Linux (يجب تفعيل التحويل أولًا لأن Linux لا يعمل كموجّه افتراضيًا):</p>
+<pre><code>sysctl -w net.ipv4.ip_forward=1
+ip route add 192.168.20.0/24 via 10.0.0.2       # على R1
+ip route add 192.168.10.0/24 via 10.0.0.1       # على R2</code></pre>
+<div class="note"><b>لماذا سطران وليس سطرًا واحدًا؟</b> الاتصال له اتجاهان. مسار واحد على R1 يوصل الطلب من PC-A إلى الخادم، لكن الرد يحتاج إلى أن يعرف R2 طريق العودة إلى <code>192.168.10.0/24</code>. نسيان <b>المسار العائد</b> هو أشهر خطأ في التوجيه الساكن، وعَرَضه أن الطلب يصل والرد لا يعود.</div>
+<h3>المسار الافتراضي الساكن</h3>
+<p>عندما يكون للموجّه مخرج واحد إلى «بقية العالم» (فرع شركة له وصلة واحدة بالمقر، أو راوتر بيت)، فالأسهل مسار افتراضي واحد بدل مسار لكل شبكة:</p>
+<pre><code>R2(config)# ip route 0.0.0.0 0.0.0.0 10.0.0.1     # Cisco
+ip route add default via 10.0.0.1                  # Linux</code></pre>
+<p>بهذا يستغني R2 عن كتابة <code>192.168.10.0/24</code> وكل شبكة أخرى تُضاف خلف R1.</p>
+<h3>المسار الاحتياطي العائم</h3>
+<p>لو كان بين الموجّهين رابطان، يمكن كتابة مسارين ساكنين إلى الوجهة نفسها، وإعطاء الاحتياطي مسافة إدارية أعلى (مثل 200) فلا يظهر في الجدول إلا إذا سقط الأساسي. يسمى <b>المسار الساكن العائم</b> <span class="en">(Floating Static Route)</span>:</p>
+<pre><code>ip route 192.168.20.0 255.255.255.0 10.0.0.2          # الأساسي (المسافة 1)
+ip route 192.168.20.0 255.255.255.0 10.0.1.2 200      # احتياطي (المسافة 200)</code></pre>
+<h3>تمرين</h3>
+<p>افتح <b>Cisco Packet Tracer</b> (مجاني من Cisco Networking Academy) أو أي محاكٍ آخر مثل GNS3، وابنِ الشكل 2. أعطِ العناوين وفق الشكل واضبط البوابتين على الحاسوب والخادم. ثم: (1) نفّذ <code>ping</code> من PC-A إلى الخادم قبل كتابة أي مسار ساكن وسجّل الرسالة. (2) اكتب المسار على R1 فقط وأعد المحاولة وفسّر ماذا اختلف. (3) اكتب المسار العائد على R2. (4) نفّذ <code>tracert</code> (أو <code>traceroute</code>) وطابق القفزات مع الشكل.</p>
+</section>
+
+<section id="journey">
+<h2>5. رحلة الحزمة عبر الموجّهات</h2>
+<p>لنتتبع حزمة من PC-A (<code>192.168.10.20</code>) إلى الخادم (<code>192.168.20.50</code>) في التصميم نفسه. عند وصول الإطار إلى أي موجّه يجري الآتي:</p>
+<ol>
+<li>يتأكد أن <b>MAC الوجهة</b> في الإطار هو عنوان واجهته (أو بث)، وإلا يتجاهله.</li>
+<li>يفك الإطار ويفحص ترويسة IP، ويتأكد من سلامتها.</li>
+<li>ينقص قيمة <b>TTL</b> بمقدار 1. إن صارت صفرًا يُسقط الحزمة ويرسل إلى المصدر رسالة ICMP «انتهى الوقت» <span class="en">(Time Exceeded)</span>.</li>
+<li>يبحث في جدول التوجيه عن أطول بادئة مطابقة لعنوان IP الوجهة.</li>
+<li>يسأل ARP عن MAC الجار التالي (القفزة التالية، أو الوجهة نفسها إن كانت متصلة به).</li>
+<li>يبني <b>إطارًا جديدًا</b> بعنوان MAC مصدره واجهته الخارجة، ووجهته الجار التالي، ويرسله.</li>
+</ol>
+<figure>
+<svg viewBox="0 0 700 330" role="img" aria-labelledby="g3t g3d">
+<title id="g3t">ما يتغير وما يثبت في كل وصلة</title><desc id="g3d">أربعة أجهزة على التوالي: الحاسوب PC-A ثم R1 ثم R2 ثم الخادم، وثلاث وصلات بينها. جدول بثلاثة صفوف، صف لكل وصلة. عنوانا MAC يتغيران في كل وصلة. عنوانا IP ثابتان: المصدر 192.168.10.20 والوجهة 192.168.20.50. قيمة TTL تنقص بمقدار واحد: 64 ثم 63 ثم 62.</desc>
+<g text-anchor="middle">
+<rect rx="10" class="bx-green" x="565" y="8" width="120" height="42"/><text x="625" y="35" class="t-b">PC-A</text>
+<rect rx="10" class="bx-amber" x="395" y="8" width="120" height="42"/><text x="455" y="35" class="t-b">R1</text>
+<rect rx="10" class="bx-amber" x="225" y="8" width="120" height="42"/><text x="285" y="35" class="t-b">R2</text>
+<rect rx="10" class="bx-green" x="55" y="8" width="120" height="42"/><text x="115" y="35" class="t-b">Server</text>
+</g>
+<path class="ln" d="M565 29H515M395 29H345M225 29H175"/>
+<g text-anchor="middle" class="t-b"><circle cx="540" cy="29" r="11" class="bx-navy"/><text x="540" y="34" class="t-w t-sm">1</text><circle cx="370" cy="29" r="11" class="bx-navy"/><text x="370" y="34" class="t-w t-sm">2</text><circle cx="200" cy="29" r="11" class="bx-navy"/><text x="200" y="34" class="t-w t-sm">3</text></g>
+<g class="t-b" text-anchor="middle"><text x="620" y="82">الوصلة</text><text x="435" y="82">عنوانا MAC (يتغيران)</text><text x="205" y="82">عنوانا IP (ثابتان)</text><text x="50" y="82">TTL</text></g>
+<g>
+<rect rx="10" class="bx-navy" x="555" y="94" width="130" height="62"/><rect rx="10" class="bx-amber" x="325" y="94" width="220" height="62"/><rect rx="10" class="bx-green" x="95" y="94" width="220" height="62"/><rect rx="10" class="bx-gray" x="15" y="94" width="70" height="62"/>
+<rect rx="10" class="bx-navy" x="555" y="164" width="130" height="62"/><rect rx="10" class="bx-amber" x="325" y="164" width="220" height="62"/><rect rx="10" class="bx-green" x="95" y="164" width="220" height="62"/><rect rx="10" class="bx-gray" x="15" y="164" width="70" height="62"/>
+<rect rx="10" class="bx-navy" x="555" y="234" width="130" height="62"/><rect rx="10" class="bx-amber" x="325" y="234" width="220" height="62"/><rect rx="10" class="bx-green" x="95" y="234" width="220" height="62"/><rect rx="10" class="bx-gray" x="15" y="234" width="70" height="62"/>
+</g>
+<g text-anchor="middle">
+<text x="620" y="121" class="t-w t-b">الوصلة 1</text><text x="620" y="142" class="t-w t-sm">من PC-A إلى R1</text>
+<text x="620" y="191" class="t-w t-b">الوصلة 2</text><text x="620" y="212" class="t-w t-sm">من R1 إلى R2</text>
+<text x="620" y="261" class="t-w t-b">الوصلة 3</text><text x="620" y="282" class="t-w t-sm">من R2 إلى الخادم</text>
+</g>
+<g text-anchor="middle">
+<text x="435" y="121">المصدر: PC-A</text><text x="435" y="142">المستلم: R1 (e0)</text>
+<text x="435" y="191">المصدر: R1 (e1)</text><text x="435" y="212">المستلم: R2 (e1)</text>
+<text x="435" y="261">المصدر: R2 (e0)</text><text x="435" y="282">المستلم: الخادم</text>
+</g>
+<g text-anchor="middle">
+<text x="205" y="121">المصدر <tspan class="ltr mono">192.168.10.20</tspan></text><text x="205" y="142">الوجهة <tspan class="ltr mono">192.168.20.50</tspan></text>
+<text x="205" y="191">المصدر <tspan class="ltr mono">192.168.10.20</tspan></text><text x="205" y="212">الوجهة <tspan class="ltr mono">192.168.20.50</tspan></text>
+<text x="205" y="261">المصدر <tspan class="ltr mono">192.168.10.20</tspan></text><text x="205" y="282">الوجهة <tspan class="ltr mono">192.168.20.50</tspan></text>
+</g>
+<g text-anchor="middle" class="t-b mono ltr"><text x="50" y="131">64</text><text x="50" y="201">63</text><text x="50" y="271">62</text></g>
+<text x="350" y="320" text-anchor="middle" class="t-sm">TTL الابتدائي 64 هنا للتوضيح، وتختلف القيمة الافتراضية حسب نظام التشغيل</text>
+</svg>
+<figcaption><b>الشكل 3:</b> الحزمة نفسها على الوصلات الثلاث. عنوانا MAC (الأصفر) يُستبدلان عند كل موجّه لأن كل وصلة شبكة محلية مستقلة. عنوانا IP (الأخضر) لا يتغيران من المرسل إلى المستقبل. أما TTL (الرمادي) فينقص بمقدار 1 عند كل موجّه.</figcaption>
+</figure>
+<p>هذه هي الفكرة التي وعدنا بها في الدرسين 2 و3: <b>MAC يخدم القفزة الواحدة، وIP يخدم الرحلة كلها</b>. الاستثناء الوحيد هو NAT الذي يستبدل عنوان IP (المصدر غالبًا) عند الخروج إلى الإنترنت.</p>
+<h3>TTL وأمر traceroute</h3>
+<p>سبب وجود <b>TTL</b> <span class="en">(Time To Live)</span> هو حماية الشبكة من الحلقات: لو دارت حزمة بين موجّهين بسبب خطأ ضبط، فلن تدور للأبد لأن TTL سيصل إلى صفر. في IPv6 يسمى الحقل نفسه <b>Hop Limit</b>.</p>
+<p>يستغل الأمر <code>traceroute</code> (و<code>tracert</code> في Windows) هذه الآلية: يرسل حزمة بـ TTL = 1 فيردّ عليه الموجّه الأول بـ «انتهى الوقت» فيعرف عنوانه، ثم TTL = 2 فيرد الثاني، وهكذا حتى يصل إلى الوجهة. النتيجة قائمة بالموجّهات التي عبرتها الحزمة:</p>
+<pre><code>$ traceroute 192.168.20.50
+ 1  192.168.10.1   0.4 ms     # R1
+ 2  10.0.0.2       0.9 ms     # R2
+ 3  192.168.20.50  1.3 ms     # الخادم</code></pre>
+</section>
+
+<section id="dynamic">
+<h2>6. التوجيه الديناميكي</h2>
+<p>تخيل شركة لديها 50 موجّهًا. كتابة المسارات يدويًا في كل واحد، وتعديلها عند كل رابط جديد أو عطل، أمر مستحيل عمليًا. الحل <b>التوجيه الديناميكي</b> <span class="en">(Dynamic Routing)</span>: تتبادل الموجّهات المعلومات عن الشبكات التي تعرفها عبر <b>بروتوكول توجيه</b>، وكل موجّه يبني جدوله بنفسه ويحدّثه إذا تغيّر شيء. وعند انقطاع رابط تكتشف الموجّهات ذلك وتعيد الحساب تلقائيًا، وهذا ما يسمى <b>التقارب</b> <span class="en">(Convergence)</span>.</p>
+<h3>نوعان حسب النطاق</h3>
+<ul>
+<li><b>بروتوكولات البوابة الداخلية</b> <span class="en">(IGP)</span>: تعمل داخل منظمة واحدة أو <b>نظام مستقل</b> <span class="en">(Autonomous System, AS)</span>: RIP وOSPF وEIGRP.</li>
+<li><b>بروتوكولات البوابة الخارجية</b> <span class="en">(EGP)</span>: تربط الأنظمة المستقلة ببعضها، وهو دور <b>BGP</b>، البروتوكول الذي يربط الإنترنت كله. لكل مزوّد خدمة وشركة كبرى رقم AS خاص بها.</li>
+</ul>
+<h3>كيف تتعلم الموجّهات؟</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>الأسلوب</th><th>الفكرة</th><th>مثال</th></tr></thead>
+<tbody>
+<tr><td><b>متجه المسافة</b> <span class="en">(Distance Vector)</span></td><td>كل موجّه يخبر جيرانه بجدوله كاملًا دوريًا: «أنا أصل إلى كذا وكذا بتكلفة كذا». لا يعرف شكل الشبكة، بل يثق بما يقوله جيرانه («التوجيه بالإشاعة»). بسيط لكنه أبطأ في التقارب.</td><td>RIP</td></tr>
+<tr><td><b>حالة الرابط</b> <span class="en">(Link State)</span></td><td>كل موجّه يعلن حالة روابطه فقط، فيبني الجميع <b>خريطة كاملة</b> للشبكة، ثم يحسب كل موجّه أقصر الطرق بخوارزمية Dijkstra. أسرع تقاربًا وأدق، ويحتاج ذاكرة ومعالجة أكثر.</td><td>OSPF</td></tr>
+<tr><td><b>متجه المسار</b> <span class="en">(Path Vector)</span></td><td>مثل متجه المسافة لكنه يحمل <b>قائمة الأنظمة المستقلة</b> التي مرّ بها المسار، فيتجنب الحلقات ويسمح بتطبيق سياسات الأعمال بين المزوّدين.</td><td>BGP</td></tr>
+</tbody></table></div>
+<div class="table-wrap"><table>
+<thead><tr><th>البروتوكول</th><th>المقياس</th><th>ملاحظات</th></tr></thead>
+<tbody>
+<tr><td>RIP (الإصدار 2)</td><td>عدد القفزات (الأقصى 15، و16 = غير قابل للوصول)</td><td>يحدّث كل 30 ثانية تقريبًا. مناسب للتعلم والشبكات الصغيرة جدًا. يتجاهل سرعة الروابط.</td></tr>
+<tr><td>OSPF</td><td>التكلفة، وتُشتق من عرض نطاق الرابط</td><td>الأكثر شيوعًا داخل المؤسسات. معيار مفتوح. يقسّم الشبكة الكبيرة إلى <b>مناطق</b> <span class="en">(Areas)</span>.</td></tr>
+<tr><td>EIGRP</td><td>مقياس مركّب (عرض النطاق والتأخير)</td><td>نشأ على أجهزة Cisco.</td></tr>
+<tr><td>BGP</td><td>سمات وسياسات (طول مسار AS وغيرها)</td><td>بروتوكول الإنترنت. يعمل فوق TCP المنفذ 179. يهتم بالسياسة قبل السرعة.</td></tr>
+</tbody></table></div>
+<h3>لماذا لا يكفي عدّ القفزات؟</h3>
+<figure>
+<svg viewBox="0 0 700 300" role="img" aria-labelledby="g4t g4d">
+<title id="g4t">اختيار المسار حسب RIP مقابل OSPF</title><desc id="g4d">ثلاثة موجّهات. بين R1 وR4 رابط مباشر بسرعة 10 ميغابت تكلفته 10. وهناك طريق عبر R2 برابطين سرعة كل منهما 100 ميغابت وتكلفة كل منهما 1، مجموعها 2. RIP يعدّ القفزات فيختار الرابط المباشر البطيء. وOSPF يعدّ التكلفة فيختار الطريق عبر R2.</desc>
+<path class="ln" d="M575 125L400 62M300 62L125 125"/>
+<path class="ln-wan" d="M550 150H150"/>
+<rect rx="10" class="bx-amber" x="550" y="125" width="100" height="50"/><text x="600" y="156" text-anchor="middle" class="t-b">R1</text>
+<rect rx="10" class="bx-amber" x="300" y="30" width="100" height="50"/><text x="350" y="61" text-anchor="middle" class="t-b">R2</text>
+<rect rx="10" class="bx-amber" x="50" y="125" width="100" height="50"/><text x="100" y="156" text-anchor="middle" class="t-b">R4</text>
+<g text-anchor="middle" class="t-sm">
+<text x="505" y="70"><tspan class="ltr mono">100 Mbps</tspan></text><text x="505" y="88">التكلفة 1</text>
+<text x="195" y="70"><tspan class="ltr mono">100 Mbps</tspan></text><text x="195" y="88">التكلفة 1</text>
+<text x="350" y="172">رابط مباشر <tspan class="ltr mono">10 Mbps</tspan></text><text x="350" y="190">التكلفة 10</text>
+</g>
+<rect rx="10" class="bx-amber" x="15" y="206" width="325" height="90"/>
+<text x="177" y="232" text-anchor="middle" class="t-b">RIP (يعدّ القفزات)</text>
+<text x="177" y="258" text-anchor="middle" class="t-sm">الرابط المباشر: قفزة واحدة</text>
+<text x="177" y="274" text-anchor="middle" class="t-sm">الطريق عبر R2: قفزتان</text>
+<text x="177" y="289" text-anchor="middle" class="t-b">يختار الرابط المباشر البطيء</text>
+<rect rx="10" class="bx-green" x="360" y="206" width="325" height="90"/>
+<text x="522" y="232" text-anchor="middle" class="t-b">OSPF (يعدّ التكلفة)</text>
+<text x="522" y="258" text-anchor="middle" class="t-sm">الرابط المباشر: التكلفة 10</text>
+<text x="522" y="274" text-anchor="middle" class="t-sm">الطريق عبر R2: التكلفة 2 (مجموع 1 و1)</text>
+<text x="522" y="289" text-anchor="middle" class="t-b">يختار الطريق عبر R2</text>
+</svg>
+<figcaption><b>الشكل 4:</b> قيمة التكلفة في OSPF على أجهزة Cisco تساوي عرض النطاق المرجعي (100 Mbps افتراضيًا) مقسومًا على سرعة الرابط، فرابط 10 Mbps تكلفته 10 ورابط 100 Mbps تكلفته 1. المسار الأقل «قفزات» ليس بالضرورة الأسرع.</figcaption>
+</figure>
+<h3>المسافة الإدارية: من نصدّق عندما يتعارض المصدران؟</h3>
+<p>قد يتعلم الموجّه الوجهة نفسها من مصدرين مختلفين (مسار ساكن وOSPF مثلًا). المقياسان غير قابلين للمقارنة (قفزات مقابل تكلفة)، فيستخدم الموجّه <b>المسافة الإدارية</b> <span class="en">(Administrative Distance, AD)</span>: رقم يعبّر عن موثوقية المصدر، والأصغر هو الأفضل. القيم الافتراضية على أجهزة Cisco:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>المصدر</th><th>المسافة الإدارية</th></tr></thead>
+<tbody>
+<tr><td>شبكة متصلة مباشرة</td><td>0</td></tr>
+<tr><td>مسار ساكن</td><td>1</td></tr>
+<tr><td>BGP الخارجي (eBGP)</td><td>20</td></tr>
+<tr><td>EIGRP</td><td>90</td></tr>
+<tr><td>OSPF</td><td>110</td></tr>
+<tr><td>RIP</td><td>120</td></tr>
+<tr><td>BGP الداخلي (iBGP)</td><td>200</td></tr>
+</tbody></table></div>
+<p>تختلف هذه القيم قليلًا بين الشركات المصنِّعة، لكن ترتيبها العام متشابه: المتصل أولًا ثم الساكن ثم البروتوكولات. وهذا هو سبب نجاح المسار العائم في القسم السابق: بمسافة 200 هو أقل موثوقية من أي بروتوكول، فلا يظهر إلا عند غياب غيره.</p>
+<div class="note"><b>تذكّر الترتيب:</b> أطول بادئة أولًا، ثم المسافة الإدارية، ثم المقياس. المسافة الإدارية لا تقارن بين بادئتين مختلفتين: مسار <code>/24</code> من RIP يتغلب على مسار <code>/16</code> ساكن، لأن البادئة الأطول تُفحص أولًا.</div>
+</section>
+
+<section id="trouble">
+<h2>7. استكشاف أخطاء التوجيه</h2>
+<p>ابدأ دائمًا بسؤالين: <b>هل يعرف كل موجّه على الطريق مسارًا إلى الوجهة؟ وهل يعرف كل منهم مسار العودة إلى المصدر؟</b> معظم الأعطال تجيب عنها.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>العَرَض</th><th>السبب المحتمل</th><th>الفحص</th></tr></thead>
+<tbody>
+<tr><td><code>ping</code> إلى البوابة ينجح وإلى الشبكة البعيدة يفشل</td><td>لا مسار إلى الوجهة على أحد الموجّهات، أو التحويل <code>ip_forward</code> معطّل على Linux</td><td><code>ip route get &lt;الوجهة&gt;</code> أو <code>show ip route &lt;الوجهة&gt;</code> على كل موجّه</td></tr>
+<tr><td>رسالة «الوجهة غير قابلة للوصول» من عنوان موجّه</td><td>هذا الموجّه (صاحب العنوان في الرسالة) لا يجد مسارًا مطابقًا</td><td>افحص جدول ذلك الموجّه تحديدًا</td></tr>
+<tr><td>انتهاء المهلة <span class="en">(Request timed out)</span> والمسار الأمامي سليم</td><td>غياب <b>المسار العائد</b>، أو جدار حماية يمنع الرد</td><td>افحص جدول الموجّه عند الوجهة بحثًا عن شبكة المصدر</td></tr>
+<tr><td><code>traceroute</code> يتوقف عند قفزة ثم يظهر <code>* * *</code></td><td>الموجّه التالي لا يملك مسارًا، أو يمنع ICMP</td><td>سجّل آخر قفزة ظهرت وافحص جدول الموجّه التالي لها</td></tr>
+<tr><td><code>traceroute</code> يكرر موجّهين بالتناوب ثم «TTL expired in transit»</td><td><b>حلقة توجيه</b> <span class="en">(Routing Loop)</span>: كل منهما يظن أن الآخر هو الطريق</td><td>راجع المسارات الساكنة والافتراضية المتقابلة على الموجّهين</td></tr>
+<tr><td>الحركة تسلك طريقًا غير المتوقع</td><td>بادئة أطول، أو مسافة إدارية أقل، أو مسار ساكن منسي</td><td><code>show ip route &lt;الوجهة&gt;</code> يريك السطر المختار بالتحديد</td></tr>
+<tr><td>مسار ساكن موجود لكنه غير مستخدم</td><td>القفزة التالية غير قابلة للوصول (الواجهة معطلة أو العنوان خطأ)، فيُسحب المسار من الجدول</td><td><code>ping</code> إلى القفزة التالية نفسها</td></tr>
+</tbody></table></div>
+<pre><code>ip route                       # Linux: الجدول كاملًا
+ip route get 192.168.20.50     # Linux: أي سطر سيُستخدم لهذه الوجهة؟
+route print                    # Windows: جدول التوجيه
+tracert 192.168.20.50          # Windows: القفزات
+traceroute -n 192.168.20.50    # Linux: القفزات بالعناوين دون DNS
+show ip route                  # Cisco: الجدول
+show ip route 192.168.20.50    # Cisco: السطر المطابق لوجهة معينة</code></pre>
+<div class="note"><b>تنبيه:</b> نفّذ الأوامر على شبكتك أو شبكة لديك إذن باختبارها. وتغيير جدول التوجيه في موجّه إنتاج قد يقطع الاتصال عنك وعن غيرك، فاحتفظ بنسخة احتياطية من الضبط وجهّز طريقة للتراجع.</div>
+</section>
+
+<section id="mistakes">
+<h2>8. أخطاء ومفاهيم خاطئة شائعة</h2>
+<ul>
+<li><b>«الموجّه يعرف الطريق كله».</b> يعرف القفزة التالية فقط.</li>
+<li><b>نسيان المسار العائد.</b> المسار الأمامي وحده لا يكفي، والاتصال ثنائي الاتجاه.</li>
+<li><b>«أقل عدد قفزات يعني أسرع طريق».</b> انظر الشكل 4. وهذا ما يجعل OSPF أفضل من RIP في معظم الحالات.</li>
+<li><b>«المسافة الإدارية تغلب على أطول بادئة».</b> العكس: البادئة الأطول تُحسم أولًا، ولا تُقارَن المسافة إلا لبادئتين متطابقتين.</li>
+<li><b>كتابة القفزة التالية بعنوان خارج شبكة متصلة.</b> القفزة التالية يجب أن تكون على شبكة متصلة مباشرة بالموجّه، وإلا لا يعرف كيف يصل إليها.</li>
+<li><b>تعريف مساري افتراضي متقابلين</b> (R1 يوجّه الكل إلى R2، وR2 يوجّه الكل إلى R1) فتتشكل حلقة لكل وجهة مجهولة.</li>
+<li><b>«الموجّه جدار حماية».</b> الموجّه يحوّل ما يصله ما لم نضف قواعد تصفية صريحة، وسنفصّل ذلك في قسم الأمن.</li>
+<li><b>نسيان تفعيل التحويل في Linux</b> (<code>net.ipv4.ip_forward</code>) فيعمل الجهاز كحاسوب لا كموجّه.</li>
+</ul>
+</section>
+
+<section id="security">
+<h2>9. اعتبارات الأمن</h2>
+<ul>
+<li><b>اختطاف مسارات BGP</b> <span class="en">(BGP Hijacking)</span>: ينشر طرف (بخطأ أو عمدًا) بادئة لا يملكها، فيصدّقه الجيران ويرسلون الحركة إليه. وقاعدة <b>أطول بادئة</b> تجعل الأمر أخطر: في عام 2008 أعلنت شركة اتصالات باكستانية بادئة أكثر تحديدًا من بادئة YouTube بقصد حجبه محليًا، فانتشرت عالميًا وانقطع الموقع عن كثيرين لبعض الوقت. الدفاع: مرشحات البادئات عند الجيران، والتحقق من أصل المسار بـ <b>RPKI</b> <span class="en">(Route Origin Validation)</span>.</li>
+<li><b>موجّه مزيّف في IGP</b> <span class="en">(Rogue Router)</span>: جهاز يتصل بالشبكة ويتكلم OSPF أو RIP فيحقن مسارات تحوّل الحركة إليه. الدفاع: <b>المصادقة</b> بين الموجّهات، وتعطيل البروتوكول على المنافذ المتجهة للمستخدمين (<span class="en">Passive Interface</span>).</li>
+<li><b>الموجّه ليس جدار حماية:</b> يحوّل كل ما يطابق جدوله. نضيف <b>قوائم التحكم بالوصول</b> <span class="en">(ACL)</span> أو جدار حماية للفصل بين الشبكات. وتذكّر أن التقسيم الذي تعلمناه في الدرس 3 لا يعزل شيئًا فعليًا ما لم تُفرض قواعد عند الموجّه الذي يربط الشبكتين.</li>
+<li><b>انتحال عنوان المصدر</b> <span class="en">(IP Spoofing)</span>: يعالَج عند الحدود بالتصفية الداخلة والخارجة (BCP 38) وبميزة <b>uRPF</b> التي تُسقط الحزمة إن كانت شبكة مصدرها لا تُوجَّه عبر الواجهة التي وصلت منها.</li>
+<li><b>التوجيه من المصدر</b> <span class="en">(Source Routing)</span>: خيار قديم في IP يسمح للمرسل بتحديد الطريق، فيمكن استغلاله لتجاوز أجهزة الحماية. يُعطَّل على الموجّهات.</li>
+<li><b>أمان إدارة الموجّه:</b> من يدخل إلى الموجّه يغيّر الجدول فيتحكم في كل الحركة. استخدم SSH بدل Telnet، وكلمات مرور قوية أو توثيقًا مركزيًا، وقيّد الإدارة بشبكة معيّنة، وعطّل الخدمات غير المستخدمة.</li>
+<li><b>الحلقات والـ TTL:</b> أخطاء الضبط قد تولّد حلقات تستهلك عرض النطاق. TTL يحدّ من الضرر، لكنه لا يغني عن مراقبة الشبكة وتوثيق التغييرات.</li>
+</ul>
+</section>
+
+<section id="summary">
+<h2>10. الملخص</h2>
+<ul>
+<li>الموجّه يربط شبكات مختلفة، ويقرر لكل حزمة <b>القفزة التالية</b> فقط، بالرجوع إلى جدول التوجيه.</li>
+<li>التوجيه يبني الجدول (التحكم)، والتحويل يستخدمه لكل حزمة (البيانات).</li>
+<li>سطر الجدول: بادئة، وقفزة تالية، وواجهة، ومقياس. تُضاف الشبكات المتصلة تلقائيًا.</li>
+<li>الاختيار: <b>أطول بادئة مطابقة</b> أولًا، ثم أقل <b>مسافة إدارية</b>، ثم أقل <b>مقياس</b>.</li>
+<li>المسار الافتراضي <code>0.0.0.0/0</code> يطابق كل شيء وهو آخر الخيارات.</li>
+<li>التوجيه الساكن بسيط ويدوي، ولا يعمل إلا إذا كُتب المسار <b>العائد</b> أيضًا. المسار العائم احتياطي بمسافة أعلى.</li>
+<li>عند كل موجّه: يتغير MAC وينقص TTL، ويبقى IP الوجهة ثابتًا (إلا عند NAT).</li>
+<li>التوجيه الديناميكي يجعل الموجّهات تتعلم المسارات وتتقارب بعد الأعطال: RIP (قفزات)، وOSPF (حالة الرابط)، وBGP بين الأنظمة المستقلة.</li>
+<li>الأمن: اختطاف BGP، وموجّه مزيّف، والحاجة إلى ACL وتأمين الإدارة.</li>
+</ul>
+</section>
+
+<section id="glossary">
+<h2>11. مسرد المصطلحات</h2>
+<dl class="glossary">
+<dt>Router / موجّه</dt><dd>جهاز يربط شبكات مختلفة ويحوّل الحزم بينها بحسب عنوان IP.</dd>
+<dt>Routing Table / جدول التوجيه</dt><dd>قائمة الشبكات المعروفة وكيف يُوصَل إليها.</dd>
+<dt>Next Hop / القفزة التالية</dt><dd>عنوان الموجّه المجاور الذي تُسلَّم إليه الحزمة.</dd>
+<dt>Hop / قفزة</dt><dd>عبور موجّه واحد.</dd>
+<dt>Longest Prefix Match</dt><dd>قاعدة اختيار السطر الذي بادئته الأطول بين المطابِقات.</dd>
+<dt>Default Route / مسار افتراضي</dt><dd>المسار <code>0.0.0.0/0</code> لكل ما لا يطابق غيره.</dd>
+<dt>Static Route / مسار ساكن</dt><dd>مسار يكتبه المهندس يدويًا.</dd>
+<dt>Dynamic Routing / توجيه ديناميكي</dt><dd>تعلّم المسارات تلقائيًا عبر بروتوكول.</dd>
+<dt>Metric / مقياس</dt><dd>تكلفة المسار عند المفاضلة داخل البروتوكول الواحد.</dd>
+<dt>Administrative Distance / المسافة الإدارية</dt><dd>درجة موثوقية مصدر المسار عند التعارض بين مصادر.</dd>
+<dt>Convergence / تقارب</dt><dd>وصول كل الموجّهات إلى جداول متسقة بعد تغيّر في الشبكة.</dd>
+<dt>IGP / EGP</dt><dd>بروتوكولات داخل نظام مستقل / بين الأنظمة المستقلة.</dd>
+<dt>Autonomous System (AS) / نظام مستقل</dt><dd>مجموعة شبكات تحت إدارة واحدة، لها رقم AS.</dd>
+<dt>Distance Vector / متجه المسافة</dt><dd>تبادل الجداول بين الجيران (RIP).</dd>
+<dt>Link State / حالة الرابط</dt><dd>تبادل حالة الروابط لبناء خريطة كاملة (OSPF).</dd>
+<dt>TTL</dt><dd>عدّاد في ترويسة IP ينقص عند كل موجّه لمنع الحلقات الأبدية.</dd>
+<dt>Routing Loop / حلقة توجيه</dt><dd>دوران الحزمة بين موجّهات بسبب جداول متعارضة.</dd>
+<dt>Summarization / تلخيص</dt><dd>جمع عدة شبكات متجاورة في بادئة واحدة.</dd>
+<dt>ECMP</dt><dd>توزيع الحركة على عدة مسارات متساوية التكلفة.</dd>
+</dl>
+</section>
+
+<section id="quiz">
+<h2>12. اختبر فهمك</h2>
+<p>اضغط على إجابة لترى التفسير. تُسجَّل نتيجتك عند الإجابة عن كل الأسئلة.</p>
+<div id="quiz-box"></div>
+<div id="quiz-result" class="alert info hidden"></div>
+<button id="retry" class="btn secondary hidden" type="button">إعادة المحاولة</button>
+<div style="margin-top:26px">
+  <button id="complete" class="btn success" type="button">وضع علامة «مكتمل»</button>
+  <span id="complete-msg" class="hint" role="status"></span>
+</div>
+</section>
+
+<section id="resources">
+<h2>13. مراجع موثوقة للتعمق</h2>
+<ul>
+<li><a href="https://www.rfc-editor.org/rfc/rfc1812" rel="noopener">RFC 1812</a> — متطلبات موجّهات IPv4 (بالإنجليزية).</li>
+<li><a href="https://www.rfc-editor.org/rfc/rfc792" rel="noopener">RFC 792</a> — بروتوكول ICMP (رسائل الوجهة غير الواصلة وانتهاء الوقت).</li>
+<li><a href="https://www.rfc-editor.org/rfc/rfc2453" rel="noopener">RFC 2453</a> — RIP الإصدار 2.</li>
+<li><a href="https://www.rfc-editor.org/rfc/rfc2328" rel="noopener">RFC 2328</a> — OSPF الإصدار 2.</li>
+<li><a href="https://www.rfc-editor.org/rfc/rfc4271" rel="noopener">RFC 4271</a> — BGP-4.</li>
+<li><a href="https://www.rfc-editor.org/rfc/rfc6811" rel="noopener">RFC 6811</a> — التحقق من أصل البادئة في BGP (RPKI).</li>
+<li><a href="https://www.rfc-editor.org/rfc/rfc3704" rel="noopener">RFC 3704</a> — التصفية الداخلة (BCP 84) لمكافحة انتحال المصدر.</li>
+<li><a href="https://www.netacad.com" rel="noopener">Cisco Networking Academy</a> — مقررات مجانية وبرنامج Packet Tracer.</li>
+</ul>
+<h3>التنقل بين الدروس</h3>
+<p><b>المتطلبات السابقة:</b> <a href="lesson-2.html">الدرس 2: نموذج OSI</a> و<a href="lesson-3.html">الدرس 3: عنونة IP</a>.<br>
+<b>الدرس التالي:</b> <a href="lesson-5.html">الدرس 5: الشبكات المحلية الافتراضية (VLAN)</a> — <a href="curriculum.html">عرض المنهج الكامل</a></p>
+</section>
+</article>
+</div>
+</main>
+<div id="site-footer"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+const LESSON_ID = 4;
+const QUESTIONS = [
+  { q: "موجّه جدوله فيه: 10.0.0.0/8 ومسار 10.1.0.0/16 ومسار افتراضي 0.0.0.0/0. إلى أي سطر تُرسَل حزمة وجهتها 10.1.4.4؟",
+    o: ["10.0.0.0/8", "10.1.0.0/16", "0.0.0.0/0", "تُسقط لأنها تطابق أكثر من سطر"], a: 1,
+    e: "تطابق الوجهة الأسطر الثلاثة، لكن الموجّه يختار أطول بادئة مطابقة وهي /16. تعدد المطابقة أمر طبيعي ولا يسبب إسقاطًا." },
+  { q: "في الشكل 2 كتبنا مسارًا على R1 إلى 192.168.20.0/24 ولم نكتب شيئًا على R2 عن 192.168.10.0/24. ماذا يحدث عند ping من PC-A إلى الخادم؟",
+    o: ["ينجح لأن R1 يعرف الطريق", "تصل الحزمة إلى الخادم لكن الرد لا يجد طريق العودة فتنتهي المهلة", "لا تغادر الحزمة PC-A أصلًا", "يستخدم R2 المسار الافتراضي تلقائيًا"], a: 1,
+    e: "المسار الأمامي سليم فيصل الطلب، لكن R2 لا يعرف شبكة المصدر فلا يستطيع إرسال الرد. هذا هو خطأ «المسار العائد» المنسي." },
+  { q: "حزمة تعبر موجّهًا واحدًا بين شبكتين. أي مجموعة تتغير فعلًا بحسب الشكل 3؟",
+    o: ["IP المصدر وIP الوجهة", "MAC المصدر وMAC الوجهة وقيمة TTL", "IP الوجهة وحده", "لا يتغير شيء"], a: 1,
+    e: "يُنشأ إطار جديد بعنواني MAC جديدين على الوصلة التالية، وينقص TTL بمقدار 1. أما عنوانا IP فيبقيان كما هما (ما لم يوجد NAT)." },
+  { q: "ظهر المسار نفسه 192.168.50.0/24 من مصدرين: مسار ساكن وOSPF. أيهما يدخل جدول التوجيه على أجهزة Cisco بالقيم الافتراضية؟",
+    o: ["OSPF لأن مسافته 110 وهي الأكبر", "المسار الساكن لأن مسافته 1", "كلاهما معًا مع توزيع الحركة", "الأقدم زمنًا فقط"], a: 1,
+    e: "عند تطابق البادئة تُفضَّل المسافة الإدارية الأقل: الساكن 1 مقابل 110 لـ OSPF. المسافة الأقل تعني موثوقية أعلى." },
+  { q: "في الشكل 4، أي بروتوكول سيختار الرابط المباشر البطيء (10 Mbps)؟",
+    o: ["RIP لأنه يعدّ القفزات", "OSPF لأنه يعدّ التكلفة", "كلاهما", "لا أحد منهما"], a: 0,
+    e: "RIP يرى قفزة واحدة مقابل قفزتين فيختار المباشر. أما OSPF فيحسب التكلفة 10 مقابل 1+1=2 فيختار الطريق الأسرع عبر R2." },
+  { q: "ما معنى المسار 0.0.0.0/0 في جدول التوجيه؟",
+    o: ["شبكة غير صالحة", "الجهاز نفسه", "يطابق كل الوجهات، لكنه الأقل أولوية بسبب طول بادئته الصفري", "عنوان البث"], a: 2,
+    e: "بادئته صفرية فتطابق أي عنوان، ولأن الاختيار بأطول بادئة فهو يُستخدم فقط عندما لا يوجد مسار أكثر تحديدًا." },
+  { q: "نفّذت traceroute فظهر موجّهان يتكرران بالتناوب (A ثم B ثم A ثم B…) وانتهى بـ «TTL expired in transit». ما التشخيص؟",
+    o: ["جدار حماية يمنع الحزمة", "حلقة توجيه بين الموجّهين بسبب مساري توجيه متعاكسين", "خادم DNS خاطئ", "القناع المستخدم /32"], a: 1,
+    e: "تكرار الموجّهين نفسهما دليل حلقة: كل واحد يرسل الحزمة إلى الآخر. TTL ينقص حتى يبلغ صفرًا فتُسقط الحزمة ويصل ICMP." },
+  { q: "الشبكات 192.168.0.0/24 و192.168.1.0/24 و192.168.2.0/24 و192.168.3.0/24 يمكن تلخيصها في:",
+    o: ["192.168.0.0/23", "192.168.0.0/22", "192.168.0.0/16", "192.168.0.0/25"], a: 1,
+    e: "الثمانية الثالثة تتدرج من 0 إلى 3، أي أربع كتل، فنحتاج بتين متغيرين: 24 − 2 = /22. وجعلها /23 يغطي شبكتين فقط." }
+];
+</script>
+<script src="assets/js/lesson.js"></script>
+</body>
+</html>

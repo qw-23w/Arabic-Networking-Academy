@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>المنهج — أكاديمية الشبكات العربية</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="assets/img/academy-icon.png">
+<script>try{var t=localStorage.getItem("ana_theme")||(matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light");document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<a class="skip" href="#main">تخطَّ إلى المحتوى</a>
+<div id="site-header"></div>
+<main id="main" class="container section">
+  <h1>المنهج الدراسي</h1>
+  <p>ثمانية دروس متدرجة. يُنصح بالترتيب لأن كل درس يبني على ما قبله. الدروس الثمانية كلها متاحة الآن.</p>
+  <div id="list" class="course-grid"></div>
+</main>
+<div id="site-footer"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+(async () => {
+  const { session } = await ANA.renderLayout("curriculum");
+  const prog = session ? await ANA.myProgress(session.user.id) : [];
+  const done = new Set(prog.filter(p => p.completed_at).map(p => p.lesson_id));
+  document.getElementById("list").innerHTML = ANA.LESSONS.map(l => {
+    const target = session ? l.href : "register.html";
+    const action = l.published ? `<a class="btn" href="${target}">${session ? (done.has(l.id) ? "مراجعة الدرس" : "ابدأ الدرس") : "سجّل لتبدأ"}</a>` : "";
+    const badge = done.has(l.id) ? '<span class="badge done">مكتمل</span>' : l.published ? '<span class="badge">متاح</span>' : '<span class="badge soon">قريبًا</span>';
+    return `<article class="card course-card"><a href="${target}" aria-label="الدرس ${l.id}: ${ANA.esc(l.ar)}"><img loading="lazy" src="assets/img/course-${l.id}.svg" alt="رسم توضيحي للدرس ${l.id}"></a><div class="course-body"><div>${badge} <span class="course-number">الدرس ${l.id}</span></div><h2>${ANA.esc(l.ar)}</h2><p class="en">${ANA.esc(l.en)}</p>${action}</div></article>`;
+  }).join("");
+})();
+</script>
+</body>
+</html>

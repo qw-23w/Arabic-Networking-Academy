@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>تسجيل الدخول — أكاديمية الشبكات العربية</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="assets/img/academy-icon.png">
+<script>try{var t=localStorage.getItem("ana_theme")||(matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light");document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<a class="skip" href="#main">تخطَّ إلى المحتوى</a>
+<div id="site-header"></div>
+<main id="main" class="container narrow section">
+  <div class="card">
+    <h1>تسجيل الدخول</h1>
+    <div id="msg" class="alert hidden"></div>
+    <form id="form" novalidate>
+      <label for="email">البريد الإلكتروني</label>
+      <input id="email" type="email" autocomplete="email" required dir="ltr">
+      <label for="pw">كلمة المرور</label>
+      <div class="password-field"><input id="pw" type="password" autocomplete="current-password" required dir="ltr"><button type="button" class="password-toggle" aria-label="إظهار كلمة المرور" aria-pressed="false">إظهار</button></div>
+      <p><button class="btn block" id="submit" type="submit">دخول</button></p>
+    </form>
+    <p><a href="reset.html">نسيت كلمة المرور؟</a></p>
+    <p>ليس لديك حساب؟ <a href="register.html">أنشئ حسابًا مجانيًا</a></p>
+  </div>
+</main>
+<div id="site-footer"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+(async () => {
+  const { sb, showAlert } = ANA;
+  const { session } = await ANA.renderLayout("login");
+  if (session) { location.replace(ANA.nextUrl("lesson-1.html")); return; }
+  const msg = document.getElementById("msg");
+  const btn = document.getElementById("submit");
+  document.getElementById("form").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    msg.classList.add("hidden");
+    const email = document.getElementById("email").value.trim().toLowerCase();
+    const pw = document.getElementById("pw").value;
+    if (!email || !pw) return showAlert(msg, "error", "أدخل البريد الإلكتروني وكلمة المرور.");
+    if (!sb) return showAlert(msg, "error", "الموقع غير مرتبط بقاعدة البيانات بعد. راجع ملف README.");
+    if (btn.disabled) return; // ignore double submits
+    btn.disabled = true;
+    let error;
+    try { ({ error } = await sb.auth.signInWithPassword({ email, password: pw })); } catch (ex) { error = ex; }
+    btn.disabled = false;
+    if (error) {
+      if (ANA.isNetworkError(error)) return showAlert(msg, "error", "تعذّر الاتصال بالخادم. تحقق من اتصالك بالإنترنت وحاول مجددًا.");
+      if (error.code === "email_not_confirmed" || /confirm/i.test(error.message)) return showAlert(msg, "warn", "لم يتم تأكيد بريدك بعد. افتح رسالة التأكيد المرسلة إليك ثم أعد المحاولة.");
+      if (error.status === 429 || /rate_limit/.test(error.code || "")) return showAlert(msg, "error", "محاولات كثيرة. انتظر قليلًا ثم حاول مجددًا.");
+      if (error.status >= 500) return showAlert(msg, "error", "الخادم غير متاح مؤقتًا. حاول بعد قليل.");
+      return showAlert(msg, "error", "البريد الإلكتروني أو كلمة المرور غير صحيحة.");
+    }
+    location.href = ANA.nextUrl("lesson-1.html");
+  });
+})();
+</script>
+<script src="assets/js/password-toggle.js" defer></script>
+</body>
+</html>

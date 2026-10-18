@@ -1,0 +1,507 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>الدرس 6: VXLAN وVRF — أكاديمية الشبكات العربية</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="assets/img/academy-icon.png">
+<script>try{var t=localStorage.getItem("ana_theme")||(matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light");document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<a class="skip" href="#main">تخطَّ إلى المحتوى</a>
+<div id="site-header"></div>
+<main id="main" class="container">
+<div class="lesson-layout">
+<nav class="toc" aria-label="قائمة الدروس والأقسام"><div class="course-sidebar-title">المنهج الدراسي</div><div id="lesson-navigation"></div><div class="original-toc" hidden>
+  <strong>محتويات الدرس</strong>
+  <ol>
+    <li><a href="#intro">مقدمة</a></li>
+    <li><a href="#objectives">الأهداف والمتطلبات</a></li>
+    <li><a href="#why">لماذا لا تكفي VLAN؟</a></li>
+    <li><a href="#vrf">VRF: فصل جداول التوجيه</a></li>
+    <li><a href="#vrfconfig">ضبط VRF عمليًا</a></li>
+    <li><a href="#vxlan">VXLAN: الشبكة فوق الشبكة</a></li>
+    <li><a href="#how">كيف يعرف VTEP إلى أين يرسل؟</a></li>
+    <li><a href="#vxlanconfig">ضبط VXLAN عمليًا</a></li>
+    <li><a href="#together">الجمع بين VXLAN وVRF</a></li>
+    <li><a href="#trouble">استكشاف الأخطاء</a></li>
+    <li><a href="#mistakes">أخطاء شائعة</a></li>
+    <li><a href="#security">اعتبارات الأمن</a></li>
+    <li><a href="#summary">الملخص</a></li>
+    <li><a href="#glossary">المسرد</a></li>
+    <li><a href="#quiz">الاختبار</a></li>
+    <li><a href="#resources">مراجع والدرس التالي</a></li>
+  </ol></div>
+</nav>
+
+<article class="lesson">
+<div id="welcome" class="alert ok hidden"></div>
+
+<section id="intro">
+<h1>الدرس 6: VXLAN وVRF <span class="en">(VXLAN and VRF)</span></h1>
+<p>في الدرس السابق قسّمنا شبكة محلية واحدة إلى عدة شبكات منطقية بواسطة VLAN. هذا يكفي لمكتب أو مبنى، لكنه يصطدم بحدود حين تكبر الشبكة إلى مركز بيانات أو إلى مزوّد خدمة يستضيف مئات العملاء: عدد VLAN لا يتجاوز 4094، وعزل VLAN يقف عند الطبقة 2، بينما الموجّه الذي يربط الشبكات ما زال يملك <b>جدول توجيه واحدًا</b> يشترك فيه الجميع. في هذا الدرس نتعلم تقنيتين تتكاملان لحل هذه المشكلات. الأولى <b>VRF</b> وتقسّم جدول التوجيه على الجهاز الواحد إلى عدة جداول مستقلة (الطبقة 3). والثانية <b>VXLAN</b> وتمدّ الشبكة المحلية (الطبقة 2) فوق شبكة IP عادية، بحدود أوسع بكثير من حدود VLAN. سنفهم الفكرة وبنية الحزمة، ثم نضبط كل منهما عمليًا، ثم نرى كيف تعملان معًا في مراكز البيانات الحديثة.</p>
+</section>
+
+<section id="objectives">
+<h2>أهداف التعلم</h2>
+<ul>
+<li>شرح محدودية VLAN في الشبكات الكبيرة ولماذا نحتاج إلى VRF وVXLAN.</li>
+<li>تعريف <b>VRF</b> وشرح كيف يسمح بعناوين IP <b>متداخلة</b> <span class="en">(Overlapping)</span> على جهاز واحد.</li>
+<li>ضبط VRF على Cisco وعلى Linux، والتحقق منه بالأوامر الصحيحة.</li>
+<li>تعريف <b>VXLAN</b> والتفريق بين <b>الشبكة الفوقية</b> <span class="en">(Overlay)</span> و<b>الشبكة التحتية</b> <span class="en">(Underlay)</span>.</li>
+<li>قراءة بنية حزمة VXLAN، وفهم <b>VNI</b> ذي الـ 24 بتًا ولماذا يعطي نحو 16 مليون شبكة.</li>
+<li>حساب الحمل الإضافي (50 بايتًا) وأثره على MTU.</li>
+<li>شرح دور <b>VTEP</b> وكيف يتعلم عناوين MAC البعيدة (التعلّم بالفيضان أو BGP EVPN).</li>
+<li>ضبط نفق VXLAN بسيط على Linux، وفهم نموذج ضبط على Cisco Nexus.</li>
+<li>تشخيص الأعطال الشائعة، وفهم أن VXLAN لا يوثّق ولا يشفّر وما يترتب على ذلك أمنيًا.</li>
+</ul>
+<h3>المعرفة المسبقة</h3>
+<p>الدرس 2 (الإطار وعنوان MAC وتعلّم المحوّل)، والدرس 3 (العنوان والشبكة الفرعية وعناوين RFC 1918 الخاصة)، والدرس 4 (جدول التوجيه والمسارات المتصلة والمسارات الساكنة)، والدرس 5 (VLAN والواجهات الفرعية). سنبني عليها مباشرة.</p>
+</section>
+
+<section id="why">
+<h2>1. لماذا لا تكفي VLAN؟</h2>
+<p>VLAN أداة ممتازة، لكنها صُمّمت لزمن كانت فيه الشبكة المحلية أصغر. حين ننتقل إلى مراكز البيانات والخدمات السحابية تظهر ثلاث مشكلات:</p>
+<ul>
+<li><b>العدد محدود:</b> حقل VID في وسم 802.1Q طوله 12 بتًا، فالأقصى 4094 شبكة. مزوّد سحابي يستضيف آلاف العملاء، ولكل عميل عدة شبكات، يستنفد هذا العدد سريعًا.</li>
+<li><b>جدول توجيه واحد:</b> VLAN تفصل في الطبقة 2، لكن حين نربط VLAN بموجّه أو بمحوّل طبقة 3 يدخل كل شيء في جدول توجيه واحد. فلو استخدم عميلان العنوان نفسه <span class="ltr mono">10.0.0.0/24</span> (وهذا شائع جدًا، فالعناوين الخاصة محدودة والجميع يختارون الأرقام نفسها) لتعارضا، فلا يستطيع الجدول أن يحمل مسارين لشبكة واحدة تعني شيئين مختلفين.</li>
+<li><b>تمديد الطبقة 2 مكلف وهشّ:</b> أحيانًا نريد أن تبقى الآلة الافتراضية في شبكتها نفسها (عنوانها نفسه) حين تنتقل من رف إلى رف أو من مبنى إلى مبنى. تمديد VLAN عبر الروابط يعني الاعتماد على بروتوكول الشجرة الممتدة <span class="en">(STP)</span> الذي يعطّل روابط عمدًا لمنع الحلقات، فتُهدَر السعة، وعاصفة بث واحدة قد تشلّ كل المواقع.</li>
+</ul>
+<p>الحل في العمارة الحديثة تقسيم المشكلة: <b>VRF</b> يحل مشكلة جدول التوجيه الواحد في الطبقة 3، و<b>VXLAN</b> يحل مشكلة العدد وتمديد الطبقة 2 بأن يبني الشبكة المحلية <b>فوق</b> شبكة IP موجَّهة ومستقرة (الدرس 4) بدل أن تمتد على روابط محوّلات.</p>
+<div class="analogy"><b>تشبيهان:</b> VRF كمبنى فيه عدة شركات تتشارك المدخل نفسه (الجهاز)، لكن لكل شركة <b>دليل هاتف داخليًا خاصًا بها</b>: التحويلة 101 عند الشركة أ شخص، وعند الشركة ب شخص آخر، ولا يحدث خلط لأن كل مكالمة تُبحث في دليل الشركة التي جاءت منها. أما VXLAN فكرسالة توضع في <b>ظرف بريدي</b>: الرسالة الأصلية (إطار الشبكة المحلية) تبقى كما هي، ومكتب البريد (الشبكة التحتية) يقرأ العنوان المكتوب على الظرف فقط ويوصله إلى مكتب الوجهة، حيث يُفتح الظرف وتُسلَّم الرسالة الأصلية سليمة.</div>
+</section>
+
+<section id="vrf">
+<h2>2. VRF: فصل جداول التوجيه</h2>
+<p><b>VRF</b> (اختصار Virtual Routing and Forwarding) تقنية تجعل الموجّه الواحد يحتفظ بعدة <b>جداول توجيه مستقلة</b>، كل واحد منها كأنه موجّه منفصل. الفكرة تشبه VLAN، لكن في الطبقة 3: VLAN تقسّم المحوّل إلى عدة محوّلات منطقية، وVRF تقسّم الموجّه إلى عدة موجّهات منطقية. القواعد الأساسية:</p>
+<ul>
+<li>كل <b>واجهة</b> تنتمي إلى VRF واحدة فقط. وإذا لم نحدد شيئًا فهي في الجدول العام <span class="en">(Global / default)</span>.</li>
+<li>حين تصل حزمة إلى واجهة، يبحث الجهاز عن وجهتها في جدول <b>VRF تلك الواجهة</b> وحده، ولا ينظر إلى أي جدول آخر.</li>
+<li>لكل VRF مساراتها المتصلة ومسارها الافتراضي ومساراتها الساكنة، وقد تشغّل نسخة خاصة من بروتوكول التوجيه (مثل OSPF أو BGP).</li>
+<li>لا تتبادل VRF أي مسارات فيما بينها افتراضيًا: العزل هو الأصل، وأي اتصال بينها <b>قرار تصميمي</b> نتخذه عمدًا.</li>
+</ul>
+<figure>
+<svg viewBox="0 0 700 316" role="img" aria-labelledby="f1t f1d">
+<title id="f1t">موجّه واحد بجدولي توجيه منفصلين</title><desc id="f1d">موجّه R1 فيه VRF باسم CUST-A وVRF باسم CUST-B. في كل منهما جدول توجيه خاص يحتوي الشبكة 10.0.0.0/24 نفسها، مرتبطة بواجهة فرعية مختلفة: Gi0/0.10 للعميل A وGi0/0.20 للعميل B. تحت الموجّه شبكتا العميلين، ولكل منهما العنوان نفسه 10.0.0.0/24 دون تعارض.</desc>
+<rect rx="10" class="bx" x="120" y="14" width="460" height="170"/>
+<text x="350" y="38" text-anchor="middle" class="t-b">الموجّه R1</text>
+<rect rx="10" class="bx-green" x="135" y="52" width="210" height="118"/>
+<text x="240" y="76" text-anchor="middle" class="t-b"><tspan class="ltr mono">VRF: CUST-A</tspan></text>
+<g class="mono ltr t-sm" text-anchor="middle"><text x="240" y="106">10.0.0.0/24</text><text x="240" y="126">via Gi0/0.10</text></g>
+<text x="240" y="154" text-anchor="middle" class="t-sm">جدول توجيه مستقل</text>
+<rect rx="10" class="bx-amber" x="355" y="52" width="210" height="118"/>
+<text x="460" y="76" text-anchor="middle" class="t-b"><tspan class="ltr mono">VRF: CUST-B</tspan></text>
+<g class="mono ltr t-sm" text-anchor="middle"><text x="460" y="106">10.0.0.0/24</text><text x="460" y="126">via Gi0/0.20</text></g>
+<text x="460" y="154" text-anchor="middle" class="t-sm">جدول توجيه مستقل</text>
+<path class="ln" d="M240 184V230M460 184V230"/>
+<rect rx="10" class="bx-green" x="135" y="230" width="210" height="56"/>
+<text x="240" y="253" text-anchor="middle" class="t-b">شبكة العميل A</text>
+<text x="240" y="273" text-anchor="middle" class="t-sm"><tspan class="ltr mono">10.0.0.0/24</tspan> (<tspan class="ltr mono">VLAN 10</tspan>)</text>
+<rect rx="10" class="bx-amber" x="355" y="230" width="210" height="56"/>
+<text x="460" y="253" text-anchor="middle" class="t-b">شبكة العميل B</text>
+<text x="460" y="273" text-anchor="middle" class="t-sm"><tspan class="ltr mono">10.0.0.0/24</tspan> (<tspan class="ltr mono">VLAN 20</tspan>)</text>
+<text x="350" y="306" text-anchor="middle" class="t-sm">الشبكة نفسها في الجدولين دون أي تعارض، لأن كل جدول لا يعلم بوجود الآخر</text>
+</svg>
+<figcaption><b>الشكل 1:</b> موجّه واحد وجهازان منفصلان منطقيًا. الحزمة الداخلة من <span class="ltr mono">Gi0/0.10</span> تُبحث وجهتها في جدول CUST-A فقط، والداخلة من <span class="ltr mono">Gi0/0.20</span> في جدول CUST-B فقط. لذلك يستطيع كل عميل استخدام العناوين التي يريدها.</figcaption>
+</figure>
+<h3>VRF وVLAN: كيف يتكاملان؟</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>وجه المقارنة</th><th>VLAN</th><th>VRF</th></tr></thead>
+<tbody>
+<tr><td>الطبقة</td><td>الطبقة 2 (الإطارات)</td><td>الطبقة 3 (الحزم والتوجيه)</td></tr>
+<tr><td>ما الذي تقسّمه</td><td>نطاق البث وجدول MAC في المحوّل</td><td>جدول التوجيه في الموجّه (أو محوّل الطبقة 3)</td></tr>
+<tr><td>الجهاز</td><td>المحوّل</td><td>الموجّه أو محوّل الطبقة 3</td></tr>
+<tr><td>المعرّف</td><td>رقم (1–4094)</td><td>اسم (مثل <code>CUST-A</code>)</td></tr>
+<tr><td>الاستخدام المعتاد</td><td>فصل الأجهزة داخل الشبكة المحلية</td><td>فصل العملاء أو البيئات (إنتاج/اختبار) في التوجيه</td></tr>
+</tbody></table></div>
+<p>عمليًا نستخدمهما معًا: كل VLAN تُربط بـ SVI أو واجهة فرعية، وهذه الواجهة تُسنَد إلى VRF. بهذا يصير لكل عميل شبكاته المحلية وجدول توجيهه الخاص.</p>
+<div class="note"><b>للتعمق لاحقًا:</b> حين تُستخدم VRF مع MPLS وBGP لبناء خدمات VPN لدى مزوّد الخدمة، تظهر مفاهيم <b>RD</b> (Route Distinguisher) الذي يجعل المسار فريدًا حتى لو تكررت العناوين، و<b>RT</b> (Route Target) الذي يحدد أي VRF تستورد المسار وأيها تصدّره. أما الاستخدام المحلي بدون MPLS فيُسمّى <span class="en">VRF-Lite</span>، وهو ما نشرحه هنا.</div>
+</section>
+
+<section id="vrfconfig">
+<h2>3. ضبط VRF عمليًا</h2>
+<p>نكمل مثال الشكل 1: واجهة <span class="ltr mono">Gi0/0</span> على R1 مرتبطة بمحوّل برابط Trunk، وعميلان يستخدمان الشبكة <span class="ltr mono">10.0.0.0/24</span> نفسها في VLAN 10 وVLAN 20 (أسلوب الواجهات الفرعية من الدرس 5).</p>
+<h3>على أجهزة Cisco (IOS XE)</h3>
+<pre><code>R1(config)# vrf definition CUST-A
+R1(config-vrf)# address-family ipv4
+R1(config-vrf-af)# exit-address-family
+R1(config-vrf)# exit
+R1(config)# vrf definition CUST-B
+R1(config-vrf)# address-family ipv4
+R1(config-vrf-af)# exit-address-family
+R1(config-vrf)# exit
+
+R1(config)# interface GigabitEthernet0/0
+R1(config-if)# no shutdown
+
+R1(config)# interface GigabitEthernet0/0.10
+R1(config-subif)# encapsulation dot1Q 10
+R1(config-subif)# vrf forwarding CUST-A                # أولًا: ربط الواجهة بالـ VRF
+R1(config-subif)# ip address 10.0.0.1 255.255.255.0     # ثم العنوان
+
+R1(config)# interface GigabitEthernet0/0.20
+R1(config-subif)# encapsulation dot1Q 20
+R1(config-subif)# vrf forwarding CUST-B
+R1(config-subif)# ip address 10.0.0.1 255.255.255.0     # العنوان نفسه، في VRF مختلفة، بلا تعارض
+
+R1(config)# ip route vrf CUST-A 172.16.5.0 255.255.255.0 10.0.0.254   # مسار ساكن داخل CUST-A فقط</code></pre>
+<p>ملاحظات مهمة:</p>
+<ul>
+<li><b>الترتيب مهم:</b> أمر <code>vrf forwarding</code> <b>يمسح عنوان IP</b> الموجود على الواجهة. لذلك اربط الواجهة بالـ VRF أولًا ثم اكتب العنوان، وإن نسيت فأعد كتابة العنوان.</li>
+<li>على الأجهزة الأقدم تُستخدم الصيغة القديمة <code>ip vrf CUST-A</code> و<code>ip vrf forwarding CUST-A</code>، والفكرة نفسها.</li>
+<li>المسار الساكن الذي يحمل كلمة <code>vrf CUST-A</code> يدخل جدول تلك الـ VRF فقط، ولا يراه العميل الآخر ولا الجدول العام.</li>
+</ul>
+<h3>أوامر التحقق، وفيها الفخ الأشهر</h3>
+<pre><code>R1# show vrf                              # الـ VRF الموجودة وواجهاتها
+R1# show ip route vrf CUST-A              # جدول CUST-A وحده
+Routing Table: CUST-A
+C        10.0.0.0/24 is directly connected, GigabitEthernet0/0.10
+L        10.0.0.1/32 is directly connected, GigabitEthernet0/0.10
+S        172.16.5.0/24 [1/0] via 10.0.0.254
+
+R1# ping vrf CUST-A 10.0.0.11             # الاختبار يجب أن يحدد الـ VRF
+R1# traceroute vrf CUST-B 10.0.0.11
+R1# show ip interface brief vrf CUST-A</code></pre>
+<div class="note"><b>الفخ الأشهر:</b> إذا كتبت <code>ping 10.0.0.11</code> بدون كلمة <code>vrf</code> فإن الموجّه يبحث في <b>الجدول العام</b>، ولن يجد شيئًا، فيفشل الاختبار رغم أن كل شيء سليم. دائمًا اكتب اسم الـ VRF في <code>ping</code> و<code>traceroute</code> و<code>show ip route</code>.</div>
+<h3>على Linux</h3>
+<p>يدعم Linux الـ VRF في نواته. ننشئ جهازًا خاصًا من نوع <code>vrf</code> مرتبطًا برقم جدول توجيه، ثم نربط الواجهات به:</p>
+<pre><code>ip link add vrf-a type vrf table 10
+ip link set vrf-a up
+ip link set eth1 master vrf-a              # eth1 صارت في VRF باسم vrf-a
+ip addr add 10.0.0.1/24 dev eth1
+
+ip route show vrf vrf-a                    # جدول هذه الـ VRF وحده
+ip vrf exec vrf-a ping 10.0.0.11          # تشغيل أمر داخل الـ VRF</code></pre>
+<h3>تسريب المسارات بين VRF (Route Leaking)</h3>
+<p>أحيانًا نريد أن تصل VRF مختلفة إلى خدمة مشتركة محددة، مثل خادم DNS أو خادم تحديثات. يمكن ذلك بمسارات ساكنة تشير إلى جدول آخر، أو في BGP باستيراد المسارات وتصديرها بين VRF عبر RT. التزم بثلاث قواعد: سرّب <b>الوجهات اللازمة فقط</b> لا الجدول كله، وتذكّر أن الاتصال يحتاج إلى مسار <b>في الاتجاهين</b> (الذهاب والعودة)، وضع <b>جدار حماية أو ACL</b> عند نقطة التسريب لأن العزل ينتهي عندها.</p>
+<h3>تمرين</h3>
+<p>في <b>Cisco Packet Tracer</b> أو GNS3: (1) أنشئ موجّهًا ومحوّلًا وحاسوبين في VLAN 10 وVLAN 20، وأعطِ الحاسوبين العنوانين <span class="ltr mono">10.0.0.11</span> و<span class="ltr mono">10.0.0.12</span> وبوابتهما <span class="ltr mono">10.0.0.1</span> في الشبكتين. (2) بدون VRF، جرّب أن تضع الواجهتين الفرعيتين على <span class="ltr mono">10.0.0.1/24</span> وفسّر الخطأ الذي يظهر. (3) اضبط VRF كما في المثال وكرر المحاولة. (4) نفّذ <code>show ip route vrf CUST-A</code> و<code>show ip route vrf CUST-B</code> و<code>show ip route</code> وقارن النتائج. (5) نفّذ <code>ping</code> مرة بدون <code>vrf</code> ومرة معه وفسّر الفرق.</p>
+</section>
+
+<section id="vxlan">
+<h2>4. VXLAN: الشبكة فوق الشبكة</h2>
+<p><b>VXLAN</b> (اختصار Virtual eXtensible LAN، وصفه المعيار <span class="ltr mono">RFC 7348</span>) يحل مشكلة العدد والتمديد معًا بفكرة بسيطة: يأخذ <b>إطار Ethernet كاملًا</b> كما أرسله الجهاز، ويضعه داخل <b>حزمة UDP/IP</b> عادية، ويرسله عبر شبكة IP إلى الجهاز الذي يفك الغلاف ويسلّم الإطار الأصلي. لهذا يُوصف بأنه تغليف <b>MAC-in-UDP</b>. نتعلم مجموعة من المصطلحات:</p>
+<ul>
+<li><b>الشبكة التحتية</b> <span class="en">(Underlay)</span>: شبكة IP العادية التي تنقل الحزم فعليًا بين الأجهزة. هي شبكة موجّهة كما في الدرس 4 (OSPF أو BGP مثلًا)، ولا تعلم شيئًا عن VXLAN، فهي ترى حزم UDP فقط.</li>
+<li><b>الشبكة الفوقية</b> <span class="en">(Overlay)</span>: الشبكات المحلية المنطقية التي يراها المستخدمون والآلات الافتراضية، وتُحمل داخل أنفاق VXLAN فوق الشبكة التحتية.</li>
+<li><b>VTEP</b> <span class="en">(VXLAN Tunnel End Point)</span>: نقطة نهاية النفق، وهي الجهاز أو البرنامج الذي <b>يغلّف</b> الإطارات عند الإرسال و<b>يفك</b> الغلاف عند الاستقبال. قد يكون محوّلًا في مركز البيانات (غالبًا Leaf) أو برنامجًا داخل خادم الافتراضية. له عنوان IP في الشبكة التحتية (غالبًا واجهة Loopback).</li>
+<li><b>VNI</b> <span class="en">(VXLAN Network Identifier)</span>: رقم يعرّف الشبكة الفوقية، أي ما يقابل رقم VLAN. طوله <b>24 بتًا</b>، فعدد القيم <span class="ltr mono">2<sup>24</sup> = 16,777,216</span>، أي نحو 16 مليون شبكة مقابل 4094 في VLAN.</li>
+</ul>
+<figure>
+<svg viewBox="0 0 700 350" role="img" aria-labelledby="f2t f2d">
+<title id="f2t">نفق VXLAN بين VTEP1 وVTEP2 فوق شبكة IP</title><desc id="f2d">آلة افتراضية VM-A متصلة بالجهاز VTEP1 وعنوانه 10.0.0.1، وآلة VM-B متصلة بالجهاز VTEP2 وعنوانه 10.0.0.2. بين الجهازين شبكة IP وسيطة تُسمى Underlay، وفوقها نفق VXLAN برقم VNI يساوي 100. تحت الشكل ثلاث خطوات لرحلة إطار من VM-A إلى VM-B.</desc>
+<g text-anchor="middle">
+<rect rx="10" class="bx-green" x="40" y="14" width="150" height="48"/><text x="115" y="34" class="t-b">VM-A</text><text x="115" y="52" class="t-sm"><tspan class="ltr mono">192.168.100.11</tspan></text>
+<rect rx="10" class="bx-green" x="510" y="14" width="150" height="48"/><text x="585" y="34" class="t-b">VM-B</text><text x="585" y="52" class="t-sm"><tspan class="ltr mono">192.168.100.12</tspan></text>
+</g>
+<path class="ln" d="M115 62V118M585 62V118"/>
+<rect rx="10" class="bx-navy" x="40" y="118" width="150" height="58"/><text x="115" y="142" text-anchor="middle" class="t-w t-b">VTEP1</text><text x="115" y="162" text-anchor="middle" class="t-w t-sm"><tspan class="ltr mono">10.0.0.1</tspan></text>
+<rect rx="10" class="bx-navy" x="510" y="118" width="150" height="58"/><text x="585" y="142" text-anchor="middle" class="t-w t-b">VTEP2</text><text x="585" y="162" text-anchor="middle" class="t-w t-sm"><tspan class="ltr mono">10.0.0.2</tspan></text>
+<path class="ln" d="M190 147H250M450 147H510"/>
+<rect rx="10" class="bx-amber" x="250" y="112" width="200" height="70"/>
+<text x="350" y="140" text-anchor="middle" class="t-b">شبكة IP الوسيطة</text>
+<text x="350" y="162" text-anchor="middle" class="t-sm">(Underlay)</text>
+<path class="ln-w" d="M190 128Q350 58 510 128"/>
+<text x="350" y="82" text-anchor="middle" class="t-b">نفق VXLAN <tspan class="ltr mono">(VNI 100)</tspan></text>
+<rect rx="10" class="bx" x="15" y="206" width="670" height="134"/>
+<g text-anchor="middle"><text x="350" y="230" class="t-b">رحلة إطار من VM-A إلى VM-B (كلاهما في الشبكة الفوقية نفسها)</text>
+<circle cx="655" cy="252" r="11" class="bx-navy"/><text x="655" y="257" class="t-w t-sm t-b">1</text>
+<circle cx="655" cy="278" r="11" class="bx-navy"/><text x="655" y="283" class="t-w t-sm t-b">2</text>
+<circle cx="655" cy="304" r="11" class="bx-navy"/><text x="655" y="309" class="t-w t-sm t-b">3</text>
+</g>
+<g text-anchor="start" class="t-sm">
+<text x="635" y="257">VM-A يرسل إطار Ethernet عاديًا إلى VM-B فيصل إلى VTEP1.</text>
+<text x="635" y="283">VTEP1 يضع الإطار كله داخل VXLAN (VNI 100) ثم UDP ثم IP من <tspan class="ltr mono">10.0.0.1</tspan> إلى <tspan class="ltr mono">10.0.0.2</tspan>.</text>
+<text x="635" y="309">الشبكة الوسيطة توجّه حزمة IP عادية، وVTEP2 يزيل الغلاف ويسلّم الإطار الأصلي.</text>
+</g>
+</svg>
+<figcaption><b>الشكل 2:</b> الآلتان تظنان أنهما على محوّل واحد وفي شبكة محلية واحدة، لأن الإطار يصل كما أُرسل تمامًا. الشبكة الوسيطة لا ترى إلا حزمًا بين <span class="ltr mono">10.0.0.1</span> و<span class="ltr mono">10.0.0.2</span>، ولا تعرف شيئًا عن VM-A ولا VM-B ولا VNI.</figcaption>
+</figure>
+<h3>بنية حزمة VXLAN</h3>
+<p>يضيف VTEP أربع طبقات خارج الإطار الأصلي: ترويسة Ethernet، ثم ترويسة IP، ثم ترويسة UDP، ثم ترويسة VXLAN التي فيها الـ VNI. منفذ الوجهة في UDP هو <span class="ltr mono">4789</span> (المخصص من IANA لـ VXLAN). أما <b>منفذ المصدر</b> فيُحسب من تجزئة <span class="en">(Hash)</span> ترويسات الإطار الداخلي، فتحصل كل محادثة على منفذ مختلف، وهذا يتيح للشبكة التحتية توزيع الحركة على عدة مسارات متساوية التكلفة <span class="en">(ECMP)</span> وهي ميزة ليست متاحة في روابط الطبقة 2 المحجوبة بـ STP.</p>
+<figure>
+<svg viewBox="0 0 700 256" role="img" aria-labelledby="f3t f3d">
+<title id="f3t">بنية حزمة VXLAN</title><desc id="f3d">أعلى الشكل حزمة مرتبة من اليسار إلى اليمين: Ethernet خارجي 14 بايتًا، IP خارجي 20 بايتًا، UDP ثمانية بايتات، ترويسة VXLAN ثمانية بايتات، ثم الإطار الأصلي كاملًا. مجموع الغلاف المضاف 50 بايتًا. أسفله تفصيل ترويسة VXLAN: حقل Flags من 8 بتات، حقل محجوز من 24 بتًا، حقل VNI من 24 بتًا، حقل محجوز من 8 بتات.</desc>
+<g class="ltr" text-anchor="middle">
+<text x="213" y="14" class="t-sm">الغلاف المضاف: 14 + 20 + 8 + 8 = 50 بايتًا</text>
+<path class="ln" d="M20 22H406M20 22V28M406 22V28" style="stroke-width:1.5"/>
+<rect rx="10" class="bx-gray" x="20" y="30" width="100" height="46"/><text x="70" y="50" class="t-b t-sm">Ethernet</text><text x="70" y="67" class="t-sm mono">14 B</text>
+<rect rx="10" class="bx-gray" x="122" y="30" width="100" height="46"/><text x="172" y="50" class="t-b t-sm">IP</text><text x="172" y="67" class="t-sm mono">20 B</text>
+<rect rx="10" class="bx-gray" x="224" y="30" width="80" height="46"/><text x="264" y="50" class="t-b t-sm">UDP</text><text x="264" y="67" class="t-sm mono">8 B</text>
+<rect rx="10" class="bx-amber" x="306" y="30" width="100" height="46" style="stroke-width:3"/><text x="356" y="50" class="t-b t-sm">VXLAN</text><text x="356" y="67" class="t-sm mono">8 B</text>
+<rect rx="10" class="bx-green" x="408" y="30" width="280" height="46"/><text x="548" y="50" class="t-b t-sm">الإطار الأصلي كاملًا</text><text x="548" y="67" class="t-sm mono">Ethernet + IP + data</text>
+</g>
+<path class="ln" d="M306 76L30 130M406 76L670 130" style="stroke-width:1.5;stroke-dasharray:4 4"/>
+<g class="ltr" text-anchor="middle">
+<rect rx="10" class="bx-gray" x="30" y="130" width="120" height="50"/><text x="90" y="152" class="t-b">Flags</text><text x="90" y="170" class="t-sm mono">8 bits</text>
+<rect rx="10" class="bx-gray" x="152" y="130" width="170" height="50"/><text x="237" y="152" class="t-b">Reserved</text><text x="237" y="170" class="t-sm mono">24 bits</text>
+<rect rx="10" class="bx-amber" x="324" y="130" width="250" height="50" style="stroke-width:3"/><text x="449" y="152" class="t-b">VNI</text><text x="449" y="170" class="t-sm mono">24 bits</text>
+<rect rx="10" class="bx-gray" x="576" y="130" width="94" height="50"/><text x="623" y="152" class="t-b">Reserved</text><text x="623" y="170" class="t-sm mono">8 bits</text>
+</g>
+<g text-anchor="middle" class="t-sm">
+<text x="90" y="200">القيمة <tspan class="ltr mono">0x08</tspan> = VNI صالح</text>
+<text x="449" y="200">رقم الشبكة الفوقية (يقابل رقم VLAN)</text>
+<text x="449" y="218">24 بتًا = 16,777,216 قيمة</text>
+<text x="350" y="246" class="t-b">مقابل 4094 فقط في VLAN</text>
+</g>
+</svg>
+<figcaption><b>الشكل 3:</b> الغلاف 50 بايتًا في IPv4 دون وسم VLAN خارجي. ترويسة VXLAN ثمانية بايتات فقط: بايت للأعلام (القيمة <code>0x08</code> تعني أن VNI صالح)، وثلاثة بايتات محجوزة، وثلاثة بايتات للـ VNI، وبايت محجوز. ما بعدها هو إطار Ethernet الأصلي كما أرسله الجهاز.</figcaption>
+</figure>
+<h3>أثر الغلاف على MTU</h3>
+<p>حجم الحمولة في Ethernet العادي 1500 بايت، وإطار VXLAN يضيف 50 بايتًا إلى الإطار الأصلي. فإذا أرسلت آلة إطارًا كاملًا بحمولة 1500 بايت، صارت الحزمة الخارجية نحو <b>1550</b> بايتًا من ترويسة IP وما بعدها. فإذا كانت روابط الشبكة التحتية MTU فيها 1500 فإن هذه الحزم الكبيرة ستُجزَّأ أو، في الغالب، ستُسقَط لأن VTEP يضع علم عدم التجزئة <span class="en">(DF)</span>. يوجد حلان:</p>
+<ul>
+<li><b>الأفضل:</b> رفع MTU في الشبكة التحتية كلها، وفي مراكز البيانات يُستخدم عادةً الإطار الكبير <span class="en">(Jumbo Frames)</span> بقيمة 9000 أو أكثر، وهو يترك مجالًا واسعًا للغلاف.</li>
+<li><b>البديل:</b> خفض MTU الآلات والواجهات الفوقية إلى 1450 أو أقل، وهذا ما يفعله Linux تلقائيًا غالبًا لواجهة VXLAN.</li>
+</ul>
+<div class="note"><b>تنبيه:</b> مشكلة MTU تظهر بصورة مميزة: <code>ping</code> الصغير ينجح، وفتح صفحة ويب أو نقل ملف كبير يتجمّد. أول ما تفحصه حين يعمل الاتصال جزئيًا هو MTU على امتداد المسار كله.</div>
+</section>
+
+<section id="how">
+<h2>5. كيف يعرف VTEP إلى أين يرسل؟</h2>
+<p>حين يصل إلى VTEP1 إطار وجهته عنوان MAC معيّن، عليه أن يعرف <b>أي VTEP</b> يقف خلفه هذا العنوان. هذا يشبه تمامًا ما يفعله المحوّل في الدرس 2: جدول يربط العنوان بالمنفذ، لكن هنا يربط العنوان <b>بعنوان IP لـ VTEP بعيد</b>. وهناك طريقتان لبناء هذا الجدول:</p>
+<h3>الأولى: التعلّم بالفيضان (Flood and Learn)</h3>
+<p>يتعلم VTEP من الحزم الواردة: يرى إطارًا قادمًا من VTEP2 مصدره MAC معيّن، فيسجّل أن هذا العنوان خلف <span class="ltr mono">10.0.0.2</span>. أما إطارات البث والوجهة المجهولة والبث المتعدد، وتُسمى مجتمعة <b>BUM</b> <span class="en">(Broadcast, Unknown unicast, Multicast)</span>، فيجب إرسالها إلى كل VTEP في نفس الـ VNI. تُعالَج بإحدى طريقتين:</p>
+<ul>
+<li><b>البث المتعدد</b> <span class="en">(Multicast)</span> في الشبكة التحتية: لكل VNI عنوان مجموعة، وكل VTEP ينضم إليها. فعّال لكنه يحتاج إلى ضبط وتشغيل بروتوكولات البث المتعدد.</li>
+<li><b>النسخ عند المصدر</b> <span class="en">(Head-end / Ingress Replication)</span>: يرسل VTEP نسخة أحادية الإرسال <span class="en">(Unicast)</span> من الإطار إلى كل VTEP في القائمة. لا يحتاج إلى بث متعدد، لكنه يزيد الحمل مع كثرة الأجهزة.</li>
+</ul>
+<h3>الثانية: خطة تحكم BGP EVPN</h3>
+<p>بدل أن نتعلم بالفيضان، تُعلن الـ VTEPs عن العناوين التي لديها بواسطة <b>BGP</b> بنوع عنوان خاص هو <b>EVPN</b> (المعيار <span class="ltr mono">RFC 7432</span> وتطبيقه على VXLAN في <span class="ltr mono">RFC 8365</span>). فيعرف كل VTEP مسبقًا أن العنوان MAC (وعنوان IP المرتبط به) خلف VTEP كذا، فيقل البث كثيرًا، ويمكن الإجابة عن طلبات ARP محليًا. وهو الأسلوب المعتمد في معظم مراكز البيانات الحديثة. كما أن BGP هو الأداة نفسها التي تعلمنا مبادئها في الدرس 4 للمسارات، فهو هنا يحمل معلومات الطبقة 2 أيضًا.</p>
+<div class="note"><b>لا يلزمك حفظ تفاصيل EVPN الآن.</b> المهم أن تفهم الفرق: فيضان وتعلّم بالملاحظة، أو إعلان صريح بواسطة بروتوكول تحكم.</div>
+<h3>VLAN المحلية وVNI العام</h3>
+<p>عند طرف الشبكة يبقى المستخدمون يتصلون بمنافذ Access في VLAN عادية كما في الدرس 5. يقوم الـ VTEP بـ <b>ربط VLAN المحلية برقم VNI</b>. وبما أن رقم VLAN لا يغادر المحوّل، يمكن أن تكون VLAN 10 على محوّل و VLAN 210 على محوّل آخر مرتبطتين بالـ VNI نفسه، فتصبحان شبكة محلية واحدة فوقية. وبهذا تتحرر الشبكة من الحاجة إلى توحيد أرقام VLAN في كل المواقع.</p>
+</section>
+
+<section id="vxlanconfig">
+<h2>6. ضبط VXLAN عمليًا</h2>
+<h3>على Linux: نفق بين مضيفين</h3>
+<p>لنوصل مضيفين A وB (عنواناهما في الشبكة التحتية <span class="ltr mono">10.0.0.1</span> و<span class="ltr mono">10.0.0.2</span> ويصل أحدهما إلى الآخر) بنفق VXLAN برقم VNI يساوي 100، ونعطي الطرفين عنوانين من شبكة فوقية جديدة <span class="ltr mono">192.168.100.0/24</span>:</p>
+<pre><code># على المضيف A
+ip link add vxlan100 type vxlan id 100 dstport 4789 local 10.0.0.1 remote 10.0.0.2 dev eth0
+ip addr add 192.168.100.1/24 dev vxlan100
+ip link set vxlan100 up
+
+# على المضيف B
+ip link add vxlan100 type vxlan id 100 dstport 4789 local 10.0.0.2 remote 10.0.0.1 dev eth0
+ip addr add 192.168.100.2/24 dev vxlan100
+ip link set vxlan100 up</code></pre>
+<ul>
+<li><code>id 100</code> هو الـ VNI، ويجب أن يتطابق على الطرفين.</li>
+<li><code>dstport 4789</code> المنفذ القياسي. <b>انتبه:</b> القيمة الافتراضية في نواة Linux هي <span class="ltr mono">8472</span> لأسباب تاريخية، فإن لم تحدد المنفذ صراحةً قد لا تتفاهم مع أجهزة أخرى تستخدم 4789.</li>
+<li><code>local</code> و<code>remote</code> عنوانا طرفي النفق في الشبكة التحتية. هذا هو أبسط شكل (نقطة إلى نقطة).</li>
+</ul>
+<p>إذا أردنا إيصال آلات افتراضية أو حاويات بالنفق، نضع واجهة VXLAN وواجهاتها داخل جسر <span class="en">(Bridge)</span>:</p>
+<pre><code>ip link add br100 type bridge
+ip link set vxlan100 master br100
+ip link set tap0 master br100          # واجهة الآلة الافتراضية
+ip link set br100 up</code></pre>
+<h3>التحقق</h3>
+<pre><code>ping 192.168.100.2                       # من A: يجب أن ينجح
+ip -d link show vxlan100                 # يعرض id وdstport وlocal وmtu
+bridge fdb show dev vxlan100             # عناوين MAC التي تعلّمها النفق
+tcpdump -ni eth0 udp port 4789           # على الواجهة الفيزيائية: ترى حزم UDP تحمل الإطار</code></pre>
+<p>حين تنفّذ <code>tcpdump</code> على <code>eth0</code> أثناء الـ <code>ping</code> سترى حزم UDP بين <span class="ltr mono">10.0.0.1</span> و<span class="ltr mono">10.0.0.2</span> على المنفذ 4789، وبداخلها ICMP بين <span class="ltr mono">192.168.100.1</span> و<span class="ltr mono">192.168.100.2</span>. وإن فتحت الالتقاط في Wireshark فسيفكّ ترويسة VXLAN ويعرض الـ VNI. هذا أفضل دليل مرئي على فكرة الغلاف.</p>
+<h3>على Cisco Nexus (مثال مفاهيمي)</h3>
+<p>في مراكز البيانات يُضبط الـ VTEP كواجهة افتراضية <span class="ltr mono">nve</span> ويُربط VLAN المحلية برقم VNI. المثال التالي بالنسخ عند المصدر (ثابت)، ويختلف بعض الصيغ بين المنصات والإصدارات، فراجع توثيق جهازك:</p>
+<pre><code>feature nv overlay
+feature vn-segment-vlan-based
+
+vlan 10
+  vn-segment 10010               # ربط VLAN 10 بالـ VNI 10010
+
+interface nve1
+  no shutdown
+  source-interface loopback0     # عنوان VTEP في الشبكة التحتية
+  member vni 10010
+    ingress-replication protocol static
+      peer-ip 10.0.0.2           # الـ VTEP البعيد</code></pre>
+<p>ولاحظ أن مثال Linux يُظهر الفكرة بأقل تعقيد، أما في الإنتاج فتُستبدل قائمة النظراء الثابتة عادةً بـ BGP EVPN.</p>
+<h3>تمرين</h3>
+<p>جهّز آلتين افتراضيتين Linux على شبكة داخلية واحدة (Host-only مثلًا). (1) تحقق أن <code>ping</code> ينجح بين عنواني الشبكة التحتية. (2) أنشئ النفق كما في المثال وجرّب <code>ping</code> بين <span class="ltr mono">192.168.100.1</span> و<span class="ltr mono">192.168.100.2</span>. (3) افتح <code>tcpdump</code> على <code>eth0</code> وصِف ما ترى. (4) غيّر <code>id</code> في أحد الطرفين إلى 101 وكرر <code>ping</code> وفسّر السبب. (5) خفّض MTU الواجهة الفيزيائية إلى 1400 وأرسل <code>ping -s 1400 -M do 192.168.100.2</code> وراقب النتيجة وفسّرها بحساب الغلاف. نفّذ التمرين على أجهزتك فقط.</p>
+</section>
+
+<section id="together">
+<h2>7. الجمع بين VXLAN وVRF</h2>
+<p>التقنيتان تعملان معًا بصورة طبيعية في بنية مراكز البيانات الشائعة المسماة <b>Spine-Leaf</b>: محوّلات الحافة (Leaf) تتصل بالخوادم وتعمل كـ VTEP، ومحوّلات العمود (Spine) تربط كل Leaf بكل Spine بروابط IP موجَّهة. تعتمد الشبكة التحتية على التوجيه (الدرس 4) فتستفيد من كل الروابط في وقت واحد دون STP. فوق ذلك:</p>
+<ul>
+<li>كل <b>مستأجر</b> <span class="en">(Tenant)</span>، أي عميل أو قسم أو بيئة، له <b>VRF</b> خاصة به في الطبقة 3.</li>
+<li>كل شبكة فرعية لهذا المستأجر تقابل <b>VNI</b> في الطبقة 2 يمتد على عدة Leaf.</li>
+<li>للتوجيه بين شبكات المستأجر نفسه عبر الـ Leaf المختلفة، يُخصَّص <b>VNI للطبقة 3</b> <span class="en">(L3 VNI)</span> يرتبط بالـ VRF.</li>
+<li>الخروج من المركز إلى الخارج يمر غالبًا بجهاز حدودي <span class="en">(Border)</span> فيه واجهات فرعية لكل VRF كما في القسم 3.</li>
+</ul>
+<h3>مثال على خطة ترقيم</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>المستأجر / VRF</th><th>VLAN المحلية</th><th>VNI (طبقة 2)</th><th>الشبكة</th><th>VNI (طبقة 3)</th></tr></thead>
+<tbody>
+<tr><td><code>TENANT-A</code></td><td><code>10</code></td><td><code>10010</code></td><td><code>10.10.10.0/24</code></td><td rowspan="2"><code>50001</code></td></tr>
+<tr><td><code>TENANT-A</code></td><td><code>20</code></td><td><code>10020</code></td><td><code>10.10.20.0/24</code></td></tr>
+<tr><td><code>TENANT-B</code></td><td><code>10</code></td><td><code>20010</code></td><td><code>10.10.10.0/24</code></td><td><code>50002</code></td></tr>
+</tbody></table></div>
+<p>لاحظ أن المستأجرين A وB يستخدمان <b>الشبكة نفسها</b> <span class="ltr mono">10.10.10.0/24</span> ورقم VLAN نفسه، بلا أي مشكلة، لأن الـ VNI مختلف (يفصل الطبقة 2) والـ VRF مختلفة (تفصل الطبقة 3). هذا هو ما كان مستحيلًا بـ VLAN وجدول توجيه واحد.</p>
+<h3>مبادئ التصميم</h3>
+<ul>
+<li><b>ابنِ الشبكة التحتية أولًا:</b> يجب أن يصل كل VTEP إلى كل VTEP آخر بعناوين Loopback، ببروتوكول توجيه مستقر، وبمسارات متعددة، وبـ MTU كافٍ.</li>
+<li><b>خطة ترقيم موثّقة:</b> اعتمد قاعدة ثابتة (مثل VNI = 10000 + رقم VLAN للمستأجر الأول) ودوّنها. الأرقام نفسها اعتباطية، لكن الفوضى فيها تصنع أخطاء مكلفة.</li>
+<li><b>VRF لكل حدّ عزل حقيقي:</b> مستأجر، أو بيئة إنتاج مقابل اختبار، أو شبكة إدارة. ولا تُكثر منها بلا حاجة فكل VRF تزيد التعقيد.</li>
+<li><b>VRF للإدارة:</b> ضع واجهات إدارة الأجهزة في VRF خاصة (Management VRF) بعيدًا عن حركة المستخدمين.</li>
+<li><b>قرّر مسبقًا كيف تتواصل VRF:</b> ما الخدمات المشتركة، وأين الجدار الناري، وما المسموح بالتسريب.</li>
+</ul>
+</section>
+
+<section id="trouble">
+<h2>8. استكشاف الأخطاء</h2>
+<p>القاعدة الذهبية: <b>افحص الشبكة التحتية أولًا ثم الفوقية.</b> إذا لم يصل VTEP إلى VTEP آخر بعنوان IP، فلا فائدة من البحث في VNI. وفي VRF ابدأ بمعرفة أي VRF تنتمي إليها الواجهة.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>العَرَض</th><th>السبب المحتمل</th><th>الفحص</th></tr></thead>
+<tbody>
+<tr><td>لا اتصال بين آلتين فوقيتين على VTEP مختلفين</td><td>الـ VTEP لا يصل إلى الآخر في الشبكة التحتية (توجيه، جدار ناري، كابل)</td><td><code>ping</code> من عنوان VTEP إلى عنوان VTEP الآخر، ثم <code>traceroute</code></td></tr>
+<tr><td>التحتية سليمة ولا يعمل النفق</td><td>VNI غير متطابق، أو المنفذ مختلف (4789 مقابل 8472)، أو ACL يحجب UDP 4789</td><td><code>ip -d link show</code> أو <code>show nve vni</code>، وقواعد الجدار الناري</td></tr>
+<tr><td><code>ping</code> الصغير ينجح والكبير يفشل أو التطبيقات تتجمد</td><td>MTU الشبكة التحتية لا يتسع للغلاف (50 بايتًا إضافية)</td><td><code>ping -M do -s 1472</code> على المسار، ثم قارن MTU للروابط</td></tr>
+<tr><td>ARP لا يُجاب عليه</td><td>قائمة النظراء ناقصة (النسخ عند المصدر)، أو البث المتعدد لا يعمل، أو VNI لم يُفعَّل على الـ VTEP</td><td>تأكد أن كل VTEP عضو في الـ VNI وأن النظراء معرّفون</td></tr>
+<tr><td>جهاز لا يصل إلى بوابته في VRF</td><td>الواجهة في VRF خاطئة، أو ضاع عنوان IP بعد <code>vrf forwarding</code></td><td><code>show vrf</code> و<code>show ip interface brief vrf X</code></td></tr>
+<tr><td><code>ping</code> من الموجّه يفشل والتوجيه سليم</td><td>نسيان كلمة <code>vrf</code> في الأمر فيبحث في الجدول العام</td><td><code>ping vrf X ...</code> و<code>show ip route vrf X</code></td></tr>
+<tr><td>VRF تصل إلى شبكات داخلها ولا تخرج إلى الخارج</td><td>لا يوجد مسار افتراضي أو مسار عودة في هذه الـ VRF</td><td><code>show ip route vrf X</code> وابحث عن <code>0.0.0.0/0</code></td></tr>
+<tr><td>VRF تصل إلى ما لا ينبغي لها</td><td>تسريب مسارات واسع، أو استيراد/تصدير RT خاطئ</td><td>راجع ضبط التسريب وقارن الجداول بين VRF</td></tr>
+</tbody></table></div>
+<div class="note"><b>تنبيه:</b> تغيير ضبط الـ VRF أو الـ VTEP على جهاز تديره عن بُعد قد يقطع اتصالك به. احتفظ بنسخة احتياطية من الضبط، ونفّذ التجارب على شبكتك أو شبكة لديك إذن باختبارها.</div>
+</section>
+
+<section id="mistakes">
+<h2>9. أخطاء ومفاهيم خاطئة شائعة</h2>
+<ul>
+<li><b>«VXLAN يحل محل VLAN».</b> الصواب أنه يكمّلها: ما زال المستخدمون يتصلون بمنافذ VLAN على حافة الشبكة، وVXLAN يحمل الشبكة المنطقية عبر الشبكة التحتية.</li>
+<li><b>«VRF هي VLAN على الطبقة 3».</b> الفكرة متشابهة، لكن VRF تفصل جداول التوجيه ولا تفصل البث، وVLAN تفصل البث ولا تفصل التوجيه. ونحتاج إليهما معًا.</li>
+<li><b>«VXLAN يشفّر الحركة».</b> لا. هو تغليف فقط، والإطار الأصلي يمر داخل UDP بنصّه الواضح.</li>
+<li><b>«يجب أن يتطابق رقم VLAN مع رقم VNI».</b> لا. VLAN محلية على الجهاز، وVNI عالمي في الشبكة الفوقية، ويقترنان بالضبط فقط.</li>
+<li><b>نسيان MTU:</b> أشهر سبب لأعطال تعمل «نصف عمل» بعد تشغيل VXLAN.</li>
+<li><b>الخلط بين العنوانين:</b> عناوين الآلات (الفوقية) غير عناوين VTEP (التحتية). حين يفشل الاتصال، اسأل نفسك أي شبكة تفحص.</li>
+<li><b>«VXLAN يحتاج دائمًا إلى بث متعدد».</b> غير صحيح، فالنسخ عند المصدر وBGP EVPN يعملان بدونه.</li>
+<li><b>«الـ VRF مغلقة تمامًا مهما فعلنا».</b> العزل افتراضي فقط، وأي تسريب مسارات يفتح بابًا بين الجدولين.</li>
+<li><b>ضبط <code>vrf forwarding</code> بعد العنوان</b> فيضيع العنوان بصمت، ثم يُبحث عن العطل في مكان آخر.</li>
+</ul>
+</section>
+
+<section id="security">
+<h2>10. اعتبارات الأمن</h2>
+<p>التقنيتان تقللان التعرّض لكن لا تعطيان حماية بذاتهما. أبرز النقاط:</p>
+<ul>
+<li><b>VXLAN لا يوثّق ولا يشفّر:</b> يقبل الـ VTEP أي حزمة UDP صحيحة الشكل على المنفذ 4789 تحمل VNI يعرفه. فمن يستطيع إرسال حزم إلى الـ VTEP يستطيع <b>حقن إطارات</b> داخل شبكة فوقية بانتحال عنوان VTEP، دون أن يكون جزءًا منها. والتنصت على الشبكة التحتية يكشف الإطارات الأصلية بنصّها.</li>
+<li><b>احمِ الشبكة التحتية:</b> اجعلها شبكة معزولة لا يصل إليها المستخدمون ولا الإنترنت. لا تُعرِّض VTEP لشبكة غير موثوقة أبدًا. واحصر UDP 4789 بقائمة ACL تسمح به <b>بين عناوين VTEP المعروفة فقط</b>، وفعّل الحماية من انتحال العناوين <span class="en">(uRPF / Anti-spoofing)</span> عند حافة الشبكة.</li>
+<li><b>التشفير عند الحاجة:</b> إذا عبر النفق شبكة غير موثوقة (بين موقعين عبر مزوّد خدمة)، فاحمِه بـ IPsec أو بتشفير الروابط <span class="en">(MACsec)</span> أو بنفق مشفّر. التغليف وحده ليس خصوصية.</li>
+<li><b>VRF عزل توجيه وليس سياسة أمنية:</b> بين VRF مختلفة ضع جدارًا ناريًا إذا سمحت بالتواصل، وقيّد التسريب بوجهات محددة، وراجع الضبط دوريًا لاكتشاف مسارات غير مقصودة.</li>
+<li><b>إدارة الأجهزة:</b> ضع واجهات الإدارة في VRF مخصصة، واستخدم SSH، وقيّد الوصول بقائمة عناوين.</li>
+<li><b>BGP EVPN:</b> وثّق جلسات BGP بين الأجهزة (مثل TCP-AO أو MD5) وحدّد عدد المسارات المسموح بها من كل جار، فخطأ أو هجوم قد يملأ الجداول أو يحوّل الحركة.</li>
+<li><b>تنظيف ما لا يُستخدم:</b> احذف VNI وVRF وSVI غير المستخدمة، فكل شيء مفعّل بلا حاجة يوسّع سطح الهجوم.</li>
+</ul>
+<div class="note"><b>الخلاصة الأمنية:</b> VXLAN وVRF يصنعان حدودًا منطقية، وصحتها مرهونة بحماية الشبكة التحتية وبضبط سياسات التصفية عند نقاط التواصل بين الحدود.</div>
+</section>
+
+<section id="summary">
+<h2>11. الملخص</h2>
+<ul>
+<li>VLAN محدودة بـ 4094 شبكة، ولا تفصل جدول التوجيه، وتمديدها بين المواقع يعتمد على STP وهو هش. من هنا الحاجة إلى VRF وVXLAN.</li>
+<li><b>VRF</b> تجعل الجهاز الواحد يحتفظ بعدة جداول توجيه مستقلة، لكل منها واجهاتها ومساراتها. تسمح بعناوين متداخلة، والعزل هو الأصل، والاتصال بين VRF قرار صريح (تسريب مسارات).</li>
+<li>عند ضبط VRF على Cisco اربط الواجهة بالـ VRF قبل كتابة العنوان، وأضف <code>vrf</code> إلى أوامر <code>ping</code> و<code>show ip route</code>.</li>
+<li><b>VXLAN</b> يغلّف إطار Ethernet كاملًا داخل UDP/IP (المنفذ 4789) فينقله عبر شبكة IP عادية. يُسمّى ما يراه المستخدمون <b>الشبكة الفوقية</b>، وما ينقله فعليًا <b>الشبكة التحتية</b>.</li>
+<li><b>VTEP</b> هو نقطة نهاية النفق. و<b>VNI</b> بطول 24 بتًا يعطي نحو 16.7 مليون شبكة فوقية.</li>
+<li>الغلاف يضيف 50 بايتًا، فيلزم رفع MTU في الشبكة التحتية (غالبًا Jumbo) أو خفضه عند الآلات.</li>
+<li>يتعلم VTEP العناوين بالفيضان (مع بث متعدد أو نسخ عند المصدر) أو بإعلانها عبر BGP EVPN.</li>
+<li>معًا: لكل مستأجر VRF، ولكل شبكة فرعية VNI، فتصير أرقام VLAN وعناوين IP قابلة لإعادة الاستخدام بين المستأجرين.</li>
+<li>VXLAN لا يوثّق ولا يشفّر، فيجب حماية الشبكة التحتية وتصفية UDP 4789 وتشفير الأنفاق العابرة لشبكات غير موثوقة. وVRF لا تغني عن الجدار الناري.</li>
+</ul>
+</section>
+
+<section id="glossary">
+<h2>12. مسرد المصطلحات</h2>
+<dl class="glossary">
+<dt>VRF</dt><dd>تقنية تقسّم جدول التوجيه في الجهاز الواحد إلى عدة جداول مستقلة.</dd>
+<dt>VRF-Lite</dt><dd>استخدام VRF محليًا دون MPLS، بواجهات وبروتوكولات توجيه لكل VRF.</dd>
+<dt>Overlapping Addresses / عناوين متداخلة</dt><dd>استخدام نطاق العناوين نفسه في شبكتين منفصلتين، وتسمح به VRF.</dd>
+<dt>Route Leaking / تسريب المسارات</dt><dd>مشاركة مسارات محددة بين VRF مختلفة عمدًا.</dd>
+<dt>RD (Route Distinguisher)</dt><dd>قيمة تجعل المسار فريدًا في BGP حتى لو تكرر العنوان في VRF مختلفة.</dd>
+<dt>RT (Route Target)</dt><dd>وسم في BGP يحدد أي VRF تستورد المسار وأيها تصدّره.</dd>
+<dt>VXLAN</dt><dd>معيار يغلّف إطارات Ethernet داخل UDP/IP لنقل الشبكة المحلية عبر شبكة IP (RFC 7348).</dd>
+<dt>Overlay / الشبكة الفوقية</dt><dd>الشبكة المنطقية التي يراها المستخدمون والآلات، وتُحمل داخل الأنفاق.</dd>
+<dt>Underlay / الشبكة التحتية</dt><dd>شبكة IP الفيزيائية التي تنقل حزم الأنفاق بين الـ VTEP.</dd>
+<dt>VTEP</dt><dd>نقطة نهاية نفق VXLAN: تغلّف الإطارات وتفك غلافها.</dd>
+<dt>VNI</dt><dd>معرّف الشبكة الفوقية في VXLAN، بطول 24 بتًا.</dd>
+<dt>L3 VNI</dt><dd>VNI مخصص لنقل حركة التوجيه الخاصة بـ VRF بين الـ VTEP.</dd>
+<dt>BUM</dt><dd>البث والبث المتعدد والأحادي المجهول الوجهة، وهي الحركة التي تحتاج إلى فيضان.</dd>
+<dt>Head-end (Ingress) Replication / النسخ عند المصدر</dt><dd>إرسال نسخة أحادية من إطار BUM إلى كل VTEP نظير.</dd>
+<dt>BGP EVPN</dt><dd>خطة تحكم تعلن عناوين MAC وIP بين الـ VTEP عبر BGP، وتقلل الحاجة إلى الفيضان.</dd>
+<dt>Spine-Leaf</dt><dd>تصميم مركز بيانات: محوّلات حافة (Leaf) متصلة بكل محوّلات العمود (Spine) بروابط IP.</dd>
+<dt>Jumbo Frame / الإطار الكبير</dt><dd>إطار MTU فيه أكبر من 1500 بايت، يُستخدم لاستيعاب الغلاف.</dd>
+<dt>ECMP</dt><dd>توزيع الحركة على عدة مسارات متساوية التكلفة.</dd>
+</dl>
+</section>
+
+<section id="quiz">
+<h2>13. اختبر فهمك</h2>
+<p>اضغط على إجابة لترى التفسير. تُسجَّل نتيجتك عند الإجابة عن كل الأسئلة.</p>
+<div id="quiz-box"></div>
+<div id="quiz-result" class="alert info hidden"></div>
+<button id="retry" class="btn secondary hidden" type="button">إعادة المحاولة</button>
+<div style="margin-top:26px">
+  <button id="complete" class="btn success" type="button">وضع علامة «مكتمل»</button>
+  <span id="complete-msg" class="hint" role="status"></span>
+</div>
+</section>
+
+<section id="resources">
+<h2>14. مراجع موثوقة للتعمق</h2>
+<ul>
+<li><a href="https://www.rfc-editor.org/rfc/rfc7348" rel="noopener">RFC 7348</a> — VXLAN: إطار لتمديد الشبكات المحلية الافتراضية فوق شبكات الطبقة 3 (بالإنجليزية).</li>
+<li><a href="https://www.rfc-editor.org/rfc/rfc7432" rel="noopener">RFC 7432</a> — BGP MPLS-Based Ethernet VPN (أساس EVPN).</li>
+<li><a href="https://www.rfc-editor.org/rfc/rfc8365" rel="noopener">RFC 8365</a> — حل EVPN لشبكات الطبقة الفوقية (ومنها VXLAN).</li>
+<li><a href="https://www.rfc-editor.org/rfc/rfc4364" rel="noopener">RFC 4364</a> — BGP/MPLS IP VPNs (أصل مفاهيم VRF وRD وRT).</li>
+<li><a href="https://www.rfc-editor.org/rfc/rfc1918" rel="noopener">RFC 1918</a> — العناوين الخاصة التي يتكرر استخدامها بين العملاء.</li>
+<li><a href="https://www.netacad.com" rel="noopener">Cisco Networking Academy</a> — مقررات مجانية وبرنامج Packet Tracer.</li>
+</ul>
+<h3>التنقل بين الدروس</h3>
+<p><b>المتطلبات السابقة:</b> <a href="lesson-2.html">الدرس 2: نموذج OSI</a> و<a href="lesson-3.html">الدرس 3: عنونة IP</a> و<a href="lesson-4.html">الدرس 4: التوجيه</a> و<a href="lesson-5.html">الدرس 5: VLAN</a>.<br>
+<b>الدرس التالي:</b> <a href="lesson-7.html">الدرس 7: بروتوكولات TCP/IP</a> — <a href="curriculum.html">عرض المنهج الكامل</a></p>
+</section>
+</article>
+</div>
+</main>
+<div id="site-footer"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+const LESSON_ID = 6;
+const QUESTIONS = [
+  { q: "يستخدم عميلان العنوان 10.0.0.0/24 نفسه ويتصلان بالموجّه نفسه. ما الحل الذي يسمح بذلك دون تعارض؟",
+    o: ["تعطيل أحد العميلين", "وضع كل عميل في VRF مستقلة على الموجّه", "جعل VLAN الأصلية واحدة للعميلين", "تغيير القناع إلى /32 عند العميلين"], a: 1,
+    e: "كل VRF لها جدول توجيه خاص، فيستطيع الجدولان حمل الشبكة نفسها دون أن يعلم أحدهما بالآخر." },
+  { q: "ضبطت VRF باسم CUST-A وربطت بها الواجهة، والجار 10.0.0.11 يعمل. نفّذت من الموجّه ping 10.0.0.11 فلم يصل رد. ما أرجح سبب فشل الاختبار؟",
+    o: ["الأمر بحث في الجدول العام لأنه لم يحدد الـ VRF، والصواب ping vrf CUST-A 10.0.0.11", "الـ VRF لا تدعم ICMP", "يجب إيقاف الواجهة أولًا", "الـ VRF تحتاج إلى VLAN 1"], a: 0,
+    e: "بدون كلمة vrf يبحث الموجّه في الجدول العام الذي لا يحوي مسارات هذه الـ VRF. لذلك تُكتب كلمة vrf واسمها في ping وtraceroute وshow ip route." },
+  { q: "كم طول حقل VNI في ترويسة VXLAN، وكم شبكة فوقية يتيح؟",
+    o: ["12 بتًا، 4094 شبكة", "16 بتًا، 65,536 شبكة", "24 بتًا، نحو 16.7 مليون شبكة", "32 بتًا، نحو 4.3 مليار شبكة"], a: 2,
+    e: "VNI بطول 24 بتًا، أي 2^24 = 16,777,216 قيمة، وهذا ما يتجاوز حدّ VLAN (12 بتًا = 4094 شبكة قابلة للاستخدام)." },
+  { q: "ما منفذ UDP القياسي الذي تستخدمه VXLAN للوجهة؟",
+    o: ["4789", "8080", "443", "123"], a: 0,
+    e: "المنفذ 4789 هو المخصص لـ VXLAN من IANA. وتذكّر أن القيمة الافتراضية في نواة Linux هي 8472 لأسباب تاريخية، فيجب تحديد dstport 4789 صراحةً للتوافق." },
+  { q: "كم بايتًا يضيف غلاف VXLAN إلى الإطار الأصلي (IPv4 دون وسم VLAN خارجي)؟",
+    o: ["4", "28", "50", "100"], a: 2,
+    e: "Ethernet الخارجي 14 + IP 20 + UDP 8 + VXLAN 8 = 50 بايتًا. لذلك يلزم رفع MTU للشبكة التحتية أو خفضه عند الآلات." },
+  { q: "ما الذي تستخدمه أجهزة الشبكة التحتية لتوجيه حزمة VXLAN بين VTEP1 وVTEP2؟",
+    o: ["عنوان MAC للآلة الافتراضية الداخلية", "رقم VNI", "رقم VLAN الداخلي", "عنوان IP الخارجي بين الـ VTEP"], a: 3,
+    e: "الشبكة التحتية ترى حزمة IP/UDP عادية فتوجّهها بحسب عنوان IP الوجهة الخارجي، ولا تفحص الإطار الداخلي ولا VNI." },
+  { q: "بعد تشغيل VXLAN، ينجح ping الصغير بين آلتين لكن نقل الملفات الكبيرة يتجمّد. ما السبب الأرجح؟",
+    o: ["رقم VNI غير متطابق", "MTU في الشبكة التحتية لا يتسع للغلاف الإضافي", "تسريب مسارات بين VRF", "فقدان عنوان IP بعد vrf forwarding"], a: 1,
+    e: "لو كان VNI مختلفًا لفشلت كل الحزم. أما نجاح الصغيرة وفشل الكبيرة فهو العَرَض المميز لمشكلة MTU: الحزمة الكبيرة مع الغلاف تتجاوز MTU الرابط وتُسقَط." },
+  { q: "كيف يتعلم VTEP أن عنوان MAC معينًا يقع خلف VTEP بعيد في BGP EVPN؟",
+    o: ["بإعلان صريح عبر BGP، فيقل الفيضان", "بإرسال ping إلى كل عنوان", "بقراءة جدول MAC للموجّه", "لا يتعلم، بل يبث كل إطار دائمًا"], a: 0,
+    e: "في EVPN تُعلن الـ VTEP عناوين MAC وIP التي لديها بواسطة BGP، فيعرف الآخرون وجهتها مسبقًا. أما في الفيضان والتعلّم فيتعلم من الحزم الواردة." },
+  { q: "أي عبارة عن أمن VXLAN وVRF صحيحة؟",
+    o: ["VXLAN يشفّر الحركة افتراضيًا", "الـ VRF تغني عن الجدار الناري حتى لو سُرّبت المسارات", "VNI سرّي ويكفي لحماية الشبكة", "VXLAN لا يوثّق ولا يشفّر، لذلك تُحمى الشبكة التحتية ويُقيَّد UDP 4789 بين الـ VTEP"], a: 3,
+    e: "يقبل الـ VTEP أي حزمة صحيحة الشكل بـ VNI معروف، والـ VNI رقم وليس سرًّا. لذلك نعزل الشبكة التحتية ونصفّي المنفذ ونشفّر الأنفاق العابرة لشبكات غير موثوقة. والـ VRF تعزل التوجيه فقط، وعند التسريب تلزم قواعد تصفية." }
+];
+</script>
+<script src="assets/js/lesson.js"></script>
+</body>
+</html>

@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>لوحة الإدارة — أكاديمية الشبكات العربية</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="assets/img/academy-icon.png">
+<script>try{var t=localStorage.getItem("ana_theme")||(matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light");document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<a class="skip" href="#main">تخطَّ إلى المحتوى</a>
+<div id="site-header"></div>
+<main id="main" class="container section">
+  <h1>لوحة الإدارة</h1>
+  <div id="share-banner" class="alert warn share-banner hidden">أنت تشاهد نسخة للقراءة فقط عبر رابط مشاركة. تظهر الإحصاءات العامة فقط، ولا تظهر بيانات الطلاب، ولا يمكنك إنشاء روابط مشاركة جديدة.</div>
+  <p><button class="btn secondary small" id="refresh" type="button">↻ تحديث البيانات</button> <button class="btn small hidden" id="share-btn" type="button">🔗 مشاركة رابط لوحة الإدارة</button> <span class="hint" id="updated" role="status"></span></p>
+  <p id="share-err" class="alert error hidden" role="alert"></p>
+  <div id="share-box" class="share-box hidden">
+    <p><b>تم إنشاء رابط المشاركة (للقراءة فقط، صالح 40 يومًا):</b></p>
+    <input id="share-url" type="text" readonly aria-label="رابط المشاركة" placeholder="سيظهر الرابط هنا">
+    <div class="share-actions">
+      <button class="btn small" id="share-copy" type="button">نسخ الرابط</button>
+      <button class="btn small hidden" id="share-native" type="button">إرسال عبر...</button>
+      <button class="btn secondary small" id="share-revoke" type="button">إلغاء كل روابط المشاركة</button>
+    </div>
+    <p class="hint" id="share-msg" role="status"></p>
+    <p class="hint">من يفتح الرابط يرى إحصاءات عامة فقط (بدون أسماء الطلاب أو بريدهم)، ولا يستطيع إنشاء رابط جديد؛ هذا الزر يظهر للمسؤولين فقط.</p>
+  </div>
+  <p id="state" class="loading">جارٍ تحميل الإحصاءات...</p>
+  <div id="content" class="hidden">
+    <div class="grid cols-3" id="cards"></div>
+
+    <h2>التسجيلات خلال آخر 30 يومًا</h2>
+    <div class="card chart-box" id="chart"></div>
+
+    <h2>إحصاءات الدروس</h2>
+    <div class="table-wrap"><table>
+      <thead><tr><th>الدرس</th><th>مرات الفتح</th><th>طلاب فتحوه (فريدون)</th><th>مرات الإكمال</th><th>متوسط الاختبار</th></tr></thead>
+      <tbody id="lessons"></tbody></table></div>
+
+    <div id="students-section">
+    <h2>الطلاب المسجّلون</h2>
+    <p class="hint">الاسم المعروض ونشاط التعلّم فقط — لا تُعرض عناوين البريد الإلكتروني. «آخر نشاط» هو أحدث فتح لدرس أو إكمال أو محاولة اختبار.</p>
+    <div class="table-wrap"><table>
+      <thead><tr><th>الاسم</th><th>تاريخ التسجيل</th><th>دروس بدأها</th><th>دروس أكملها</th><th>متوسط الاختبارات</th><th>آخر نشاط</th></tr></thead>
+      <tbody id="students"><tr><td colspan="6">جارٍ التحميل...</td></tr></tbody></table></div>
+    <p class="pager"><button class="btn secondary small" id="prev" type="button">السابق</button>
+      <span id="pageinfo" role="status"></span>
+      <button class="btn secondary small" id="next" type="button">التالي</button></p>
+    </div>
+
+    <h2>التعريفات المستخدمة</h2>
+    <ul>
+      <li><b>حساب مسجّل:</b> صف واحد لكل مستخدم في قاعدة البيانات. تسجيل الدخول المتكرر أو تحديث الصفحة لا يزيد العدد.</li>
+      <li><b>بدأ درسًا:</b> فتح درسًا متاحًا مرة واحدة على الأقل وهو مسجّل الدخول.</li>
+      <li><b>أكمل الدورة:</b> أكمل كل الدروس المنشورة حاليًا.</li>
+      <li><b>مرات الفتح:</b> أحداث فتح مسجّلة للحسابات فقط (مرة لكل جلسة متصفح)، وهي ليست زيارات الصفحات العامة.</li>
+    </ul>
+    <p class="hint">لا تعرض هذه اللوحة أي بريد إلكتروني. للزيارات العامة استخدم خدمة تحليلات منفصلة مثل Cloudflare Web Analytics.</p>
+  </div>
+</main>
+<div id="site-footer"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+(async () => {
+  const { sb, esc } = ANA;
+  const { profile } = await ANA.renderLayout("admin");
+  const shareToken = new URLSearchParams(location.search).get("share");
+  const shareMode = !!shareToken && !(profile && profile.role === "admin");
+  if (!shareMode) {
+    const session = await ANA.requireAuth();
+    if (!session) return;
+  }
+  const state = document.getElementById("state"), content = document.getElementById("content");
+  const fail = (m) => { state.className = "alert error"; state.textContent = m; state.classList.remove("hidden"); content.classList.add("hidden"); };
+  const denied = (e) => e && (e.code === "42501" || /not authorized|permission denied/i.test(e.message || ""));
+  const n = (x) => Number(x || 0).toLocaleString("ar-EG");
+  const pct = (x) => x === null || x === undefined ? "—" : Number(x).toLocaleString("ar-EG") + "٪";
+  const fmtDate = (v) => v ? new Date(v).toLocaleDateString("ar-EG") : "—";
+  const NOAUTH = "ليست لديك صلاحية الوصول إلى هذه الصفحة.";
+  const PAGE = 25; let page = 0, total = 0, busy = false;
+
+  // UI courtesy only: the database enforces authorization in every RPC below.
+  if (!shareMode && profile && profile.role !== "admin") return fail(NOAUTH);
+  if (shareMode) {
+    document.getElementById("share-banner").classList.remove("hidden");
+    document.getElementById("students-section").classList.add("hidden");
+  }
+  const R = shareMode
+    ? { stats: ["share_stats", { link_token: shareToken }], days: ["share_registrations_by_day", { link_token: shareToken, days: 30 }], lessons: ["share_lesson_stats", { link_token: shareToken }] }
+    : { stats: ["admin_stats", undefined], days: ["admin_registrations_by_day", { days: 30 }], lessons: ["admin_lesson_stats", undefined] };
+
+  function errText(e) {
+    return denied(e) ? NOAUTH : ANA.isNetworkError(e) ? "تعذّر الاتصال بالخادم. تحقق من اتصالك بالإنترنت ثم اضغط «تحديث البيانات»."
+      : "تعذّر تحميل البيانات. تأكد من تطبيق ملفات SQL الأحدث (schema.sql) ثم حاول مجددًا.";
+  }
+
+  function drawChart(days) {
+    const box = document.getElementById("chart"), rows = days.data || [];
+    if (days.error) { box.textContent = "تعذّر تحميل بيانات التسجيلات."; return; }
+    if (!rows.length) { box.textContent = "لا توجد بيانات."; return; }
+    if (rows.every(r => Number(r.registrations) === 0)) { box.textContent = "لا توجد تسجيلات في هذه الفترة."; return; }
+    const W = 700, H = 240, pad = 34, max = Math.max(...rows.map(r => Number(r.registrations)), 1);
+    const bw = (W - pad * 2) / rows.length;
+    const bars = rows.map((r, i) => {
+      const h = (H - pad * 2) * Number(r.registrations) / max;
+      const x = W - pad - (i + 1) * bw + 2; // RTL: oldest on the right
+      return `<rect x="${x}" y="${H - pad - h}" width="${bw - 4}" height="${h}" rx="2" fill="#1f6feb"><title>${esc(r.day)}: ${r.registrations}</title></rect>`;
+    }).join("");
+    box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" style="direction:ltr" role="img" aria-label="عدد التسجيلات اليومية">
+      <line x1="${pad}" y1="${H - pad}" x2="${W - pad}" y2="${H - pad}" stroke="#aab4c4"/>
+      <text x="${pad - 6}" y="${pad + 4}" font-size="12" text-anchor="end" fill="#5d6878">${max}</text>
+      <text x="${pad - 6}" y="${H - pad}" font-size="12" text-anchor="end" fill="#5d6878">0</text>
+      ${bars}
+      <text x="${W - pad}" y="${H - 10}" font-size="12" text-anchor="end" fill="#5d6878">${esc(rows[0].day)}</text>
+      <text x="${pad}" y="${H - 10}" font-size="12" text-anchor="start" fill="#5d6878">${esc(rows[rows.length - 1].day)}</text></svg>`;
+  }
+
+  async function loadStudents() {
+    const body = document.getElementById("students"), info = document.getElementById("pageinfo");
+    const prev = document.getElementById("prev"), next = document.getElementById("next");
+    prev.disabled = next.disabled = true;
+    const r = await sb.rpc("admin_list_students", { page_size: PAGE, page_offset: page * PAGE });
+    if (r.error) {
+      body.innerHTML = `<tr><td colspan="6">${esc(errText(r.error))}</td></tr>`; info.textContent = ""; return;
+    }
+    const rows = r.data || [];
+    total = rows.length ? Number(rows[0].total_count) : 0;
+    if (!rows.length && page > 0) { page = Math.max(0, Math.ceil(total / PAGE) - 1); return loadStudents(); }
+    body.innerHTML = rows.length ? rows.map(x =>
+      `<tr><td>${esc(x.student_name)}${x.account_role === "admin" ? ' <span class="badge">مسؤول</span>' : ""}</td><td>${fmtDate(x.registered_at)}</td><td>${n(x.lessons_started)}</td><td>${n(x.lessons_completed)}</td><td>${pct(x.avg_quiz_percent)}</td><td>${fmtDate(x.last_activity)}</td></tr>`).join("")
+      : '<tr><td colspan="6">لا يوجد طلاب مسجّلون بعد.</td></tr>';
+    const pages = Math.max(1, Math.ceil(total / PAGE));
+    info.textContent = `الصفحة ${n(page + 1)} من ${n(pages)} — ${n(total)} حسابًا`;
+    prev.disabled = page === 0; next.disabled = page + 1 >= pages;
+  }
+
+  async function load() {
+    if (busy) return; busy = true;
+    const refresh = document.getElementById("refresh"); refresh.disabled = true;
+    state.className = "loading"; state.textContent = "جارٍ تحميل الإحصاءات..."; state.classList.remove("hidden");
+    try {
+      // Authorization is enforced by the database: these RPCs raise an error for non-admins.
+      const [s, days, lessons] = await Promise.all([
+        sb.rpc(R.stats[0], R.stats[1]), sb.rpc(R.days[0], R.days[1]), sb.rpc(R.lessons[0], R.lessons[1])
+      ]);
+      if (s.error) return fail(shareMode ? "رابط المشاركة غير صالح أو انتهت صلاحيته. اطلب رابطًا جديدًا من المسؤول." : errText(s.error));
+      const d = s.data;
+      const rate = d.total_registered > 0 ? Math.round(1000 * d.completed_course / d.total_registered) / 10 : null;
+      const card = (v, l) => `<div class="card stat"><b>${v}</b><span>${l}</span></div>`;
+      document.getElementById("cards").innerHTML = [
+        card(n(d.total_registered), "إجمالي الحسابات المسجّلة"),
+        card(n(d.new_today), "تسجيلات اليوم"),
+        card(n(d.new_7_days), "آخر 7 أيام"),
+        card(n(d.new_30_days), "آخر 30 يومًا"),
+        card(n(d.started_students), "طلاب بدؤوا درسًا"),
+        card(n(d.completed_one), "طلاب أكملوا درسًا"),
+        card(n(d.completed_course), `أكملوا الدورة (${n(d.published_lessons)} دروس منشورة)`),
+        card(rate === null ? "—" : rate.toLocaleString("ar-EG") + "٪", "نسبة إكمال الدورة من المسجّلين"),
+        card(pct(d.avg_quiz_percent), `متوسط الاختبارات (${n(d.quiz_attempts)} محاولة)`)
+      ].join("");
+      drawChart(days);
+      const ls = lessons.data || [];
+      document.getElementById("lessons").innerHTML = lessons.error ? '<tr><td colspan="5">تعذّر تحميل إحصاءات الدروس.</td></tr>'
+        : ls.length ? ls.map(l => `<tr><td>${l.lesson_id}. ${esc(l.title_ar)}</td><td>${n(l.views)}</td><td>${n(l.unique_viewers)}</td><td>${n(l.completions)}</td><td>${pct(l.avg_quiz_percent)}</td></tr>`).join("")
+        : '<tr><td colspan="5">لا توجد بيانات بعد.</td></tr>';
+      if (!shareMode) await loadStudents();
+      state.classList.add("hidden"); content.classList.remove("hidden");
+      document.getElementById("updated").textContent = "آخر تحديث: " + new Date().toLocaleTimeString("ar-EG");
+    } catch (e) {
+      console.error("admin load", e); fail(errText(e));
+    } finally { busy = false; refresh.disabled = false; }
+  }
+
+  document.getElementById("refresh").addEventListener("click", load);
+  document.getElementById("prev").addEventListener("click", () => { if (page > 0) { page--; loadStudents(); } });
+  document.getElementById("next").addEventListener("click", () => { page++; loadStudents(); });
+  // ---- Share link (admins only; the database also enforces this) ----
+  if (!shareMode && profile && profile.role === "admin") {
+    const sbtn = document.getElementById("share-btn"), box = document.getElementById("share-box");
+    const urlEl = document.getElementById("share-url"), smsg = document.getElementById("share-msg");
+    const errEl = document.getElementById("share-err"), nbtn = document.getElementById("share-native");
+    const LABEL = sbtn.textContent;
+    sbtn.classList.remove("hidden");
+    const showErr = (m) => { box.classList.add("hidden"); errEl.textContent = m; errEl.classList.remove("hidden"); };
+    const missingFn = (e) => e && (e.code === "PGRST202" || e.code === "42883" || /could not find the function|does not exist|schema cache/i.test(e.message || ""));
+    async function copyText(t) {
+      try { await navigator.clipboard.writeText(t); return true; }
+      catch (e) {
+        try { urlEl.focus(); urlEl.select(); return document.execCommand("copy"); } catch (e2) { return false; }
+      }
+    }
+    sbtn.addEventListener("click", async () => {
+      sbtn.disabled = true; sbtn.textContent = "جارٍ إنشاء الرابط..."; smsg.textContent = ""; errEl.classList.add("hidden");
+      let r;
+      try { r = await sb.rpc("admin_create_share_link", { valid_days: 40 }); }
+      catch (e) { r = { error: e }; }
+      sbtn.disabled = false; sbtn.textContent = LABEL;
+      if (r.error || !r.data) {
+        const e = r.error;
+        return showErr(denied(e) ? NOAUTH
+          : missingFn(e) ? "ميزة المشاركة غير مفعّلة في قاعدة البيانات بعد. افتح Supabase ← SQL Editor، والصق محتوى الملف supabase/migrations/20261017000100_admin_share_links.sql ثم اضغط Run، وبعدها أعد المحاولة."
+          : ANA.isNetworkError(e) ? "تعذّر الاتصال بالخادم. تحقق من الإنترنت ثم أعد المحاولة."
+          : "تعذّر إنشاء الرابط: " + ((e && e.message) || "خطأ غير معروف"));
+      }
+      const link = location.origin + location.pathname + "?share=" + encodeURIComponent(r.data);
+      urlEl.value = link;
+      box.classList.remove("hidden");
+      if (navigator.share) nbtn.classList.remove("hidden");
+      smsg.textContent = (await copyText(link)) ? "تم إنشاء الرابط ونسخه تلقائيًا ✓ يمكنك لصقه وإرساله الآن." : "تم إنشاء الرابط. اضغط «نسخ الرابط» لنسخه.";
+      box.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    });
+    document.getElementById("share-copy").addEventListener("click", async () => {
+      if (!urlEl.value) return;
+      smsg.textContent = (await copyText(urlEl.value)) ? "تم نسخ الرابط ✓" : "حدّد الرابط وانسخه يدويًا.";
+    });
+    nbtn.addEventListener("click", async () => {
+      if (!urlEl.value) return;
+      try { await navigator.share({ title: "لوحة إدارة أكاديمية شبكات الحاسوب العربية (قراءة فقط)", url: urlEl.value }); } catch (e) { /* cancelled */ }
+    });
+    document.getElementById("share-revoke").addEventListener("click", async () => {
+      if (!confirm("سيتوقف كل روابط المشاركة الحالية عن العمل. متابعة؟")) return;
+      const r = await sb.rpc("admin_revoke_share_links");
+      if (r.error) { smsg.textContent = "تعذّر الإلغاء."; return; }
+      urlEl.value = ""; box.classList.add("hidden"); errEl.classList.add("hidden");
+      alert("تم إلغاء كل روابط المشاركة.");
+    });
+  }
+  load();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>تعلّمي — أكاديمية الشبكات العربية</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="assets/img/academy-icon.png">
+<script>try{var t=localStorage.getItem("ana_theme")||(matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light");document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<a class="skip" href="#main">تخطَّ إلى المحتوى</a>
+<div id="site-header"></div>
+<main id="main" class="container section">
+  <header class="learning-intro"><span class="eyebrow">مساحتك التعليمية</span><h1>تعلّمي</h1><p>كل ما تحتاجه لمتابعة رحلتك في مكان واحد.</p></header>
+  <p id="state" class="loading">جارٍ التحميل...</p>
+  <div id="content" class="hidden">
+    <div class="card">
+      <h2 style="margin-top:0;border:0">تقدّمك في الدورة</h2>
+      <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" id="bar"><span></span></div>
+      <p id="summary"></p>
+    </div>
+    <h2>دروسك</h2>
+    <div id="list" class="learning-grid"></div>
+    <details class="quiz-history"><summary>عرض نتائج الاختبارات الأخيرة</summary><h2>نتائج الاختبارات الأخيرة</h2>
+    <div class="table-wrap"><table><thead><tr><th>الدرس</th><th>النتيجة</th><th>التاريخ</th></tr></thead><tbody id="quizzes"></tbody></table></div></details>
+  </div>
+</main>
+<div id="site-footer"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+(async () => {
+  const { sb, esc } = ANA;
+  await ANA.renderLayout("learning");
+  const session = await ANA.requireAuth();
+  if (!session) return;
+  const state = document.getElementById("state");
+  try {
+    const [prog, quiz] = await Promise.all([
+      ANA.myProgress(session.user.id),
+      sb.from("quiz_results").select("lesson_id,score,total,created_at").eq("user_id", session.user.id).order("created_at", { ascending: false }).limit(10)
+    ]);
+    if (quiz.error) throw quiz.error;
+    const done = new Set(prog.filter(p => p.completed_at).map(p => p.lesson_id));
+    const started = new Set(prog.map(p => p.lesson_id));
+    const published = ANA.LESSONS.filter(l => l.published);
+    const doneCount = published.filter(l => done.has(l.id)).length;
+    const pct = Math.round(100 * doneCount / published.length);
+    document.querySelector("#bar span").style.width = pct + "%";
+    document.getElementById("bar").setAttribute("aria-valuenow", pct);
+    document.getElementById("summary").textContent = `أكملت ${doneCount} من ${published.length} دروس متاحة حاليًا (${pct}%).`;
+    document.getElementById("list").innerHTML = ANA.LESSONS.map(l => {
+      const b = done.has(l.id) ? '<span class="badge done">مكتمل</span>' : started.has(l.id) ? '<span class="badge">قيد الدراسة</span>' : l.published ? '<span class="badge">لم يبدأ</span>' : '<span class="badge soon">قريبًا</span>';
+      return `<article class="card learning-card"><img src="assets/img/course-${l.id}.svg" alt="" loading="lazy"><div class="learning-card-body">${b}<h3>${l.ar}</h3>${l.published ? `<a class="btn" href="${l.href}">${done.has(l.id) ? "مراجعة الدرس" : started.has(l.id) ? "متابعة التعلم" : "ابدأ الدرس"}</a>` : ""}</div></article>`;
+    }).join("");
+    const rows = (quiz.data || []);
+    document.getElementById("quizzes").innerHTML = rows.length
+      ? rows.map(r => `<tr><td>الدرس ${r.lesson_id}</td><td>${r.score} / ${r.total}</td><td>${esc(new Date(r.created_at).toLocaleDateString("ar"))}</td></tr>`).join("")
+      : '<tr><td colspan="3">لا توجد محاولات بعد.</td></tr>';
+    state.classList.add("hidden");
+    document.getElementById("content").classList.remove("hidden");
+  } catch (e) {
+    state.className = "alert error"; state.textContent = "تعذّر تحميل بياناتك. حاول لاحقًا.";
+  }
+})();
+</script>
+</body>
+</html>

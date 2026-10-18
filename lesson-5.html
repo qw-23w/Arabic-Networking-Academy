@@ -1,0 +1,473 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>الدرس 5: الشبكات المحلية الافتراضية VLAN — أكاديمية الشبكات العربية</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="assets/img/academy-icon.png">
+<script>try{var t=localStorage.getItem("ana_theme")||(matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light");document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<a class="skip" href="#main">تخطَّ إلى المحتوى</a>
+<div id="site-header"></div>
+<main id="main" class="container">
+<div class="lesson-layout">
+<nav class="toc" aria-label="قائمة الدروس والأقسام"><div class="course-sidebar-title">المنهج الدراسي</div><div id="lesson-navigation"></div><div class="original-toc" hidden>
+  <strong>محتويات الدرس</strong>
+  <ol>
+    <li><a href="#intro">مقدمة</a></li>
+    <li><a href="#objectives">الأهداف والمتطلبات</a></li>
+    <li><a href="#why">لماذا نحتاج VLAN؟</a></li>
+    <li><a href="#what">ما هي VLAN؟</a></li>
+    <li><a href="#trunk">الوصلات بين المحوّلات</a></li>
+    <li><a href="#config">الضبط العملي</a></li>
+    <li><a href="#intervlan">التوجيه بين VLAN</a></li>
+    <li><a href="#design">تصميم VLAN وعناوينها</a></li>
+    <li><a href="#trouble">استكشاف الأخطاء</a></li>
+    <li><a href="#mistakes">أخطاء شائعة</a></li>
+    <li><a href="#security">اعتبارات الأمن</a></li>
+    <li><a href="#summary">الملخص</a></li>
+    <li><a href="#glossary">المسرد</a></li>
+    <li><a href="#quiz">الاختبار</a></li>
+    <li><a href="#resources">مراجع والدرس التالي</a></li>
+  </ol></div>
+</nav>
+
+<article class="lesson">
+<div id="welcome" class="alert ok hidden"></div>
+
+<section id="intro">
+<h1>الدرس 5: الشبكات المحلية الافتراضية <span class="en">(VLANs)</span></h1>
+<p>في الدرس السابق رأينا أن الموجّه هو الذي يربط الشبكات ببعضها، وأن كل واجهة فيه تقع على شبكة منفصلة. لكن كيف نصنع شبكتين منفصلتين إذا كان عندنا محوّل واحد فقط؟ الحل التقليدي أن نشتري محوّلًا لكل شبكة، وهذا مكلف ومتعب. الحل الحديث أن نجعل المحوّل الواحد <b>يتصرف كأنه عدة محوّلات منفصلة</b>. هذا ما تفعله <b>الشبكات المحلية الافتراضية</b> (VLAN). في هذا الدرس نفهم لماذا نقسّم الشبكة المحلية، وكيف يفرّق المحوّل بين الشبكات داخل سلك واحد، وكيف نضبط ذلك عمليًا، وكيف تتواصل الشبكات المقسّمة عند الحاجة، وما المخاطر الأمنية التي ينبغي الانتباه لها.</p>
+</section>
+
+<section id="objectives">
+<h2>أهداف التعلم</h2>
+<ul>
+<li>شرح <b>نطاق البث</b> <span class="en">(Broadcast Domain)</span> ولماذا يؤدي كبره إلى مشكلات.</li>
+<li>تعريف VLAN، وشرح كيف يفصل المحوّل بين الشبكات المنطقية على جهاز مادي واحد.</li>
+<li>التفريق بين <b>منفذ الوصول</b> <span class="en">(Access Port)</span> و<b>منفذ الجذع</b> <span class="en">(Trunk Port)</span>.</li>
+<li>قراءة وسم <b>802.1Q</b> وفهم حقوله، ولماذا عدد المعرّفات 4094 وليس 4096.</li>
+<li>ضبط VLAN ومنافذ وصول وجذع على أجهزة Cisco وعلى Linux.</li>
+<li>شرح كيف تتواصل شبكتا VLAN عبر موجّه (Router-on-a-Stick) أو محوّل طبقة 3 (SVI).</li>
+<li>ربط كل VLAN بشبكة IP فرعية خاصة بها وفق ما تعلمناه في الدرس 3.</li>
+<li>تشخيص أعطال VLAN الشائعة، وفهم هجمات <b>VLAN Hopping</b> وسبل الوقاية منها.</li>
+</ul>
+<h3>المعرفة المسبقة</h3>
+<p>الدرس 1 (المحوّل والموجّه)، والدرس 2 (الطبقة 2 وعنوان MAC والإطار)، والدرس 3 (العنوان والقناع والشبكة الفرعية)، والدرس 4 (الموجّه والبوابة والمسارات المتصلة). سنعتمد على هذه الدروس كثيرًا، خاصة أن المحوّل يعمل في الطبقة 2 والموجّه في الطبقة 3.</p>
+</section>
+
+<section id="why">
+<h2>1. لماذا نحتاج VLAN؟</h2>
+<p>تذكّر كيف يتصرف المحوّل: يتعلم أي عنوان MAC خلف أي منفذ، فيرسل الإطار المعروف وجهته إلى منفذ واحد. أما <b>إطارات البث</b> <span class="en">(Broadcast)</span>، وهي المرسلة إلى <span class="ltr mono">FF:FF:FF:FF:FF:FF</span>، والإطارات التي لم يتعلم وجهتها بعد، فيرسلها إلى <b>كل المنافذ تقريبًا</b>. مجموعة الأجهزة التي يصلها بث أي جهاز منها تسمى <b>نطاق البث</b> <span class="en">(Broadcast Domain)</span>.</p>
+<p>في محوّل واحد بلا أي ضبط، كل الأجهزة المتصلة به نطاق بث واحد. وهنا تبدأ المشكلات حين يكبر العدد:</p>
+<ul>
+<li><b>ضجيج البث:</b> كل طلب ARP، وكل طلب DHCP، وكثير من البروتوكولات القديمة ترسل بثًا. كلما زاد عدد الأجهزة زاد البث، وكل جهاز يضطر إلى فحص كل إطار بث يصله حتى لو لم يعنِه.</li>
+<li><b>الأمن:</b> الأجهزة في نطاق البث نفسه ترى حركة بعضها (طلبات ARP ونحوها)، ويستطيع جهاز في قسم المبيعات أن يتحدث مباشرة مع خادم المحاسبة على مستوى الطبقة 2 دون أن يمر بأي موجّه أو جدار حماية.</li>
+<li><b>المرونة:</b> الموظف الذي ينتقل إلى مكتب آخر في الطابق الآخر يجب أن يبقى في شبكة قسمه. بدون VLAN يعني ذلك مدّ كوابل إلى محوّل قسمه، أو نقله إلى شبكة قسم آخر.</li>
+<li><b>التكلفة والإدارة:</b> قسم من 10 أجهزة على محوّل بـ 48 منفذًا يترك 38 منفذًا مهدورًا إن أردنا فصله فيزيائيًا.</li>
+</ul>
+<div class="analogy"><b>تشبيه:</b> تخيل مبنى مكاتب كبيرًا فيه قاعة واحدة ضخمة يعمل فيها الجميع، وإذا نادى أحدهم باسم زميله سمع النداء كل من في القاعة. الحل بناء جدران تقسّم القاعة إلى غرف: النداء يبقى داخل الغرفة. VLAN هي الجدران، لكنها جدران <b>برمجية</b> نضعها بضبط المحوّل، فلا نغيّر البناء نفسه. وإذا أراد موظف في غرفة التحدث مع غرفة أخرى فعليه المرور بـ«الاستقبال» (الموجّه)، وهناك تُطبّق القواعد.</div>
+</section>
+
+<section id="what">
+<h2>2. ما هي VLAN؟</h2>
+<p><b>VLAN</b> (اختصار Virtual Local Area Network) هي شبكة محلية <b>منطقية</b> تُعرَّف داخل المحوّل: نعطي كل منفذ رقم VLAN، فيعامل المحوّل المنافذ ذات الرقم الواحد كأنها محوّل مستقل خاص بها. والقاعدة الجوهرية:</p>
+<div class="note"><b>القاعدة:</b> المحوّل لا ينقل إطارًا من VLAN إلى VLAN أخرى أبدًا. بث VLAN 10 يصل إلى منافذ VLAN 10 فقط. وكذلك جدول عناوين MAC عند المحوّل يُحفظ <b>لكل VLAN على حدة</b>: العنوان نفسه قد يظهر في VLAN مختلفتين من غير أي تعارض.</div>
+<figure>
+<svg viewBox="0 0 700 300" role="img" aria-labelledby="f1t f1d">
+<title id="f1t">محوّل واحد مقسوم إلى VLAN 10 وVLAN 20</title><desc id="f1d">محوّل واحد بستة منافذ. المنافذ Fa0/1 وFa0/2 وFa0/3 في VLAN 10 المبيعات، والمنافذ Fa0/4 وFa0/5 وFa0/6 في VLAN 20 المحاسبة. فوق كل منفذ جهاز متصل به. لا تنتقل الإطارات بين المجموعتين داخل المحوّل.</desc>
+<g text-anchor="middle">
+<rect rx="10" class="bx-green" x="565" y="22" width="70" height="42"/><text x="600" y="48" class="t-b">PC1</text>
+<rect rx="10" class="bx-green" x="465" y="22" width="70" height="42"/><text x="500" y="48" class="t-b">PC2</text>
+<rect rx="10" class="bx-green" x="365" y="22" width="70" height="42"/><text x="400" y="48" class="t-b">PC3</text>
+<rect rx="10" class="bx-amber" x="265" y="22" width="70" height="42"/><text x="300" y="48" class="t-b">PC4</text>
+<rect rx="10" class="bx-amber" x="165" y="22" width="70" height="42"/><text x="200" y="48" class="t-b">PC5</text>
+<rect rx="10" class="bx-amber" x="65" y="22" width="70" height="42"/><text x="100" y="48" class="t-b">PC6</text>
+</g>
+<path class="ln" d="M600 64V128M500 64V128M400 64V128M300 64V128M200 64V128M100 64V128"/>
+<rect rx="10" class="bx-navy" x="50" y="100" width="600" height="90"/>
+<text x="350" y="120" text-anchor="middle" class="t-w t-b">المحوّل SW1</text>
+<g text-anchor="middle">
+<rect rx="10" class="bx-green" x="565" y="130" width="70" height="44"/><rect rx="10" class="bx-green" x="465" y="130" width="70" height="44"/><rect rx="10" class="bx-green" x="365" y="130" width="70" height="44"/>
+<rect rx="10" class="bx-amber" x="265" y="130" width="70" height="44"/><rect rx="10" class="bx-amber" x="165" y="130" width="70" height="44"/><rect rx="10" class="bx-amber" x="65" y="130" width="70" height="44"/>
+</g>
+<g class="mono ltr t-sm" text-anchor="middle"><text x="600" y="158">Fa0/1</text><text x="500" y="158">Fa0/2</text><text x="400" y="158">Fa0/3</text><text x="300" y="158">Fa0/4</text><text x="200" y="158">Fa0/5</text><text x="100" y="158">Fa0/6</text></g>
+<path class="ln" d="M635 212H365" /><path class="ln-wan" d="M335 212H65"/>
+<text x="500" y="240" text-anchor="middle" class="t-b"><tspan class="ltr mono">VLAN 10</tspan> — المبيعات</text>
+<text x="200" y="240" text-anchor="middle" class="t-b"><tspan class="ltr mono">VLAN 20</tspan> — المحاسبة</text>
+<text x="500" y="260" text-anchor="middle" class="t-sm"><tspan class="ltr mono">192.168.10.0/24</tspan></text>
+<text x="200" y="260" text-anchor="middle" class="t-sm"><tspan class="ltr mono">192.168.20.0/24</tspan></text>
+<text x="350" y="288" text-anchor="middle" class="t-sm">كل مجموعة نطاق بث مستقل، ولا ينتقل أي إطار بينهما داخل المحوّل</text>
+</svg>
+<figcaption><b>الشكل 1:</b> محوّل مادي واحد يعمل كمحوّلين منطقيين. إذا أرسل PC1 بثًا (طلب ARP مثلًا) وصل إلى PC2 وPC3 فقط. لا يراه PC4 ولا PC5 ولا PC6 رغم أنهم في الصندوق نفسه. وإذا أراد PC1 الاتصال بـ PC4 فلا مفرّ من جهاز طبقة 3 (انظر القسم 5).</figcaption>
+</figure>
+<h3>منفذ الوصول</h3>
+<p>المنفذ الذي يتصل به جهاز نهائي (حاسوب، طابعة، كاميرا) يُضبط كـ <b>منفذ وصول</b> <span class="en">(Access Port)</span> ويُعيَّن إلى VLAN واحدة فقط. الجهاز نفسه لا يعلم أي شيء عن VLAN: يرسل إطارات Ethernet عادية، والمحوّل هو الذي ينسبها إلى VLAN المنفذ عند دخولها، وينزع أي إشارة عند خروجها. وبهذا لا نحتاج إلى أي تعديل على الحواسيب.</p>
+<h3>تعيين VLAN للمنفذ</h3>
+<p>الأسلوب الأكثر استخدامًا هو <b>VLAN المرتبطة بالمنفذ</b> (Static / Port-based): المهندس يحدد المنفذ ورقم VLAN يدويًا. وهناك أسلوب أكثر تقدمًا يعتمد على هوية المستخدم أو الجهاز عبر المصادقة 802.1X، فيُعيَّن الجهاز تلقائيًا إلى VLAN مناسبة أينما اتصل. سنركز في الدرس على الأسلوب الأول.</p>
+<h3>أرقام VLAN</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>الرقم</th><th>الاستخدام</th></tr></thead>
+<tbody>
+<tr><td><code>0</code> و<code>4095</code></td><td>محجوزان ولا يُستخدمان كـ VLAN عادية.</td></tr>
+<tr><td><code>1</code></td><td>VLAN الافتراضية في أجهزة Cisco: كل المنافذ فيها منذ التشغيل الأول، ولا يمكن حذفها. يُنصح بعدم وضع حركة المستخدمين فيها.</td></tr>
+<tr><td><code>2–1001</code></td><td>المدى العادي (يحتوي أيضًا الأرقام 1002–1005 المحجوزة لتقنيات قديمة).</td></tr>
+<tr><td><code>1006–4094</code></td><td>المدى الموسّع.</td></tr>
+</tbody></table></div>
+<p>الإجمالي: 4094 رقمًا قابلًا للاستخدام (من 1 إلى 4094)، وسنرى سبب هذا الحد في القسم التالي.</p>
+</section>
+
+<section id="trunk">
+<h2>3. الوصلات بين المحوّلات: Trunk ووسم 802.1Q</h2>
+<p>شبكات المؤسسات لا تقوم على محوّل واحد. فإذا كان لقسم المبيعات أجهزة على محوّلين في طابقين مختلفين، فيجب أن تمتد VLAN 10 عبرهما. السؤال: كيف نوصل المحوّلين؟ لو مددنا كابلًا لكل VLAN لاحتجنا إلى منفذ وكابل لكل شبكة، وهذا يلغي فائدة VLAN. الحل أن نمرر <b>كل VLAN على كابل واحد</b>، مع وسم يوضح لأي VLAN ينتمي كل إطار. يسمى هذا الرابط <b>Trunk</b> (جذع)، ويسمى معيار الوسم <b>IEEE 802.1Q</b>.</p>
+<figure>
+<svg viewBox="0 0 700 340" role="img" aria-labelledby="f2t f2d">
+<title id="f2t">محوّلان يربطهما رابط Trunk واحد</title><desc id="f2d">محوّلان SW1 وSW2. على SW1 الحاسوب PC-A في VLAN 10 والحاسوب PC-B في VLAN 20. على SW2 الحاسوب PC-C في VLAN 10 والحاسوب PC-D في VLAN 20. رابط واحد بين المحوّلين يحمل الشبكتين معًا بإطارات موسومة. تحته شرح لرحلة إطار من PC-A إلى PC-C.</desc>
+<g text-anchor="middle">
+<rect rx="10" class="bx-green" x="550" y="16" width="90" height="44"/><text x="595" y="36" class="t-b">PC-A</text><text x="595" y="52" class="t-sm"><tspan class="ltr mono">VLAN 10</tspan></text>
+<rect rx="10" class="bx-amber" x="430" y="16" width="90" height="44"/><text x="475" y="36" class="t-b">PC-B</text><text x="475" y="52" class="t-sm"><tspan class="ltr mono">VLAN 20</tspan></text>
+<rect rx="10" class="bx-green" x="190" y="16" width="90" height="44"/><text x="235" y="36" class="t-b">PC-C</text><text x="235" y="52" class="t-sm"><tspan class="ltr mono">VLAN 10</tspan></text>
+<rect rx="10" class="bx-amber" x="70" y="16" width="90" height="44"/><text x="115" y="36" class="t-b">PC-D</text><text x="115" y="52" class="t-sm"><tspan class="ltr mono">VLAN 20</tspan></text>
+</g>
+<path class="ln" d="M595 60V120M475 60V120M235 60V120M115 60V120"/>
+<rect rx="10" class="bx-navy" x="420" y="120" width="230" height="56"/><text x="535" y="154" text-anchor="middle" class="t-w t-b">SW1</text>
+<rect rx="10" class="bx-navy" x="60" y="120" width="230" height="56"/><text x="175" y="154" text-anchor="middle" class="t-w t-b">SW2</text>
+<path class="ln-wan" d="M420 148H290" style="stroke-width:6"/>
+<g text-anchor="middle"><text x="355" y="136" class="t-b">Trunk</text><text x="355" y="168" class="t-sm ltr mono">VLAN 10,20</text></g>
+<rect rx="10" class="bx" x="15" y="200" width="670" height="128"/>
+<g text-anchor="middle">
+<text x="350" y="224" class="t-b">رحلة إطار من PC-A إلى PC-C (كلاهما في VLAN 10)</text>
+<circle cx="655" cy="250" r="11" class="bx-navy"/><text x="655" y="255" class="t-w t-sm t-b">1</text>
+<circle cx="655" cy="278" r="11" class="bx-navy"/><text x="655" y="283" class="t-w t-sm t-b">2</text>
+<circle cx="655" cy="306" r="11" class="bx-navy"/><text x="655" y="311" class="t-w t-sm t-b">3</text>
+</g>
+<g text-anchor="start" class="t-sm">
+<text x="635" y="255">يخرج الإطار من PC-A عاديًا بلا وسم، ويدخل منفذ وصول في VLAN 10.</text>
+<text x="635" y="283">SW1 يضيف الوسم <tspan class="ltr mono">VID=10</tspan> ويرسل الإطار على الـ Trunk.</text>
+<text x="635" y="311">SW2 يقرأ الوسم، فينزعه، ويسلّم الإطار من منفذ وصول في VLAN 10 إلى PC-C.</text>
+</g>
+</svg>
+<figcaption><b>الشكل 2:</b> الأجهزة النهائية لا تعرف أن هناك VLAN ولا أن هناك وسمًا. الوسم يوجد فقط على روابط الـ Trunk بين أجهزة الشبكة. أما الإطار المرسل من PC-B (VLAN 20) فيعبر الرابط نفسه بوسم <code>VID=20</code> ويصل إلى PC-D فقط.</figcaption>
+</figure>
+<h3>بنية الوسم</h3>
+<p>وسم 802.1Q حجمه <b>4 بايتات</b> (32 بتًا) يُدرَج داخل إطار Ethernet بين عنوان MAC المصدر وحقل النوع <span class="en">(EtherType)</span>. وهذا يعني أن أقصى حجم للإطار يزيد من 1518 إلى 1522 بايتًا، بينما تبقى سعة الحمولة 1500 بايت كما هي.</p>
+<figure>
+<svg viewBox="0 0 700 250" role="img" aria-labelledby="f3t f3d">
+<title id="f3t">إطار Ethernet مع وسم 802.1Q</title><desc id="f3d">أعلى الشكل إطار Ethernet مرتب من اليسار إلى اليمين: MAC الوجهة 6 بايتات، MAC المصدر 6 بايتات، وسم 802.1Q أربعة بايتات، حقل النوع بايتان، الحمولة، ثم FCS أربعة بايتات. أسفله تفصيل الوسم: TPID بطول 16 بتًا وقيمته 0x8100، وحقل PCP بطول 3 بتات للأولوية، وحقل DEI بطول بت واحد، وحقل VID بطول 12 بتًا لرقم VLAN.</desc>
+<g class="ltr" text-anchor="middle">
+<rect rx="10" class="bx-gray" x="20" y="20" width="100" height="46"/><text x="70" y="40" class="t-b t-sm">MAC الوجهة</text><text x="70" y="57" class="t-sm mono">6 B</text>
+<rect rx="10" class="bx-gray" x="122" y="20" width="100" height="46"/><text x="172" y="40" class="t-b t-sm">MAC المصدر</text><text x="172" y="57" class="t-sm mono">6 B</text>
+<rect rx="10" class="bx-amber" x="224" y="20" width="130" height="46" style="stroke-width:3"/><text x="289" y="40" class="t-b t-sm">802.1Q Tag</text><text x="289" y="57" class="t-sm mono">4 B</text>
+<rect rx="10" class="bx-gray" x="356" y="20" width="90" height="46"/><text x="401" y="40" class="t-b t-sm">النوع</text><text x="401" y="57" class="t-sm mono">2 B</text>
+<rect rx="10" class="bx-green" x="448" y="20" width="150" height="46"/><text x="523" y="40" class="t-b t-sm">الحمولة (IP...)</text><text x="523" y="57" class="t-sm mono">46–1500 B</text>
+<rect rx="10" class="bx-gray" x="600" y="20" width="80" height="46"/><text x="640" y="40" class="t-b t-sm">FCS</text><text x="640" y="57" class="t-sm mono">4 B</text>
+</g>
+<path class="ln" d="M224 66L30 120M354 66L670 120" style="stroke-width:1.5;stroke-dasharray:4 4"/>
+<g class="ltr" text-anchor="middle">
+<rect rx="10" class="bx-navy" x="30" y="120" width="320" height="50"/><text x="190" y="142" class="t-w t-b">TPID</text><text x="190" y="160" class="t-w t-sm mono">16 bits = 0x8100</text>
+<rect rx="10" class="bx-green" x="352" y="120" width="60" height="50"/><text x="382" y="142" class="t-b">PCP</text><text x="382" y="160" class="t-sm mono">3 bits</text>
+<rect rx="10" class="bx-gray" x="414" y="120" width="40" height="50"/><text x="434" y="142" class="t-b t-sm">DEI</text><text x="434" y="160" class="t-sm mono">1 bit</text>
+<rect rx="10" class="bx-amber" x="456" y="120" width="214" height="50" style="stroke-width:3"/><text x="563" y="142" class="t-b">VID</text><text x="563" y="160" class="t-sm mono">12 bits = 0–4095</text>
+</g>
+<g text-anchor="middle" class="t-sm">
+<text x="190" y="196">يعلن أن الإطار موسوم (مكان حقل النوع)</text>
+<text x="382" y="214">الأولوية (QoS)</text>
+<text x="563" y="196">رقم VLAN: اثنا عشر بتًا</text>
+<text x="563" y="214">تعطي 4096 قيمة، تُستبعد منها 2</text>
+<text x="350" y="240" class="t-b">الناتج: 4094 رقم VLAN قابلًا للاستخدام</text>
+</g>
+</svg>
+<figcaption><b>الشكل 3:</b> الوسم يتكون من <b>TPID</b> (قيمة ثابتة <code>0x8100</code> تدل المحوّل على أن هذا إطار موسوم، وتشغل مكان حقل النوع الأصلي)، و<b>PCP</b> (3 بتات لأولوية الحركة، يستفيد منها QoS مثل أولوية المكالمات الصوتية)، و<b>DEI</b> (بت يدل على إمكان إسقاط الإطار عند الازدحام)، و<b>VID</b> (12 بتًا هي رقم VLAN). بعد إضافة الوسم يعيد المحوّل حساب FCS.</figcaption>
+</figure>
+<h3>VLAN الأصلية (Native VLAN)</h3>
+<p>على رابط الـ Trunk، تُرسَل كل VLAN موسومة <b>ما عدا واحدة</b> تسمى <b>VLAN الأصلية</b> <span class="en">(Native VLAN)</span>: تمر إطاراتها <b>بلا وسم</b>، وأي إطار يصل بلا وسم يُنسب إليها. القيمة الافتراضية على Cisco هي VLAN 1. الغرض تاريخي، هو التوافق مع أجهزة لا تفهم الوسم (مثل موزّع قديم على الرابط). يجب أن يكون الرقم نفسه على طرفي الرابط، وإلا ينتقل الإطار من VLAN إلى أخرى دون قصد. وهذه نقطة أمنية مهمة سنعود إليها.</p>
+<h3>Access أم Trunk؟</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>نوع المنفذ</th><th>يتصل بـ</th><th>عدد VLAN</th><th>الإطار على الكابل</th></tr></thead>
+<tbody>
+<tr><td><b>Access</b></td><td>جهاز نهائي (حاسوب، طابعة)</td><td>واحدة</td><td>بلا وسم</td></tr>
+<tr><td><b>Trunk</b></td><td>محوّل آخر، أو موجّه، أو خادم افتراضي</td><td>عدة VLAN</td><td>موسوم (عدا الـ Native)</td></tr>
+</tbody></table></div>
+<div class="note"><b>حالة خاصة، هاتف IP:</b> يتصل الهاتف بالمحوّل ويتصل حاسوب الموظف بالهاتف. يمكن ضبط المنفذ بحيث تمر حركة الصوت موسومة في VLAN مخصصة للصوت <span class="en">(Voice VLAN)</span> وحركة الحاسوب بلا وسم في VLAN البيانات، بكابل واحد.</div>
+</section>
+
+<section id="config">
+<h2>4. الضبط العملي</h2>
+<p>لنضبط محوّلًا بحسب الشكل 1: المنافذ 1 إلى 3 في VLAN 10 (المبيعات)، والمنافذ 4 إلى 6 في VLAN 20 (المحاسبة)، والمنفذ <span class="ltr mono">Gi0/1</span> رابط Trunk إلى محوّل آخر.</p>
+<h3>على أجهزة Cisco</h3>
+<pre><code>SW1(config)# vlan 10
+SW1(config-vlan)# name Sales
+SW1(config-vlan)# vlan 20
+SW1(config-vlan)# name Accounting
+SW1(config-vlan)# exit
+
+SW1(config)# interface range FastEthernet0/1 - 3
+SW1(config-if-range)# switchport mode access
+SW1(config-if-range)# switchport access vlan 10
+
+SW1(config)# interface range FastEthernet0/4 - 6
+SW1(config-if-range)# switchport mode access
+SW1(config-if-range)# switchport access vlan 20
+
+SW1(config)# interface GigabitEthernet0/1
+SW1(config-if)# switchport mode trunk
+SW1(config-if)# switchport trunk allowed vlan 10,20
+SW1(config-if)# switchport trunk native vlan 999</code></pre>
+<p>ملاحظات على الأوامر:</p>
+<ul>
+<li><code>switchport mode access</code> تُثبّت المنفذ كمنفذ وصول، فلا يتفاوض على أن يصير Trunk.</li>
+<li><code>switchport trunk allowed vlan 10,20</code> تحصر ما يمرّ على الرابط بالـ VLAN المطلوبة فقط. هذا يقلل البث غير الضروري ويحدّ من الأخطاء الأمنية.</li>
+<li>بعض المحوّلات الأقدم تطلب قبل <code>mode trunk</code> الأمر <code>switchport trunk encapsulation dot1q</code>، لأنها تدعم معيارًا قديمًا اسمه ISL. المحوّلات الحديثة تستخدم 802.1Q وحده فلا حاجة إليه.</li>
+<li>VLAN 999 هنا رقم اخترناه لـ Native VLAN غير مستخدمة، سبب ذلك في قسم الأمن.</li>
+</ul>
+<p>ولا بد من تنفيذ الأوامر نفسها (VLAN وTrunk) على المحوّل الثاني، فكل محوّل يحتاج إلى أن يعرف VLAN 10 و20 ويضبط الرابط من طرفه.</p>
+<h3>أوامر التحقق</h3>
+<pre><code>SW1# show vlan brief               # كل VLAN وما فيها من منافذ
+VLAN Name        Status    Ports
+---- ----------- --------- ----------------------------
+1    default     active    Gi0/2
+10   Sales       active    Fa0/1, Fa0/2, Fa0/3
+20   Accounting  active    Fa0/4, Fa0/5, Fa0/6
+
+SW1# show interfaces trunk         # روابط Trunk وVLAN المسموحة والـ Native
+SW1# show interfaces Fa0/1 switchport   # وضع المنفذ (access/trunk) وVLAN الخاصة به
+SW1# show mac address-table vlan 10     # العناوين التي تعلّمها المحوّل في VLAN 10</code></pre>
+<h3>على Linux</h3>
+<p>خادم Linux (مثل خادم افتراضي) قد يستقبل أكثر من VLAN على بطاقة واحدة. ننشئ لكل VLAN واجهة فرعية تتولى الوسم تلقائيًا:</p>
+<pre><code>ip link add link eth0 name eth0.10 type vlan id 10
+ip addr add 192.168.10.5/24 dev eth0.10
+ip link set eth0.10 up</code></pre>
+<p>الحزم الخارجة من <code>eth0.10</code> تُوسَم بـ <code>VID=10</code> قبل وصولها إلى <code>eth0</code>، ويُنزَع الوسم عن الواردة. على الطرف الآخر يجب أن يكون منفذ المحوّل المتصل ببطاقة هذا الخادم Trunk يسمح بـ VLAN 10.</p>
+<h3>تمرين</h3>
+<p>في <b>Cisco Packet Tracer</b> ابنِ الشكل 2: محوّلان ورابط بينهما وأربعة حواسيب. أعطِ حاسوبي VLAN 10 العنوانين <span class="ltr mono">192.168.10.11</span> و<span class="ltr mono">192.168.10.12</span> وحاسوبي VLAN 20 العنوانين <span class="ltr mono">192.168.20.11</span> و<span class="ltr mono">192.168.20.12</span> (قناع 255.255.255.0). ثم: (1) قبل ضبط VLAN، نفّذ <code>ping</code> بين كل الأجهزة. (2) اضبط VLAN والمنافذ وكرر <code>ping</code> داخل VLAN الواحدة وبين VLAN مختلفتين وفسّر الفرق. (3) اجعل الرابط بين المحوّلين Access في VLAN 10 فقط، وجرّب <code>ping</code> بين حاسوبي VLAN 20 على المحوّلين المختلفين وفسّر ما يحدث. (4) أعده Trunk ونفّذ <code>show interfaces trunk</code>.</p>
+</section>
+
+<section id="intervlan">
+<h2>5. التوجيه بين VLAN</h2>
+<p>الآن لدينا شبكتان معزولتان تمامًا. وهذا بالضبط المطلوب، لكنه غالبًا ليس كافيًا: الموظفون يحتاجون أحيانًا إلى الوصول إلى خادم مشترك أو إلى الإنترنت. وبما أن المحوّل لا ينقل بين VLAN، فالجواب هو ما تعلمناه في الدرس السابق: <b>الموجّه</b>. كل VLAN شبكة IP مستقلة، والتواصل بين شبكتين IP مختلفتين هو عمل الطبقة 3. لذلك يُسمى هذا <b>التوجيه بين VLAN</b> <span class="en">(Inter-VLAN Routing)</span>.</p>
+<h3>الخيار الأول: موجّه على عصا (Router-on-a-Stick)</h3>
+<p>نصل موجّهًا بالمحوّل برابط Trunk <b>واحد</b>، وننشئ على واجهة الموجّه الفيزيائية <b>واجهة فرعية</b> <span class="en">(Subinterface)</span> لكل VLAN. كل واجهة فرعية تفهم وسم VLAN واحدة وتحمل عنوان IP هو <b>البوابة الافتراضية</b> لتلك VLAN.</p>
+<figure>
+<svg viewBox="0 0 700 360" role="img" aria-labelledby="f4t f4d">
+<title id="f4t">موجّه على عصا لربط VLAN 10 وVLAN 20</title><desc id="f4d">موجّه R1 متصل برابط Trunk واحد بمحوّل SW1. إلى المحوّل حاسوب PC-A في VLAN 10 وحاسوب PC-B في VLAN 20. لإرسال حزمة من PC-A إلى PC-B تصعد الحزمة إلى الموجّه عبر الرابط ثم تنزل عبر الرابط نفسه بوسم VLAN 20. على اليمين جدول الواجهات الفرعية: Gi0/0.10 بعنوان 192.168.10.1 وGi0/0.20 بعنوان 192.168.20.1.</desc>
+<rect rx="10" class="bx" x="440" y="16" width="245" height="112"/>
+<text x="562" y="40" text-anchor="middle" class="t-b">الواجهات الفرعية في R1</text>
+<g class="mono ltr t-sm" text-anchor="start" xml:space="preserve"><text x="452" y="68">Gi0/0.10  VLAN 10</text><text x="452" y="86">192.168.10.1/24</text><text x="452" y="108">Gi0/0.20  VLAN 20</text><text x="452" y="124" >192.168.20.1/24</text></g>
+<rect rx="10" class="bx-amber" x="225" y="20" width="130" height="56"/><text x="290" y="46" text-anchor="middle" class="t-b">R1</text><text x="290" y="64" text-anchor="middle" class="t-sm">موجّه</text>
+<path class="ln-wan" d="M290 76V150" style="stroke-width:6"/>
+<text x="160" y="118" text-anchor="middle" class="t-sm">Trunk (رابط واحد)</text>
+<rect rx="10" class="bx-navy" x="190" y="150" width="200" height="50"/><text x="290" y="181" text-anchor="middle" class="t-w t-b">SW1</text>
+<path class="ln" d="M240 200L560 250M340 200L130 250"/>
+<rect rx="10" class="bx-green" x="500" y="250" width="120" height="56"/><text x="560" y="276" text-anchor="middle" class="t-b">PC-A</text><text x="560" y="294" text-anchor="middle" class="t-sm"><tspan class="ltr mono">192.168.10.20</tspan></text>
+<rect rx="10" class="bx-amber" x="70" y="250" width="120" height="56"/><text x="130" y="276" text-anchor="middle" class="t-b">PC-B</text><text x="130" y="294" text-anchor="middle" class="t-sm"><tspan class="ltr mono">192.168.20.20</tspan></text>
+<g text-anchor="middle" class="t-b">
+<circle cx="440" cy="222" r="11" class="bx-navy"/><text x="440" y="227" class="t-w t-sm">1</text>
+<circle cx="312" cy="112" r="11" class="bx-navy"/><text x="312" y="117" class="t-w t-sm">2</text>
+<circle cx="268" cy="112" r="11" class="bx-navy"/><text x="268" y="117" class="t-w t-sm">3</text>
+<circle cx="205" cy="212" r="11" class="bx-navy"/><text x="205" y="217" class="t-w t-sm">4</text>
+</g>
+<text x="350" y="338" text-anchor="middle" class="t-sm">PC-A ← SW1 ← Trunk ← R1 ← Trunk ← SW1 ← PC-B (الرابط نفسه يُعبَر مرتين)</text>
+</svg>
+<figcaption><b>الشكل 4:</b> الخطوات: (1) PC-A يرسل الحزمة إلى بوابته <span class="ltr mono">192.168.10.1</span> لأن الوجهة خارج شبكته، (2) SW1 يوسمها بـ VLAN 10 ويرسلها على الـ Trunk إلى R1، (3) R1 يبحث في جدول التوجيه فيجد أن <span class="ltr mono">192.168.20.0/24</span> متصلة بالواجهة <span class="ltr mono">Gi0/0.20</span>، فيعيد بناء الإطار ويرسله موسومًا بـ VLAN 20 على الرابط نفسه، (4) SW1 ينزع الوسم ويسلّم الإطار إلى PC-B.</figcaption>
+</figure>
+<pre><code>R1(config)# interface GigabitEthernet0/0
+R1(config-if)# no shutdown                      # الواجهة الفيزيائية بلا عنوان، لكن يجب تشغيلها
+
+R1(config)# interface GigabitEthernet0/0.10
+R1(config-subif)# encapsulation dot1Q 10        # أي وسم يخص هذه الواجهة الفرعية
+R1(config-subif)# ip address 192.168.10.1 255.255.255.0
+
+R1(config)# interface GigabitEthernet0/0.20
+R1(config-subif)# encapsulation dot1Q 20
+R1(config-subif)# ip address 192.168.20.1 255.255.255.0</code></pre>
+<p>ولا نحتاج إلى أي مسار ساكن، فالشبكتان <b>متصلتان مباشرة</b> بالموجّه (المصدر C في جدول التوجيه) كما رأينا في الدرس 4. وعلى حواسيب VLAN 10 تكون البوابة <span class="ltr mono">192.168.10.1</span>، وعلى حواسيب VLAN 20 تكون <span class="ltr mono">192.168.20.1</span>.</p>
+<p>العيب الأساسي أن <b>الرابط الواحد يحمل كل الحركة بين VLAN في الاتجاهين</b>، فيكون عنق الزجاجة. لذلك يصلح هذا الأسلوب للمكاتب الصغيرة والمختبرات.</p>
+<h3>الخيار الثاني: محوّل الطبقة 3 (SVI)</h3>
+<p><b>محوّل الطبقة 3</b> <span class="en">(Layer 3 Switch)</span> جهاز واحد يجمع التحويل والتوجيه. نعرّف عليه <b>واجهة VLAN افتراضية</b> <span class="en">(SVI: Switch Virtual Interface)</span> لكل VLAN وتحمل عنوان البوابة، ويجري التوجيه بين VLAN داخل المحوّل نفسه بسرعة الأجهزة المتخصصة ودون رابط خارجي يحدّ من السرعة. وهذا هو الأسلوب الشائع في المؤسسات.</p>
+<pre><code>SW1(config)# ip routing                          # تفعيل التوجيه في المحوّل
+SW1(config)# interface vlan 10
+SW1(config-if)# ip address 192.168.10.1 255.255.255.0
+SW1(config-if)# no shutdown
+SW1(config)# interface vlan 20
+SW1(config-if)# ip address 192.168.20.1 255.255.255.0
+SW1(config-if)# no shutdown</code></pre>
+<div class="note"><b>شرط:</b> لا تُفعَّل واجهة SVI (تبقى down) إلا إذا كانت VLAN موجودة وفيها منفذ واحد على الأقل فعّال، سواء منفذ وصول أو Trunk يسمح بها.</div>
+<h3>DHCP لا يعبر بين VLAN</h3>
+<p>تذكّر أن طلب DHCP يُرسَل <b>بثًا</b>، وأن البث لا يعبر حدود VLAN. فإن كان خادم DHCP في VLAN مختلفة فلن يصله الطلب. الحل: يُضبط الموجّه (أو محوّل الطبقة 3) كـ <b>وكيل DHCP</b> <span class="en">(DHCP Relay)</span> بالأمر <code>ip helper-address</code> على واجهة كل VLAN، فيحوّل الطلب إلى الخادم مباشرة (Unicast). ويكون للخادم نطاق عناوين (Scope) لكل VLAN.</p>
+<pre><code>R1(config-subif)# ip helper-address 192.168.99.10     # عنوان خادم DHCP</code></pre>
+</section>
+
+<section id="design">
+<h2>6. تصميم VLAN وعناوينها</h2>
+<h3>قاعدة: VLAN واحدة = شبكة IP واحدة</h3>
+<p>عمليًا نجعل لكل VLAN شبكة فرعية خاصة بها، ونختار أرقامًا تسهّل الحفظ، كأن ننسب VLAN 10 إلى <span class="ltr mono">192.168.10.0/24</span> وVLAN 20 إلى <span class="ltr mono">192.168.20.0/24</span>. تفصل VLAN في الطبقة 2، وتفصل الشبكة الفرعية في الطبقة 3، وكلاهما يتفق على الحدود نفسها. أما الخطأ الشائع فهو وضع حاسوب بعنوان شبكة VLAN 10 في منفذ VLAN 20، فلا يتصل بأحد، لأن بوابته ليست على شبكته الفعلية.</p>
+<h3>مثال على خطة</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>VLAN</th><th>الاسم</th><th>الشبكة</th><th>البوابة</th><th>الغرض</th></tr></thead>
+<tbody>
+<tr><td><code>10</code></td><td>Sales</td><td><code>192.168.10.0/24</code></td><td><code>192.168.10.1</code></td><td>أجهزة قسم المبيعات</td></tr>
+<tr><td><code>20</code></td><td>Accounting</td><td><code>192.168.20.0/24</code></td><td><code>192.168.20.1</code></td><td>أجهزة المحاسبة</td></tr>
+<tr><td><code>30</code></td><td>Voice</td><td><code>192.168.30.0/24</code></td><td><code>192.168.30.1</code></td><td>هواتف IP</td></tr>
+<tr><td><code>99</code></td><td>Management</td><td><code>192.168.99.0/24</code></td><td><code>192.168.99.1</code></td><td>إدارة المحوّلات والموجّهات والخوادم</td></tr>
+<tr><td><code>999</code></td><td>Unused-Native</td><td>لا شيء</td><td>لا شيء</td><td>VLAN أصلية فارغة ومنافذ غير مستخدمة</td></tr>
+</tbody></table></div>
+<h3>مبادئ التصميم</h3>
+<ul>
+<li><b>قسّم بحسب الوظيفة أو الحساسية</b> (مستخدمون، وخوادم، وضيوف، وطابعات، وإدارة)، لا بحسب الموقع الفيزيائي فقط. هذه حرية VLAN: يمكن لقسم واحد أن يمتد على عدة طوابق.</li>
+<li><b>لا تجعل VLAN كبيرة جدًا.</b> VLAN بآلاف الأجهزة تعيد مشكلة نطاق البث الكبير. وكثيرًا ما تُحدّ بـ /24 أي نحو 250 جهازًا.</li>
+<li><b>VLAN للإدارة منفصلة</b> يصل إليها المدراء فقط، فلا تُدار الأجهزة من شبكة المستخدمين.</li>
+<li><b>أسماء ثابتة ومفهومة</b> (<code>name Sales</code>) وتوثيق يربط كل VLAN بشبكتها ووظيفتها.</li>
+<li><b>VLAN 1 للتركة لا للاستخدام:</b> لا تضع فيها حركة المستخدمين ولا الإدارة.</li>
+</ul>
+</section>
+
+<section id="trouble">
+<h2>7. استكشاف أخطاء VLAN</h2>
+<p>ابدأ دائمًا بالطبقة 1 ثم 2، قبل أن تفحص التوجيه: <b>هل المنفذ فعّال؟ هل هو في VLAN الصحيحة؟ هل تصل VLAN إلى المحوّل الآخر؟</b></p>
+<div class="table-wrap"><table>
+<thead><tr><th>العَرَض</th><th>السبب المحتمل</th><th>الفحص</th></tr></thead>
+<tbody>
+<tr><td>جهازان في VLAN نفسها على محوّل واحد لا يتصلان</td><td>أحد المنفذين في VLAN مختلفة، أو المنفذ مغلق، أو VLAN محذوفة فصار المنفذ <code>inactive</code></td><td><code>show vlan brief</code></td></tr>
+<tr><td>يعمل داخل المحوّل ولا يعمل عبر المحوّلين</td><td>الرابط ليس Trunk، أو VLAN غير مسموحة عليه، أو غير معرّفة على المحوّل الآخر</td><td><code>show interfaces trunk</code> على الطرفين</td></tr>
+<tr><td>رسالة <code>NATIVE_VLAN_MISMATCH</code> في السجل (CDP)</td><td>VLAN الأصلية مختلفة بين طرفي الـ Trunk</td><td><code>show interfaces trunk</code> وقارن عمود Native vlan</td></tr>
+<tr><td>الجهاز يحصل على عنوان IP من الشبكة الخاطئة</td><td>المنفذ في VLAN غير المقصودة</td><td><code>show interfaces &lt;منفذ&gt; switchport</code></td></tr>
+<tr><td>لا يحصل على عنوان IP بالكامل</td><td>خادم DHCP في VLAN أخرى بلا وكيل DHCP، أو لا يوجد نطاق عناوين لهذه VLAN</td><td>تأكد من <code>ip helper-address</code> ومن نطاق الخادم</td></tr>
+<tr><td>يتصل داخل VLAN ولا يخرج منها</td><td>البوابة على الحاسوب خطأ، أو الواجهة الفرعية/SVI معطلة، أو رقم <code>encapsulation dot1Q</code> لا يطابق VLAN</td><td><code>show ip interface brief</code> ثم <code>ping</code> إلى البوابة</td></tr>
+<tr><td>VLAN تعمل لكن المنفذ يتعطّل ويعود</td><td>عدم توافق السرعة أو الازدواج <span class="en">(Duplex)</span>، أو كابل تالف (طبقة 1)</td><td><code>show interfaces &lt;منفذ&gt;</code> وعدّاد الأخطاء</td></tr>
+</tbody></table></div>
+<div class="note"><b>تنبيه:</b> قبل أن تغيّر ضبط Trunk على محوّل تتصل به عن بُعد، تأكد أنك لا تقطع الرابط الذي تدخل منه إلى المحوّل نفسه، واحتفظ بنسخة احتياطية من الضبط. نفّذ الأوامر على شبكتك أو شبكة لديك إذن باختبارها.</div>
+</section>
+
+<section id="mistakes">
+<h2>8. أخطاء ومفاهيم خاطئة شائعة</h2>
+<ul>
+<li><b>«VLAN جدار حماية».</b> VLAN تفصل في الطبقة 2 فقط. وبمجرد وجود توجيه بين VLAN فإن كل شيء يمر ما لم نضف ACL أو جدار حماية عند نقطة التوجيه.</li>
+<li><b>«VLAN تعني شبكة فيزيائية مستقلة».</b> هي شبكة منطقية على الأجهزة نفسها، وخطأ في ضبط المحوّل قد يخلط بينها.</li>
+<li><b>نسيان إنشاء VLAN على المحوّل الثاني</b> أو عدم السماح بها على الـ Trunk.</li>
+<li><b>ضبط جهاز نهائي على منفذ Trunk</b> فيرسل المحوّل إطارات موسومة لا يفهمها الجهاز.</li>
+<li><b>VLAN أصلية مختلفة على طرفي الرابط</b>، وهذا يسرّب حركة من VLAN إلى أخرى.</li>
+<li><b>«VLAN وشبكة IP الفرعية شيء واحد».</b> الأولى في الطبقة 2 والثانية في الطبقة 3. تتطابقان بالعرف والتصميم الجيد، لا بالضرورة التقنية.</li>
+<li><b>ترك جميع المنافذ في VLAN 1 وبنمط التفاوض التلقائي</b> (Dynamic Auto)، وهذا يترك المجال للتلاعب (القسم التالي).</li>
+<li><b>«حركة البث تعبر الموجّه»</b>، والصواب أن الموجّه يوقف البث. لذلك يُحتاج إلى وكيل DHCP.</li>
+</ul>
+</section>
+
+<section id="security">
+<h2>9. اعتبارات الأمن</h2>
+<p>VLAN أداة تنظيم وعزل مفيدة، لكنها ليست حدًّا أمنيًا مطلقًا. أشهر الثغرات في ضبطها:</p>
+<ul>
+<li><b>انتحال المحوّل</b> <span class="en">(Switch Spoofing)</span>: بعض المنافذ تتفاوض تلقائيًا على كونها Trunk عبر بروتوكول <b>DTP</b>. المهاجم الذي يتصل بمنفذ كهذا ويتظاهر بأنه محوّل يحصل على رابط Trunk فيرى كل VLAN. الدفاع: <code>switchport mode access</code> لكل منافذ المستخدمين، و<code>switchport nonegotiate</code> لإيقاف DTP على روابط الـ Trunk الثابتة.</li>
+<li><b>الوسم المزدوج</b> <span class="en">(Double Tagging)</span>: يعمل عندما يكون منفذ المهاجم في VLAN هي نفسها <b>VLAN الأصلية</b> لرابط Trunk. يرسل المهاجم إطارًا بوسمين: الخارجي هو VLAN الأصلية، والداخلي هو VLAN الضحية. المحوّل الأول ينزع الوسم الخارجي (لأن الأصلية لا تُوسَم) ويرسل الإطار على الـ Trunk بوسم الضحية فقط، فيصل إلى VLAN الضحية. الهجوم باتجاه واحد (لا يعود الرد)، لكنه يكفي لحقن حركة. الدفاع: لا تضع أي منفذ مستخدمين في VLAN الأصلية، واجعلها VLAN فارغة غير مستخدمة (مثل 999) على كل الـ Trunk، وتأكد أن كل منافذ المستخدمين Access، ويمكن في بعض الأجهزة <b>وسم VLAN الأصلية أيضًا</b>.</li>
+<li><b>VLAN 1 والخدمات الافتراضية:</b> تمر فيها بروتوكولات إدارة الطبقة 2 (CDP وVTP وغيرها). أبقِ حركة المستخدمين خارجها.</li>
+<li><b>المنافذ غير المستخدمة:</b> يُوصِل أحدهم جهازًا بمنفذ مفتوح فيدخل الشبكة. أغلقها <code>shutdown</code> وانقلها إلى VLAN غير مستخدمة. وللمنافذ الفعّالة استخدم <b>أمان المنفذ</b> <span class="en">(Port Security)</span> أو المصادقة 802.1X.</li>
+<li><b>السماح بكل VLAN على الـ Trunk:</b> يعني أن VLAN غير ضرورية تنتشر في كل مكان. قيّد القائمة بـ <code>allowed vlan</code>.</li>
+<li><b>التوجيه بين VLAN بلا قواعد:</b> إن ربطنا VLAN بموجّه بلا ACL فكأننا لم نفصلها. اكتب قواعد تسمح بما يلزم فقط، مثل أن تصل المبيعات إلى خادم محدد ولا تصل إلى المحاسبة.</li>
+<li><b>إدارة المحوّل:</b> ضع واجهة الإدارة في VLAN إدارة منفصلة، واستخدم SSH بدل Telnet، وكلمات مرور قوية أو توثيقًا مركزيًا.</li>
+</ul>
+<div class="note"><b>الخلاصة الأمنية:</b> VLAN تقلل التعرّض ولا تحمي بذاتها. اعتمد في الأمر الحساس على تصفية الحركة عند نقطة التوجيه وعلى الضبط الصحيح للمنافذ.</div>
+</section>
+
+<section id="summary">
+<h2>10. الملخص</h2>
+<ul>
+<li>المحوّل يمرر البث إلى كل المنافذ، فكل المنافذ نطاق بث واحد ما لم نقسّمه. تقسيمه يقلل الضجيج ويحسّن الأمن والمرونة.</li>
+<li><b>VLAN</b> تجعل المحوّل الواحد يعمل كعدة محوّلات منطقية: لكل VLAN نطاق بث وجدول MAC خاص، ولا ينتقل إطار بين VLAN داخل المحوّل.</li>
+<li><b>منفذ Access</b> لجهاز نهائي وVLAN واحدة وبلا وسم. <b>منفذ Trunk</b> بين أجهزة الشبكة ويحمل عدة VLAN بوسم.</li>
+<li>وسم <b>802.1Q</b> أربعة بايتات: TPID (<code>0x8100</code>) وPCP وDEI وVID (12 بتًا) فيحد من العدد بـ 4094 VLAN.</li>
+<li>الإطارات على الـ Trunk موسومة عدا <b>VLAN الأصلية</b> التي يجب أن تتطابق على الطرفين.</li>
+<li>التواصل بين VLAN يحتاج جهاز طبقة 3: موجّه بواجهات فرعية (Router-on-a-Stick) أو محوّل طبقة 3 بواجهات SVI. بوابة كل VLAN هي واجهتها على هذا الجهاز.</li>
+<li>VLAN واحدة تقابل عادةً شبكة IP فرعية واحدة. والبث (ومنه DHCP) لا يعبر بين VLAN إلا بوكيل DHCP.</li>
+<li>الأمن: أوقف التفاوض التلقائي، وقيّد الـ Trunk، واجعل VLAN الأصلية فارغة، وأغلق المنافذ غير المستخدمة، وطبّق ACL بين VLAN.</li>
+</ul>
+</section>
+
+<section id="glossary">
+<h2>11. مسرد المصطلحات</h2>
+<dl class="glossary">
+<dt>VLAN / شبكة محلية افتراضية</dt><dd>شبكة محلية منطقية معرّفة داخل المحوّل برقم، لها نطاق بث مستقل.</dd>
+<dt>Broadcast Domain / نطاق البث</dt><dd>مجموعة الأجهزة التي يصلها إطار البث المرسل من أي منها.</dd>
+<dt>Access Port / منفذ وصول</dt><dd>منفذ ينتمي إلى VLAN واحدة، ويتصل بجهاز نهائي، وتمر عليه الإطارات بلا وسم.</dd>
+<dt>Trunk / جذع</dt><dd>رابط بين أجهزة الشبكة يحمل عدة VLAN بإطارات موسومة.</dd>
+<dt>IEEE 802.1Q</dt><dd>المعيار الذي يعرّف وسم VLAN في إطار Ethernet.</dd>
+<dt>TPID</dt><dd>حقل الوسم الذي قيمته <code>0x8100</code> ويدل على أن الإطار موسوم.</dd>
+<dt>VID / معرّف VLAN</dt><dd>الحقل ذو 12 بتًا الذي يحمل رقم VLAN.</dd>
+<dt>PCP</dt><dd>حقل 3 بتات في الوسم لأولوية الإطار (QoS).</dd>
+<dt>Native VLAN / VLAN الأصلية</dt><dd>VLAN التي تمر إطاراتها بلا وسم على الـ Trunk.</dd>
+<dt>Inter-VLAN Routing / التوجيه بين VLAN</dt><dd>نقل الحزم بين VLAN مختلفة بواسطة جهاز طبقة 3.</dd>
+<dt>Router-on-a-Stick</dt><dd>موجّه واحد على رابط Trunk واحد بواجهات فرعية لكل VLAN.</dd>
+<dt>Subinterface / واجهة فرعية</dt><dd>واجهة منطقية على واجهة فيزيائية تخدم VLAN واحدة.</dd>
+<dt>SVI</dt><dd>واجهة افتراضية لـ VLAN على محوّل الطبقة 3، تحمل بوابتها.</dd>
+<dt>Layer 3 Switch / محوّل الطبقة 3</dt><dd>محوّل يستطيع التوجيه بين الشبكات.</dd>
+<dt>DTP</dt><dd>بروتوكول Cisco يتفاوض تلقائيًا على جعل المنفذ Trunk.</dd>
+<dt>VLAN Hopping</dt><dd>هجوم يتجاوز عزل VLAN، بالانتحال أو بالوسم المزدوج.</dd>
+<dt>DHCP Relay / وكيل DHCP</dt><dd>يحوّل طلبات DHCP المبثوثة إلى خادم في شبكة أخرى.</dd>
+</dl>
+</section>
+
+<section id="quiz">
+<h2>12. اختبر فهمك</h2>
+<p>اضغط على إجابة لترى التفسير. تُسجَّل نتيجتك عند الإجابة عن كل الأسئلة.</p>
+<div id="quiz-box"></div>
+<div id="quiz-result" class="alert info hidden"></div>
+<button id="retry" class="btn secondary hidden" type="button">إعادة المحاولة</button>
+<div style="margin-top:26px">
+  <button id="complete" class="btn success" type="button">وضع علامة «مكتمل»</button>
+  <span id="complete-msg" class="hint" role="status"></span>
+</div>
+</section>
+
+<section id="resources">
+<h2>13. مراجع موثوقة للتعمق</h2>
+<ul>
+<li><a href="https://1.ieee802.org/" rel="noopener">IEEE 802.1Q</a> — معيار الجسور وشبكات VLAN (بالإنجليزية).</li>
+<li><a href="https://www.rfc-editor.org/rfc/rfc826" rel="noopener">RFC 826</a> — بروتوكول ARP الذي يعتمد على البث.</li>
+<li><a href="https://www.rfc-editor.org/rfc/rfc2131" rel="noopener">RFC 2131</a> — بروتوكول DHCP.</li>
+<li><a href="https://www.rfc-editor.org/rfc/rfc3046" rel="noopener">RFC 3046</a> — خيار معلومات الوكيل في DHCP (DHCP Relay).</li>
+<li><a href="https://www.netacad.com" rel="noopener">Cisco Networking Academy</a> — مقررات مجانية وبرنامج Packet Tracer.</li>
+</ul>
+<h3>التنقل بين الدروس</h3>
+<p><b>المتطلبات السابقة:</b> <a href="lesson-2.html">الدرس 2: نموذج OSI</a> و<a href="lesson-3.html">الدرس 3: عنونة IP</a> و<a href="lesson-4.html">الدرس 4: التوجيه</a>.<br>
+<b>الدرس التالي:</b> <a href="lesson-6.html">الدرس 6: VXLAN وVRF</a> — <a href="curriculum.html">عرض المنهج الكامل</a></p>
+</section>
+</article>
+</div>
+</main>
+<div id="site-footer"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+const LESSON_ID = 5;
+const QUESTIONS = [
+  { q: "حاسوب في VLAN 10 أرسل طلب ARP بثًا على محوّل واحد فيه VLAN 10 وVLAN 20. من يستقبل الطلب؟",
+    o: ["كل المنافذ في المحوّل", "منافذ VLAN 10 فقط", "منافذ VLAN 20 فقط", "الموجّه وحده"], a: 1,
+    e: "لكل VLAN نطاق بث مستقل. المحوّل لا ينقل أي إطار، بثًا كان أو غير بث، من VLAN إلى VLAN أخرى." },
+  { q: "حقل VID في وسم 802.1Q طوله 12 بتًا. كم VLAN قابلة للاستخدام فعليًا؟",
+    o: ["4096", "4095", "4094", "1024"], a: 2,
+    e: "12 بتًا تعطي 4096 قيمة، لكن القيمتين 0 و4095 محجوزتان، فيبقى 4094 رقمًا (من 1 إلى 4094)." },
+  { q: "أي نوع من المنافذ يُستخدم بين محوّلين لتمرير عدة VLAN على كابل واحد؟",
+    o: ["Trunk", "Access", "Console", "Loopback"], a: 0,
+    e: "منفذ Trunk يحمل عدة VLAN بإطارات موسومة بـ 802.1Q. أما Access فيخدم VLAN واحدة وبلا وسم، ويُستعمل مع الأجهزة النهائية." },
+  { q: "حاسوبان في VLAN مختلفتين على المحوّل نفسه، ولا يوجد موجّه ولا محوّل طبقة 3. ماذا يحدث عند ping بينهما؟",
+    o: ["ينجح لأنهما على المحوّل نفسه", "ينجح إن كان القناع 255.0.0.0", "يفشل لأن المحوّل يمنع ICMP", "يفشل لأنهما في شبكتين منطقيتين منفصلتين، ولا يعبر بينهما إلا جهاز طبقة 3"], a: 3,
+    e: "المحوّل لا ينقل بين VLAN. التواصل يحتاج إلى جهاز يعمل في الطبقة 3 (موجّه أو محوّل طبقة 3) تكون له واجهة في كل VLAN." },
+  { q: "في تصميم Router-on-a-Stick، ما البوابة الافتراضية لحاسوب في VLAN 20؟",
+    o: ["عنوان واجهة R1 الفيزيائية Gi0/0 دائمًا", "عنوان المحوّل SW1", "عنوان الواجهة الفرعية Gi0/0.20 على الموجّه", "عنوان حاسوب آخر في VLAN 20"], a: 2,
+    e: "كل واجهة فرعية تحمل عنوان البوابة الخاصة بـ VLAN واحدة. الواجهة الفيزيائية نفسها لا تحمل عنوانًا في هذا التصميم." },
+  { q: "لماذا ينجح هجوم الوسم المزدوج (Double Tagging) فقط في حالات معينة؟",
+    o: ["حين يكون منفذ المهاجم في أي VLAN غير مسموحة على الـ Trunk", "حين يكون منفذ المهاجم في VLAN هي نفسها VLAN الأصلية على رابط Trunk", "حين تكون كل المنافذ Access", "حين يكون القناع /32"], a: 1,
+    e: "المحوّل الأول ينزع الوسم الخارجي لأنه وسم VLAN الأصلية التي تمر بلا وسم، فيبقى الوسم الداخلي (VLAN الضحية). لذلك يُنصح بعدم وضع منافذ مستخدمين في VLAN الأصلية وجعلها VLAN فارغة." },
+  { q: "أي ضبط يحمي منفذ مستخدم من هجوم Switch Spoofing عبر DTP؟",
+    o: ["switchport mode access", "switchport mode dynamic auto", "switchport trunk allowed vlan all", "تركه في VLAN 1"], a: 0,
+    e: "تثبيت المنفذ كـ Access يمنعه من التفاوض ليصبح Trunk. أما الوضع التلقائي فيترك المجال للمهاجم." },
+  { q: "الـ Trunk بين SW1 وSW2 يعمل، لكن حاسوبين في VLAN 30 على المحوّلين لا يتصلان. أظهر show interfaces trunk أن VLAN المسموحة هي 10 و20 فقط. ما الحل؟",
+    o: ["تغيير قناع الشبكة على الحاسوبين", "تغيير VLAN الأصلية إلى 30", "إنشاء VLAN 30 على الموجّه فقط", "إضافة 30 إلى القائمة المسموحة على الـ Trunk، مع التأكد أن VLAN 30 معرّفة على المحوّلين"], a: 3,
+    e: "VLAN التي ليست في قائمة allowed لا تعبر الرابط. يجب السماح بها على الطرفين وإنشاؤها على كل محوّل تمتد عليه." }
+];
+</script>
+<script src="assets/js/lesson.js"></script>
+</body>
+</html>

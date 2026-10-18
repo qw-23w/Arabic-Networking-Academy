@@ -1,0 +1,244 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>الدرس 7: بروتوكولات TCP/IP — أكاديمية الشبكات العربية</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="assets/img/academy-icon.png">
+<script>try{var t=localStorage.getItem("ana_theme")||(matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light");document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<a class="skip" href="#main">تخطَّ إلى المحتوى</a>
+<div id="site-header"></div>
+<main id="main" class="container">
+<div class="lesson-layout">
+<nav class="toc" aria-label="قائمة الدروس والأقسام"><div class="course-sidebar-title">المنهج الدراسي</div><div id="lesson-navigation"></div><div class="original-toc" hidden>
+  <strong>محتويات الدرس</strong>
+  <ol>
+    <li><a href="#intro">مقدمة</a></li>
+    <li><a href="#objectives">الأهداف</a></li>
+    <li><a href="#suite">حزمة البروتوكولات</a></li>
+    <li><a href="#ports">المنافذ وUDP</a></li>
+    <li><a href="#tcp">TCP: الاتصال الموثوق</a></li>
+    <li><a href="#mss">MTU وMSS</a></li>
+    <li><a href="#tools">أدوات الفحص</a></li>
+    <li><a href="#trouble">استكشاف الأخطاء</a></li>
+    <li><a href="#security">اعتبارات الأمن</a></li>
+    <li><a href="#summary">الملخص</a></li>
+    <li><a href="#glossary">المسرد</a></li>
+    <li><a href="#quiz">الاختبار</a></li>
+    <li><a href="#resources">مراجع والدرس التالي</a></li>
+  </ol></div>
+</nav>
+
+<article class="lesson">
+<div id="welcome" class="alert ok hidden"></div>
+
+<section id="intro">
+<h1>الدرس 7: بروتوكولات TCP/IP <span class="en">(TCP/IP)</span></h1>
+<p>عرفنا في الدرس 2 أن TCP يضمن التسليم وأن UDP أسرع بلا ضمان، وفي الدروس 3 إلى 6 تتبّعنا الحزمة عبر العناوين والتوجيه وVLAN والأنفاق. في هذا الدرس ندخل إلى <b>الطبقة 4</b> بعمق: كيف تُبنى المحادثة بين تطبيقين، وكيف يبدأ TCP الاتصال ويضمن وصول البيانات سليمة ومرتبة، وكيف تفرّق الأعراض بين «رُفض الاتصال» و«انتهت المهلة». هذا الدرس هو الأساس لاستكشاف الأخطاء في الدرس 8.</p>
+</section>
+
+<section id="objectives">
+<h2>أهداف التعلم</h2>
+<ul>
+<li>تحديد موقع البروتوكولات الشائعة في طبقات TCP/IP الأربع ومنافذها.</li>
+<li>شرح المقبس <span class="en">(Socket)</span> وكيف يميّز الجهاز بين آلاف الاتصالات.</li>
+<li>قراءة ترويسة UDP وترويسة TCP وأعلامها.</li>
+<li>شرح المصافحة الثلاثية وإغلاق الاتصال، وأرقام التسلسل والتأكيد.</li>
+<li>فهم النافذة والتحكم بالازدحام، وحساب أثر زمن الرحلة على السرعة.</li>
+<li>ربط MSS بـ MTU (الدرس 6) واستخدام أدوات الفحص وتفسير الأعراض.</li>
+</ul>
+<p><b>المعرفة المسبقة:</b> الدرس 2 (الطبقات وTCP/UDP)، والدرس 3 (العناوين وNAT وDHCP)، والدرس 4 (TTL وICMP).</p>
+</section>
+
+<section id="suite">
+<h2>1. حزمة البروتوكولات</h2>
+<p>TCP/IP ليس بروتوكولًا واحدًا بل <b>حزمة</b> بروتوكولات تعمل معًا في أربع طبقات: <b>التطبيق</b> (HTTP وDNS وSSH)، و<b>النقل</b> (TCP وUDP)، و<b>الإنترنت</b> (IP وICMP)، و<b>وصول الشبكة</b> (Ethernet وWi-Fi). يضيف كل مستوى ترويسته عند الإرسال ويزيلها المستلم، كما رأينا في التغليف. حقل <span class="ltr mono">Protocol</span> في ترويسة IP يخبر المستلم لمن يسلّم الحمولة: <span class="ltr mono">6</span> لـ TCP و<span class="ltr mono">17</span> لـ UDP و<span class="ltr mono">1</span> لـ ICMP.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>البروتوكول</th><th>النقل</th><th>المنفذ</th><th>وظيفته</th></tr></thead>
+<tbody>
+<tr><td>HTTP / HTTPS</td><td>TCP</td><td><span class="ltr mono">80 / 443</span></td><td>الويب (HTTP/3 يعمل فوق UDP 443)</td></tr>
+<tr><td>SSH</td><td>TCP</td><td><span class="ltr mono">22</span></td><td>إدارة بعيدة مشفّرة</td></tr>
+<tr><td>DNS</td><td>UDP وTCP</td><td><span class="ltr mono">53</span></td><td>تحويل الأسماء إلى عناوين</td></tr>
+<tr><td>DHCP</td><td>UDP</td><td><span class="ltr mono">67 / 68</span></td><td>توزيع العناوين (الدرس 3)</td></tr>
+<tr><td>NTP</td><td>UDP</td><td><span class="ltr mono">123</span></td><td>مزامنة الوقت</td></tr>
+<tr><td>BGP</td><td>TCP</td><td><span class="ltr mono">179</span></td><td>توجيه بين الشبكات</td></tr>
+<tr><td>VXLAN</td><td>UDP</td><td><span class="ltr mono">4789</span></td><td>أنفاق الدرس 6</td></tr>
+<tr><td>ICMP</td><td>فوق IP مباشرة</td><td>لا منافذ</td><td>ping ورسائل الأخطاء</td></tr>
+</tbody></table></div>
+<p><b>DNS</b> يستخدم UDP للاستعلامات الصغيرة لسرعتها، ويعود إلى TCP حين يكبر الرد أو في نقل المناطق. والمستخدم يسأل <b>خادمًا مُحلِّلًا</b> <span class="en">(Resolver)</span> يسأل بدوره الخوادم الجذرية ثم خوادم النطاق العلوي ثم الخادم المخوَّل، ويخزّن الجواب مؤقتًا بحسب قيمة TTL فيه.</p>
+</section>
+
+<section id="ports">
+<h2>2. المنافذ وUDP</h2>
+<p>عنوان IP يوصل الحزمة إلى الجهاز، و<b>المنفذ</b> (رقم من 16 بتًا، من 0 إلى 65535) يوصلها إلى التطبيق. تنقسم المنافذ إلى: <b>المعروفة</b> 0 إلى 1023، و<b>المسجّلة</b> 1024 إلى 49151، و<b>الديناميكية</b> 49152 إلى 65535 (يستخدم Linux افتراضيًا المدى 32768 إلى 60999). الخادم ينتظر على منفذ ثابت، والعميل يأخذ منفذ مصدر مؤقتًا عشوائيًا.</p>
+<p>يتعرّف الجهاز على كل اتصال بخماسية: <b>(البروتوكول، IP المصدر، منفذ المصدر، IP الوجهة، منفذ الوجهة)</b>. ولهذا يمكن لمئة نافذة متصفح أن تتصل بالخادم نفسه والمنفذ نفسه دون تداخل. وهذه الخماسية هي ما يحفظه جدول <b>NAT/PAT</b> الذي ذكرناه في الدرس 3: يغيّر الموجّه عنوان المصدر ومنفذه، فيسجّل <span class="ltr mono">192.168.1.20:51514 ⇄ 203.0.113.5:40001</span> ليعيد الرد إلى الجهاز الصحيح.</p>
+<p><b>UDP</b> أبسط بروتوكول نقل: ترويسته <b>8 بايتات</b> فقط (منفذ المصدر، منفذ الوجهة، الطول، المجموع الاختباري). لا مصافحة ولا تأكيد ولا ترتيب ولا إعادة إرسال، وعلى التطبيق أن يتدبّر الفقد إن لزم. لذلك يناسب DNS والصوت والفيديو المباشر والألعاب، ويقوم عليه QUIC الذي يبني فوقه موثوقية وتشفيرًا لـ HTTP/3.</p>
+</section>
+
+<section id="tcp">
+<h2>3. TCP: الاتصال الموثوق</h2>
+<p>يقدّم TCP لكل تطبيق <b>مجرى بايتات</b> موثوقًا ومرتبًا، رغم أن IP تحته يسلّم حزمًا قد تضيع أو تتكرر أو تصل مبعثرة. يقسّم TCP البيانات إلى <b>مقاطع</b> <span class="en">(Segments)</span>، ويحمل كل مقطع ترويسة من 20 بايتًا على الأقل فيها: المنفذان، و<b>رقم التسلسل</b> <span class="en">(Sequence)</span>، و<b>رقم التأكيد</b> <span class="en">(Acknowledgment)</span>، وحجم النافذة، والأعلام: <span class="ltr mono">SYN</span> لبدء الاتصال، <span class="ltr mono">ACK</span> للتأكيد، <span class="ltr mono">FIN</span> للإنهاء المنظّم، <span class="ltr mono">RST</span> للإنهاء الفوري، <span class="ltr mono">PSH</span> لدفع البيانات إلى التطبيق.</p>
+<h3>المصافحة الثلاثية</h3>
+<figure>
+<svg viewBox="0 0 700 250" role="img" aria-labelledby="f1t f1d">
+<title id="f1t">المصافحة الثلاثية في TCP</title><desc id="f1d">العميل يرسل SYN برقم تسلسل x، فيرد الخادم بـ SYN-ACK برقم تسلسل y ورقم تأكيد x زائد 1، ثم يرسل العميل ACK برقم تأكيد y زائد 1، فيبدأ تبادل البيانات.</desc>
+<rect rx="10" class="bx-green" x="40" y="8" width="150" height="40"/><text x="115" y="34" text-anchor="middle" class="t-b">العميل</text>
+<rect rx="10" class="bx-navy" x="510" y="8" width="150" height="40"/><text x="585" y="34" text-anchor="middle" class="t-w t-b">الخادم</text>
+<path class="ln" d="M115 48V240M585 48V240M115 85H570M585 145H130M115 205H570"/>
+<polygon class="bx-navy" points="585,85 570,79 570,91"/><polygon class="bx-navy" points="115,145 130,139 130,151"/><polygon class="bx-navy" points="585,205 570,199 570,211"/>
+<g text-anchor="middle" class="t-b">
+<text x="350" y="76">1) <tspan class="ltr mono">SYN  seq=x</tspan></text>
+<text x="350" y="136">2) <tspan class="ltr mono">SYN-ACK  seq=y, ack=x+1</tspan></text>
+<text x="350" y="196">3) <tspan class="ltr mono">ACK  ack=y+1</tspan></text></g>
+</svg>
+<figcaption><b>الشكل 1:</b> يختار كل طرف رقم تسلسل ابتدائيًا عشوائيًا. بعد الخطوة 3 يصبح الاتصال <span class="ltr mono">ESTABLISHED</span> عند الطرفين، ويحمل SYN رقم تسلسل واحدًا لذلك يكون التأكيد <span class="ltr mono">x+1</span>.</figcaption>
+</figure>
+<h3>التسلسل والتأكيد والنافذة</h3>
+<ul>
+<li><b>أرقام التسلسل تعدّ البايتات:</b> إذا أرسل العميل 100 بايت تبدأ برقم 1001 فالخادم يؤكد بالرقم <span class="ltr mono">1101</span>، أي «أنتظر البايت 1101 تاليًا». التأكيد <b>تراكمي</b>.</li>
+<li><b>إعادة الإرسال:</b> إذا لم يصل تأكيد قبل انتهاء مؤقّت <span class="en">(RTO)</span>، أو وصلت ثلاثة تأكيدات مكررة، يعيد المرسل المقطع.</li>
+<li><b>التحكم بالتدفق:</b> يعلن المستقبل في كل ردّ <b>نافذة الاستقبال</b> <span class="en">(rwnd)</span> أي ما يتسع له من بايتات دون تأكيد، حتى لا يُغرَق.</li>
+<li><b>التحكم بالازدحام:</b> يضبط المرسل <b>نافذة الازدحام</b> <span class="en">(cwnd)</span>: يبدأ ببطء ثم يضاعف المعدل <span class="en">(Slow Start)</span> ثم يزيده بحذر، ويخفضه عند ملاحظة فقد. والمرسَل فعليًا هو الأصغر من النافذتين.</li>
+</ul>
+<div class="analogy"><b>مثال على أثر النافذة:</b> حجم النافذة 64 كيلوبايت (65,535 بايتًا) وزمن الرحلة ذهابًا وإيابًا 100 مللي ثانية. أقصى سرعة نظرية = 65,535 × 8 ÷ 0.1 ≈ <b>5.2 ميغابت/ث</b> مهما كان الرابط سريعًا. لهذا يوجد خيار <b>تحجيم النافذة</b> <span class="en">(Window Scaling)</span> في المصافحة، فيسمح بنوافذ تصل إلى نحو 1 غيغابايت.</div>
+<h3>إغلاق الاتصال</h3>
+<p>الإغلاق المنظّم بتبادل <span class="ltr mono">FIN</span> و<span class="ltr mono">ACK</span> في كل اتجاه (أربع رسائل)، لأن كل اتجاه يُغلق على حدة. يبقى الطرف الذي بدأ الإغلاق في حالة <span class="ltr mono">TIME_WAIT</span> نحو دقيقة (60 ثانية في Linux) كي لا تختلط مقاطع متأخرة باتصال جديد، وهذا طبيعي حتى لو ظهر منه المئات. أما <span class="ltr mono">RST</span> فيُنهي الاتصال فورًا: يُرسَل حين يصل مقطع إلى منفذ لا يستمع عليه أحد، أو حين يُلغي التطبيق الاتصال.</p>
+</section>
+
+<section id="mss">
+<h2>4. MTU وMSS</h2>
+<p>MTU هو أكبر حزمة IP يقبلها الرابط (1500 في Ethernet). أما <b>MSS</b> <span class="en">(Maximum Segment Size)</span> فهو أكبر <b>حمولة TCP</b> في المقطع، ويعلنه كل طرف في SYN. في IPv4: <span class="ltr mono">1500 − 20 (IP) − 20 (TCP) = 1460</span>. وفي واجهة VXLAN ذات MTU 1450 (الدرس 6) يصبح MSS نحو <span class="ltr mono">1410</span>. وإذا عُبّر عن MSS خطأً فكبرت الحزم عن المسار وكان علم DF مفعّلًا أُسقطت، فينجح <span class="ltr mono">ping</span> الصغير وتتجمد التحميلات، ويعتمد الكشف على رسالة ICMP نوع 3 (يلزم التجزئة)، فلا تحجب ICMP كلها في الجدار الناري.</p>
+</section>
+
+<section id="tools">
+<h2>5. أدوات الفحص</h2>
+<pre><code>ss -tuln                      # Linux: المنافذ المستمعة (TCP وUDP)
+ss -tn state established      # الاتصالات القائمة الآن
+netstat -ano                  # Windows: الاتصالات ومعرّف العملية
+nc -vz 93.184.216.34 443      # هل يُقبل الاتصال بالمنفذ 443؟
+Test-NetConnection 93.184.216.34 -Port 443   # PowerShell
+curl -v https://example.com   # مراحل DNS وTCP وTLS وHTTP
+dig example.com A             # استعلام DNS مفصّل
+sudo tcpdump -nn 'tcp port 443'   # التقاط الحزم</code></pre>
+<p>يظهر في الالتقاط المصافحة بالأعلام <span class="ltr mono">[S]</span> ثم <span class="ltr mono">[S.]</span> ثم <span class="ltr mono">[.]</span>، و<span class="ltr mono">[P.]</span> للبيانات، و<span class="ltr mono">[F.]</span> للإنهاء، و<span class="ltr mono">[R]</span> للإعادة. التقط على جهازك أو شبكة مخبرك فقط.</p>
+<h3>تمرين</h3>
+<p>شغّل <span class="ltr mono">tcpdump</span> أو Wireshark وافتح موقعًا. (1) ابحث عن المصافحة الثلاثية وسجّل MSS ومعامل التحجيم. (2) لاحظ أرقام التسلسل والتأكيد في أول طلب. (3) نفّذ <span class="ltr mono">nc -vz</span> على منفذ مغلق وآخر محجوب بجدار ناري وقارن النتيجة.</p>
+</section>
+
+<section id="trouble">
+<h2>6. استكشاف الأخطاء</h2>
+<p>الفرق الأهم: <b>«Connection refused»</b> يعني أن الجهاز وصل ورفض (RST فوري)، و<b>«Timed out»</b> يعني أن لا رد يصل (إسقاط صامت أو عطل توجيه).</p>
+<div class="table-wrap"><table>
+<thead><tr><th>العَرَض</th><th>السبب المحتمل</th><th>الفحص</th></tr></thead>
+<tbody>
+<tr><td>رُفض الاتصال فورًا</td><td>لا خدمة تستمع على المنفذ، أو قاعدة رفض (reject)</td><td><code>ss -tuln</code> على الخادم</td></tr>
+<tr><td>انتهت المهلة</td><td>جدار ناري يُسقط، أو لا مسار، أو الخادم متوقف</td><td><code>traceroute</code> ثم <code>tcpdump</code> لرؤية SYN بلا رد</td></tr>
+<tr><td>يعمل بالعنوان لا بالاسم</td><td>مشكلة DNS</td><td><code>dig</code> و<code>nslookup</code></td></tr>
+<tr><td>ping ينجح والتطبيق لا</td><td>المنفذ محجوب أو الخدمة متوقفة (ICMP غير TCP)</td><td><code>nc -vz IP PORT</code></td></tr>
+<tr><td>صغير ينجح والكبير يتجمد</td><td>MTU/MSS</td><td><code>ping -M do -s 1472</code></td></tr>
+<tr><td>بطء على رابط بعيد سريع</td><td>نافذة صغيرة أو فقد حزم</td><td>التقاط الحزم وتتبّع إعادة الإرسال</td></tr>
+<tr><td>تراكم <span class="ltr mono">CLOSE_WAIT</span></td><td>التطبيق لا يغلق مقابسه</td><td><code>ss -tanp</code> وراجع كود التطبيق</td></tr>
+</tbody></table></div>
+</section>
+
+<section id="security">
+<h2>7. اعتبارات الأمن</h2>
+<ul>
+<li><b>فيضان SYN:</b> إرسال SYN بكثرة دون إكمال المصافحة يملأ جدول الاتصالات نصف المفتوحة. الدفاع: <b>SYN cookies</b> وتحديد المعدل وخدمات التخفيف.</li>
+<li><b>الانعكاس والتضخيم:</b> UDP لا يتحقق من المصدر، فيُنتحل عنوان الضحية لإرسال ردود كبيرة من خوادم DNS وNTP المكشوفة. الدفاع: تصفية الانتحال عند الحافة (BCP 38) وإغلاق المحلِّلات المفتوحة.</li>
+<li><b>أرقام التسلسل العشوائية</b> تصعّب حقن مقاطع مزيفة في اتصال قائم. والبروتوكولات النصية (Telnet وFTP وHTTP) تكشف البيانات، فاستبدلها بـ SSH وSFTP وHTTPS.</li>
+<li><b>قلّل المنافذ المفتوحة:</b> ما يستمع على المنفذ يمكن مهاجمته. استخدم جدارًا ناريًا حافظًا للحالة <span class="en">(Stateful)</span> يسمح بالردود على اتصالات خرجت من الداخل فقط، ولا تفحص منافذ شبكة لا تملك إذنًا بفحصها.</li>
+</ul>
+</section>
+
+<section id="summary">
+<h2>8. الملخص</h2>
+<ul>
+<li>IP يوصل الحزمة إلى الجهاز، والمنفذ يوصلها إلى التطبيق، والاتصال تعرّفه الخماسية.</li>
+<li>UDP بسيط وسريع بلا ضمان (ترويسة 8 بايتات)، وTCP موثوق ومرتب (ترويسة 20 بايتًا فأكثر).</li>
+<li>يبدأ TCP بمصافحة ثلاثية ويضمن التسليم بالتسلسل والتأكيد وإعادة الإرسال، ويضبط السرعة بنافذتي الاستقبال والازدحام.</li>
+<li>MSS = MTU − 40 في IPv4، ومشاكل MTU تظهر بصورة «الصغير ينجح والكبير يتجمد».</li>
+<li>«رُفض» تعني وصولًا ورفضًا، و«المهلة» تعني صمتًا. ولكل منهما فحص مختلف.</li>
+</ul>
+</section>
+
+<section id="glossary">
+<h2>9. مسرد المصطلحات</h2>
+<dl class="glossary">
+<dt>Socket / المقبس</dt><dd>عنوان IP مع منفذ، يحدد طرف الاتصال.</dd>
+<dt>Three-way Handshake</dt><dd>SYN ثم SYN-ACK ثم ACK لبدء اتصال TCP.</dd>
+<dt>Sequence / ACK Number</dt><dd>رقم أول بايت في المقطع، ورقم البايت التالي المنتظر.</dd>
+<dt>rwnd / cwnd</dt><dd>نافذة الاستقبال التي يعلنها المستقبل، ونافذة الازدحام التي يحسبها المرسل.</dd>
+<dt>MSS</dt><dd>أكبر حمولة TCP في مقطع واحد.</dd>
+<dt>RTT</dt><dd>زمن الرحلة ذهابًا وإيابًا.</dd>
+<dt>TIME_WAIT</dt><dd>حالة انتظار بعد الإغلاق تمنع اختلاط المقاطع المتأخرة.</dd>
+<dt>RST</dt><dd>علم إنهاء فوري للاتصال.</dd>
+<dt>SYN cookies</dt><dd>تقنية تتفادى حجز موارد للاتصالات نصف المفتوحة.</dd>
+</dl>
+</section>
+
+<section id="quiz">
+<h2>10. اختبر فهمك</h2>
+<p>اضغط على إجابة لترى التفسير. تُسجَّل نتيجتك عند الإجابة عن كل الأسئلة.</p>
+<div id="quiz-box"></div>
+<div id="quiz-result" class="alert info hidden"></div>
+<button id="retry" class="btn secondary hidden" type="button">إعادة المحاولة</button>
+<div style="margin-top:26px">
+  <button id="complete" class="btn success" type="button">وضع علامة «مكتمل»</button>
+  <span id="complete-msg" class="hint" role="status"></span>
+</div>
+</section>
+
+<section id="resources">
+<h2>11. مراجع موثوقة للتعمق</h2>
+<ul>
+<li><a href="https://www.rfc-editor.org/rfc/rfc9293" rel="noopener">RFC 9293</a> — مواصفة TCP الحالية.</li>
+<li><a href="https://www.rfc-editor.org/rfc/rfc768" rel="noopener">RFC 768</a> — UDP.</li>
+<li><a href="https://www.rfc-editor.org/rfc/rfc791" rel="noopener">RFC 791</a> — IP.</li>
+<li><a href="https://www.rfc-editor.org/rfc/rfc2827" rel="noopener">RFC 2827 (BCP 38)</a> — تصفية الدخول ضد انتحال العناوين.</li>
+<li><a href="https://www.iana.org/assignments/service-names-port-numbers" rel="noopener">IANA</a> — سجل أرقام المنافذ.</li>
+</ul>
+<h3>التنقل بين الدروس</h3>
+<p><b>المتطلبات السابقة:</b> <a href="lesson-2.html">الدرس 2</a> و<a href="lesson-3.html">الدرس 3</a> و<a href="lesson-4.html">الدرس 4</a> و<a href="lesson-6.html">الدرس 6</a>.<br>
+<b>الدرس التالي:</b> <a href="lesson-8.html">الدرس 8: استكشاف الأخطاء والأمن الأساسي</a> — <a href="curriculum.html">عرض المنهج الكامل</a></p>
+</section>
+</article>
+</div>
+</main>
+<div id="site-footer"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+const LESSON_ID = 7;
+const QUESTIONS = [
+  { q: "ما الترتيب الصحيح لرسائل المصافحة الثلاثية في TCP؟",
+    o: ["ACK ثم SYN ثم FIN", "SYN ثم SYN-ACK ثم ACK", "SYN ثم ACK ثم SYN-ACK", "SYN-ACK ثم SYN ثم ACK"], a: 1,
+    e: "يرسل العميل SYN، فيرد الخادم SYN-ACK، ثم يؤكد العميل بـ ACK فيصبح الاتصال قائمًا." },
+  { q: "حاولت الاتصال بمنفذ فجاءك رفض فوري (Connection refused). ما التفسير الأرجح؟",
+    o: ["جدار ناري يُسقط الحزم بصمت", "الرابط مقطوع", "الجهاز وصل لكن لا خدمة تستمع على ذلك المنفذ", "DNS لا يعمل"], a: 2,
+    e: "الرفض الفوري يعني أن الجهاز ردّ بـ RST. أما الإسقاط الصامت فيظهر مهلة منتهية." },
+  { q: "أرسل عميل 100 بايت تبدأ برقم تسلسل 1001. ما رقم التأكيد الذي يرسله الخادم؟",
+    o: ["1001", "1100", "1102", "1101"], a: 3,
+    e: "التأكيد تراكمي ويحمل رقم البايت التالي المنتظر: 1001 + 100 = 1101." },
+  { q: "نافذة TCP بحجم 65,535 بايتًا وزمن الرحلة 100 مللي ثانية. ما أقصى سرعة نظرية تقريبًا؟",
+    o: ["نحو 5.2 ميغابت/ث", "نحو 520 ميغابت/ث", "نحو 65 ميغابت/ث", "بلا حد"], a: 0,
+    e: "السرعة = النافذة ÷ زمن الرحلة = 65,535 × 8 ÷ 0.1 ≈ 5.2 ميغابت/ث، ولذلك نحتاج إلى تحجيم النافذة." },
+  { q: "كم يبلغ MSS المعتاد في IPv4 على Ethernet بـ MTU يساوي 1500؟",
+    o: ["1500", "1480", "1460", "1400"], a: 2,
+    e: "MSS = 1500 − 20 (ترويسة IP) − 20 (ترويسة TCP) = 1460 بايتًا." },
+  { q: "أي عبارة صحيحة عن DNS؟",
+    o: ["يستخدم TCP فقط", "يستخدم UDP 53 غالبًا ويعود إلى TCP 53 للردود الكبيرة", "يستخدم UDP 67", "يعمل فوق ICMP"], a: 1,
+    e: "الاستعلامات الصغيرة تُرسل بـ UDP، وTCP يُستخدم عند كبر الرد أو لنقل المناطق." },
+  { q: "ما الدفاع الأنسب ضد فيضان SYN؟",
+    o: ["زيادة حجم الردود", "تشفير الترويسة", "SYN cookies وتحديد المعدل", "فتح كل المنافذ"], a: 2,
+    e: "SYN cookies تتفادى حجز موارد للاتصالات نصف المفتوحة، وتحديد المعدل يخفف الضغط." }
+];
+</script>
+<script src="assets/js/lesson.js"></script>
+</body>
+</html>

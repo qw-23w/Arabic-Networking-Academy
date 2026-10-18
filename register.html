@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>إنشاء حساب — أكاديمية الشبكات العربية</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="assets/img/academy-icon.png">
+<script>try{var t=localStorage.getItem("ana_theme")||(matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light");document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<a class="skip" href="#main">تخطَّ إلى المحتوى</a>
+<div id="site-header"></div>
+<main id="main" class="container narrow section">
+  <div class="card">
+    <h1>أهلًا بك في رحلتك مع الشبكات</h1>
+    <p>أنشئ حسابك المجاني لتبدأ الدورة ويُحفظ تقدمك تلقائيًا.</p>
+    <div id="msg" class="alert hidden"></div>
+    <form id="form" novalidate>
+      <label for="name">الاسم الكامل أو اسم العرض</label>
+      <input id="name" type="text" autocomplete="name" required minlength="2" maxlength="60">
+      <label for="email">البريد الإلكتروني</label>
+      <input id="email" type="email" autocomplete="email" required dir="ltr">
+      <label for="pw">كلمة المرور</label>
+      <div class="password-field"><input id="pw" type="password" autocomplete="new-password" required dir="ltr"><button type="button" class="password-toggle" aria-label="إظهار كلمة المرور" aria-pressed="false">إظهار</button></div>
+      <div class="hint">8 أحرف على الأقل، وتحتوي على حرف ورقم.</div>
+      <label for="pw2">تأكيد كلمة المرور</label>
+      <div class="password-field"><input id="pw2" type="password" autocomplete="new-password" required dir="ltr"><button type="button" class="password-toggle" aria-label="إظهار كلمة المرور" aria-pressed="false">إظهار</button></div>
+      <p><button class="btn block" id="submit" type="submit">إنشاء الحساب والمتابعة</button></p>
+    </form>
+    <p>لديك حساب بالفعل؟ <a href="login.html">سجّل الدخول</a></p>
+  </div>
+</main>
+<div id="site-footer"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+(async () => {
+  const { sb, showAlert } = ANA;
+  const { session } = await ANA.renderLayout("register");
+  if (session) { location.replace("lesson-1.html"); return; }
+  const msg = document.getElementById("msg");
+  const form = document.getElementById("form");
+  const btn = document.getElementById("submit");
+
+  form.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    msg.classList.add("hidden");
+    const name = document.getElementById("name").value.trim();
+    const email = document.getElementById("email").value.trim().toLowerCase();
+    const pw = document.getElementById("pw").value;
+    const pw2 = document.getElementById("pw2").value;
+
+    if (name.length < 2) return showAlert(msg, "error", "الرجاء إدخال اسم لا يقل عن حرفين.");
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return showAlert(msg, "error", "صيغة البريد الإلكتروني غير صحيحة.");
+    if (pw.length < 8 || !/[A-Za-z\u0600-\u06FF]/.test(pw) || !/\d/.test(pw)) return showAlert(msg, "error", "كلمة المرور يجب ألا تقل عن 8 أحرف وتحتوي على حرف ورقم.");
+    if (pw !== pw2) return showAlert(msg, "error", "كلمتا المرور غير متطابقتين.");
+    if (!sb) return showAlert(msg, "error", "الموقع غير مرتبط بقاعدة البيانات بعد. راجع ملف README.");
+
+    if (btn.disabled) return; // ignore double submits
+    btn.disabled = true; btn.textContent = "جارٍ إنشاء الحساب...";
+    let data, error;
+    try {
+      ({ data, error } = await sb.auth.signUp({
+        email, password: pw,
+        options: { data: { display_name: name }, emailRedirectTo: location.origin + location.pathname.replace("register.html", "login.html") }
+      }));
+    } catch (ex) { error = ex; }
+    btn.disabled = false; btn.textContent = "إنشاء الحساب والمتابعة";
+
+    if (error) {
+      const code = error.code || "";
+      const m = ANA.isNetworkError(error) ? "تعذّر الاتصال بالخادم. تحقق من اتصالك بالإنترنت وحاول مجددًا."
+        : (/user_already_exists|email_exists/.test(code) || /already registered|already exists/i.test(error.message)) ? "هذا البريد مسجّل مسبقًا. جرّب تسجيل الدخول."
+        : (error.status === 429 || /rate_limit/.test(code) || /rate limit|too many/i.test(error.message)) ? "تم تجاوز عدد المحاولات المسموح بها. انتظر قليلًا ثم حاول مجددًا."
+        : (code === "weak_password" || /password/i.test(error.message)) ? "كلمة المرور غير مقبولة: اختر كلمة مرور أقوى (8 أحرف على الأقل مع حرف ورقم)."
+        : "تعذّر إنشاء الحساب. حاول مرة أخرى لاحقًا.";
+      return showAlert(msg, "error", m);
+    }
+    // When email confirmation is on and the email already exists, Supabase returns a user with no identities.
+    if (data.user && data.user.identities && data.user.identities.length === 0) {
+      return showAlert(msg, "error", "هذا البريد مسجّل مسبقًا. جرّب تسجيل الدخول أو استعادة كلمة المرور.");
+    }
+    if (data.session) {
+      showAlert(msg, "ok", "تم إنشاء حسابك بنجاح! جارٍ تحويلك إلى الدورة...");
+      setTimeout(() => location.href = "lesson-1.html?welcome=1", 900);
+    } else {
+      form.classList.add("hidden");
+      showAlert(msg, "info", "تم إنشاء الحساب. أرسلنا رسالة تأكيد إلى بريدك الإلكتروني؛ افتح الرابط الموجود فيها لتفعيل الحساب، ثم سجّل الدخول للبدء. (تحقق من مجلد الرسائل غير المرغوب فيها إن لم تصلك.)");
+    }
+  });
+})();
+</script>
+<script src="assets/js/password-toggle.js" defer></script>
+</body>
+</html>

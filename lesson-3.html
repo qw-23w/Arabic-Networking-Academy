@@ -1,0 +1,442 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>الدرس 3: عنونة IP — أكاديمية الشبكات العربية</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="assets/img/academy-icon.png">
+<script>try{var t=localStorage.getItem("ana_theme")||(matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light");document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<a class="skip" href="#main">تخطَّ إلى المحتوى</a>
+<div id="site-header"></div>
+<main id="main" class="container">
+<div class="lesson-layout">
+<nav class="toc" aria-label="قائمة الدروس والأقسام"><div class="course-sidebar-title">المنهج الدراسي</div><div id="lesson-navigation"></div><div class="original-toc" hidden>
+  <strong>محتويات الدرس</strong>
+  <ol>
+    <li><a href="#intro">مقدمة</a></li>
+    <li><a href="#objectives">الأهداف والمتطلبات</a></li>
+    <li><a href="#what">ما هو عنوان IP؟</a></li>
+    <li><a href="#binary">العدّ الثنائي</a></li>
+    <li><a href="#mask">الشبكة والمضيف والقناع</a></li>
+    <li><a href="#subnetting">تقسيم الشبكات</a></li>
+    <li><a href="#special">العناوين الخاصة والمحجوزة</a></li>
+    <li><a href="#gateway">البوابة وقرار الإرسال</a></li>
+    <li><a href="#dhcp">DHCP وARP</a></li>
+    <li><a href="#ipv6">مدخل إلى IPv6</a></li>
+    <li><a href="#trouble">استكشاف الأخطاء</a></li>
+    <li><a href="#mistakes">أخطاء شائعة</a></li>
+    <li><a href="#security">اعتبارات الأمن</a></li>
+    <li><a href="#summary">الملخص</a></li>
+    <li><a href="#glossary">المسرد</a></li>
+    <li><a href="#quiz">الاختبار</a></li>
+    <li><a href="#resources">مراجع والدرس التالي</a></li>
+  </ol></div>
+</nav>
+
+<article class="lesson">
+<div id="welcome" class="alert ok hidden"></div>
+
+<section id="intro">
+<h1>الدرس 3: عنونة IP <span class="en">(IP Addressing)</span></h1>
+<p>في الدرس السابق رأينا أن الطبقة 3 مسؤولة عن «إلى أين تذهب هذه الحزمة؟»، وأن الجواب يعتمد على <b>عنوان IP</b>. في هذا الدرس نفهم هذا العنوان من الداخل: كيف يُكتب، وكيف يُقسَم إلى جزء يدل على الشبكة وجزء يدل على الجهاز، وكيف نحسب ذلك بأنفسنا. هذه المهارة هي أساس التوجيه (الدرس التالي)، وVLAN، وجدران الحماية، وكل تصميم شبكي بعد ذلك.</p>
+</section>
+
+<section id="objectives">
+<h2>أهداف التعلم</h2>
+<ul>
+<li>شرح بنية عنوان IPv4 وتحويله بين الصيغة العشرية والثنائية.</li>
+<li>تحديد جزء الشبكة وجزء المضيف من العنوان والقناع، بصيغة CIDR وبالصيغة العشرية.</li>
+<li>حساب عنوان الشبكة وعنوان البث والمدى الصالح للأجهزة وعددها.</li>
+<li>تقسيم شبكة إلى شبكات فرعية متساوية.</li>
+<li>التعرف على العناوين الخاصة والمحجوزة وسبب وجودها.</li>
+<li>شرح كيف يقرر الجهاز بين الإرسال المباشر والإرسال عبر البوابة، ودور ARP وDHCP.</li>
+<li>قراءة عنوان IPv6 واختصاره، وتشخيص أخطاء العنونة الشائعة.</li>
+</ul>
+<h3>المعرفة المسبقة</h3>
+<p>الدرسان 1 و2: الشبكة المحلية، والطبقة 3، والفرق بين MAC وIP. لا نحتاج رياضيات متقدمة، فقط الجمع والقسمة على 2.</p>
+</section>
+
+<section id="what">
+<h2>1. ما هو عنوان IP؟</h2>
+<p><b>عنوان IP</b> هو رقم يعرّف واجهة شبكة <span class="en">(Interface)</span> على شبكة تعمل ببروتوكول الإنترنت. لاحظ أنه يعرّف <b>الواجهة</b> لا الجهاز: الموجّه الذي له ثلاث واجهات له ثلاثة عناوين، والحاسوب المحمول بواجهتي Wi-Fi وEthernet له عنوانان.</p>
+<p>عنوان IPv4 مكوّن من <b>32 بتًا</b>، نكتبها كأربعة أرقام عشرية يفصل بينها نقطة، كل رقم يمثل <b>8 بتات</b> تسمى «ثمانية» <span class="en">(Octet)</span> وقيمته من 0 إلى 255:</p>
+<pre><code>192.168.10.77</code></pre>
+<p>عدد العناوين الممكنة 2<sup>32</sup>، أي نحو 4.3 مليار. بدا ذلك كثيرًا في الثمانينيات، لكنه لم يكفِ مع انتشار الأجهزة، وهذا ما أدى إلى حلين: <b>NAT</b> وعناوين خاصة (نراها بعد قليل)، وبروتوكول <b>IPv6</b> الأوسع.</p>
+<div class="analogy"><b>تشبيه:</b> عنوان IP مثل عنوان بيتك: «اسم الحي + رقم البيت». جزء من العنوان يحدد <b>الحي</b> (الشبكة)، والجزء الآخر يحدد <b>البيت</b> داخل الحي (المضيف). ساعي البريد يذهب أولًا إلى الحي، ثم يبحث عن رقم البيت. الموجّهات تعمل بالطريقة نفسها: تهتم بالحي فقط، ولا تعرف كل بيت في العالم.</div>
+</section>
+
+<section id="binary">
+<h2>2. العدّ الثنائي: المهارة الوحيدة المطلوبة</h2>
+<p>الحاسوب يرى كل عنوان كسلسلة أصفار وآحاد، وفهم القناع يتطلب أن نفكر مثله. كل بت في الثمانية له «وزن» يساوي ضعف الذي على يمينه:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>الوزن</th><th>128</th><th>64</th><th>32</th><th>16</th><th>8</th><th>4</th><th>2</th><th>1</th></tr></thead>
+<tbody>
+<tr><td>مثال: 77</td><td>0</td><td>1</td><td>0</td><td>0</td><td>1</td><td>1</td><td>0</td><td>1</td></tr>
+</tbody></table></div>
+<p>نجمع أوزان البتات التي قيمتها 1: <code>64 + 8 + 4 + 1 = 77</code>، إذن 77 تُكتب <code>01001101</code>.</p>
+<h3>طريقة التحويل من العشري إلى الثنائي</h3>
+<ol>
+<li>اكتب الأوزان 128 إلى 1.</li>
+<li>من اليسار: إن كان الرقم أكبر من أو يساوي الوزن، ضع 1 واطرح الوزن، وإلا ضع 0.</li>
+<li>مثال: 168 ← 168−128 = 40 (1)، 64 لا (0)، 40−32 = 8 (1)، 16 لا (0)، 8−8 = 0 (1)، والباقي أصفار. النتيجة <code>10101000</code>.</li>
+</ol>
+<p>وأرقام القناع الأشهر تستحق الحفظ، فهي ما يظهر دائمًا: عدد الآحاد من اليسار ← القيمة: 1←128، 2←192، 3←224، 4←240، 5←248، 6←252، 7←254، 8←255.</p>
+</section>
+
+<section id="mask">
+<h2>3. الشبكة والمضيف والقناع</h2>
+<p>كل عنوان IP يُقسَم إلى جزأين: <b>جزء الشبكة</b> <span class="en">(Network)</span> في البداية، و<b>جزء المضيف</b> <span class="en">(Host)</span> في النهاية. من يحدد موضع الفاصل؟ <b>القناع</b> <span class="en">(Subnet Mask)</span>: سلسلة من 32 بتًا، فيها آحاد متصلة تغطي جزء الشبكة، ثم أصفار تغطي جزء المضيف.</p>
+<p>الكتابة المختصرة <b>CIDR</b> تعدّ الآحاد فقط: <code>/26</code> تعني 26 واحدًا ثم 6 أصفار، أي القناع <code>255.255.255.192</code>.</p>
+<figure>
+<svg viewBox="0 0 700 300" role="img" aria-labelledby="f1t f1d">
+<title id="f1t">تقسيم العنوان 192.168.10.77/26 إلى شبكة ومضيف</title><desc id="f1d">أربع ثمانيات للعنوان بالعشري والثنائي. أول 26 بتًا تلوّن كجزء الشبكة والبتات الستة الأخيرة جزء المضيف. تحتها القناع بالثنائي ثم الناتج بعد عملية AND وهو عنوان الشبكة 192.168.10.64.</desc>
+<text x="350" y="20" text-anchor="middle" class="t-b">32 بتًا = أربع ثمانيات (8 بتات لكل واحدة)</text>
+<g class="t-b ltr" text-anchor="middle">
+<rect rx="10" class="bx" x="15" y="30" width="160" height="34"/><text x="95" y="53">192</text>
+<rect rx="10" class="bx" x="185" y="30" width="160" height="34"/><text x="265" y="53">168</text>
+<rect rx="10" class="bx" x="355" y="30" width="160" height="34"/><text x="435" y="53">10</text>
+<rect rx="10" class="bx" x="525" y="30" width="160" height="34"/><text x="605" y="53">77</text>
+</g>
+<g class="mono ltr" text-anchor="middle">
+<rect rx="10" class="bx-amber" x="15" y="70" width="160" height="34"/><text x="95" y="93">11000000</text>
+<rect rx="10" class="bx-amber" x="185" y="70" width="160" height="34"/><text x="265" y="93">10101000</text>
+<rect rx="10" class="bx-amber" x="355" y="70" width="160" height="34"/><text x="435" y="93">00001010</text>
+<rect rx="10" class="bx-amber" x="525" y="70" width="40" height="34"/><text x="545" y="93">01</text>
+<rect rx="10" class="bx-green" x="565" y="70" width="120" height="34"/><text x="625" y="93">001101</text>
+</g>
+<path class="ln" d="M15 114v8H561v-8M569 114v8H685v-8"/>
+<text x="288" y="144" text-anchor="middle">جزء الشبكة: 26 بتًا</text>
+<text x="627" y="144" text-anchor="middle">جزء المضيف: 6 بتات</text>
+<text x="685" y="172" text-anchor="start" class="t-sm">القناع (26 واحدًا ثم 6 أصفار)</text>
+<g class="mono ltr" text-anchor="middle">
+<rect rx="10" class="bx-gray" x="15" y="180" width="160" height="30"/><text x="95" y="201">11111111</text>
+<rect rx="10" class="bx-gray" x="185" y="180" width="160" height="30"/><text x="265" y="201">11111111</text>
+<rect rx="10" class="bx-gray" x="355" y="180" width="160" height="30"/><text x="435" y="201">11111111</text>
+<rect rx="10" class="bx-gray" x="525" y="180" width="160" height="30"/><text x="605" y="201">11000000</text>
+</g>
+<text x="685" y="234" text-anchor="start" class="t-sm">الناتج بعد AND = عنوان الشبكة (المضيف يصبح أصفارًا)</text>
+<g class="mono ltr" text-anchor="middle">
+<rect rx="10" class="bx-navy" x="15" y="242" width="160" height="30"/><text x="95" y="263" class="t-w">11000000</text>
+<rect rx="10" class="bx-navy" x="185" y="242" width="160" height="30"/><text x="265" y="263" class="t-w">10101000</text>
+<rect rx="10" class="bx-navy" x="355" y="242" width="160" height="30"/><text x="435" y="263" class="t-w">00001010</text>
+<rect rx="10" class="bx-navy" x="525" y="242" width="160" height="30"/><text x="605" y="263" class="t-w">01000000</text>
+</g>
+<g class="t-b ltr" text-anchor="middle"><text x="95" y="292">192</text><text x="265" y="292">168</text><text x="435" y="292">10</text><text x="605" y="292">64</text></g>
+</svg>
+<figcaption><b>الشكل 1:</b> العنوان <code>192.168.10.77/26</code>. أول 26 بتًا (الأصفر) هي الشبكة، وآخر 6 بتات (الأخضر) هي المضيف. عملية <b>AND</b> بين العنوان والقناع تُبقي بتات الشبكة وتصفّر بتات المضيف، فينتج عنوان الشبكة <code>192.168.10.64</code>. تُقرأ الأرقام والبتات في هذا الشكل من اليسار إلى اليمين كما تُكتب عادةً.</figcaption>
+</figure>
+<p>من هذا العنوان والقناع نستخرج أربع معلومات تُحسب في كل مسألة عنونة:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>المعلومة</th><th>كيف تُحسب</th><th>في مثالنا (192.168.10.77/26)</th></tr></thead>
+<tbody>
+<tr><td>عنوان الشبكة</td><td>بتات المضيف كلها 0</td><td><code>192.168.10.64</code></td></tr>
+<tr><td>عنوان البث <span class="en">(Broadcast)</span></td><td>بتات المضيف كلها 1</td><td><code>192.168.10.127</code></td></tr>
+<tr><td>المدى الصالح للأجهزة</td><td>من عنوان الشبكة + 1 إلى البث − 1</td><td><code>192.168.10.65</code> إلى <code>192.168.10.126</code></td></tr>
+<tr><td>عدد الأجهزة</td><td>2<sup>(بتات المضيف)</sup> − 2</td><td>2<sup>6</sup> − 2 = 62</td></tr>
+</tbody></table></div>
+<p>لماذا نطرح 2؟ لأن أول عنوان يمثل الشبكة نفسها، وآخر عنوان مخصص للبث إلى كل أجهزتها، فلا يُعطى أي منهما لجهاز.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>CIDR</th><th>القناع</th><th>حجم الكتلة (الثمانية الرابعة)</th><th>الأجهزة الصالحة</th></tr></thead>
+<tbody>
+<tr><td><code>/8</code></td><td><code>255.0.0.0</code></td><td>—</td><td>16,777,214</td></tr>
+<tr><td><code>/16</code></td><td><code>255.255.0.0</code></td><td>—</td><td>65,534</td></tr>
+<tr><td><code>/24</code></td><td><code>255.255.255.0</code></td><td>256</td><td>254</td></tr>
+<tr><td><code>/25</code></td><td><code>255.255.255.128</code></td><td>128</td><td>126</td></tr>
+<tr><td><code>/26</code></td><td><code>255.255.255.192</code></td><td>64</td><td>62</td></tr>
+<tr><td><code>/27</code></td><td><code>255.255.255.224</code></td><td>32</td><td>30</td></tr>
+<tr><td><code>/28</code></td><td><code>255.255.255.240</code></td><td>16</td><td>14</td></tr>
+<tr><td><code>/29</code></td><td><code>255.255.255.248</code></td><td>8</td><td>6</td></tr>
+<tr><td><code>/30</code></td><td><code>255.255.255.252</code></td><td>4</td><td>2</td></tr>
+</tbody></table></div>
+<div class="note"><b>ملاحظة:</b> في الوصلات الثنائية بين موجّهين يمكن استخدام <code>/31</code> (عنوانان فقط بلا بث) وفق RFC 3021، لكن ابدأ بالقاعدة العامة أعلاه.</div>
+</section>
+
+<section id="subnetting">
+<h2>4. تقسيم الشبكات (Subnetting)</h2>
+<p>لماذا نقسّم شبكة كبيرة إلى شبكات فرعية؟ لأن لكل شبكة فرعية <b>نطاق بث</b> خاصًا بها فتقلّ الضجة، ولأنها تسمح بفصل الأقسام (الموظفون، الضيوف، الخوادم) وتطبيق سياسات أمن مختلفة عليها، ولأنها تجعل جداول التوجيه منظمة.</p>
+<p>الفكرة: نستعير بتات من جزء المضيف ونحوّلها إلى جزء الشبكة. كل بت مستعار <b>يضاعف</b> عدد الشبكات ويُنصّف حجم كل منها.</p>
+<h3>مسألة محلولة</h3>
+<p>لدينا الشبكة <code>192.168.10.0/24</code> ونريد أربعة أقسام، وأكبرها فيه 50 جهازًا.</p>
+<ol>
+<li><b>كم بت للمضيفين؟</b> نحتاج 2<sup>h</sup> − 2 ≥ 50. جرّب h = 5: 30 (لا يكفي). h = 6: 62 (يكفي). إذن 6 بتات للمضيف.</li>
+<li><b>البادئة الجديدة:</b> 32 − 6 = <b>/26</b>. استعرنا بتين من الثمانية الرابعة فحصلنا على 2<sup>2</sup> = 4 شبكات، وهذا ما نريده.</li>
+<li><b>حجم الكتلة:</b> 2<sup>6</sup> = 64. فتبدأ الشبكات من 0 ثم 64 ثم 128 ثم 192.</li>
+</ol>
+<figure>
+<svg viewBox="0 0 700 300" role="img" aria-labelledby="f2t f2d">
+<title id="f2t">تقسيم 192.168.10.0/24 إلى أربع شبكات /26</title><desc id="f2d">أربعة مربعات تمثل الشبكات الفرعية. لكل شبكة عنوانها والمدى الصالح للمضيفين وعنوان البث وعدد الأجهزة 62. تحتها مقياس من 0 إلى 256.</desc>
+<text x="350" y="20" text-anchor="middle" class="t-b">شبكة واحدة (256 عنوانًا) تنقسم إلى أربع شبكات، كل واحدة 64 عنوانًا</text>
+<g text-anchor="middle">
+<rect rx="10" class="bx" x="15" y="34" width="160" height="176"/>
+<rect rx="10" class="bx-green" x="185" y="34" width="160" height="176"/>
+<rect rx="10" class="bx-amber" x="355" y="34" width="160" height="176"/>
+<rect rx="10" class="bx-gray" x="525" y="34" width="160" height="176"/>
+<g class="t-b"><text class="ltr" x="95" y="62">192.168.10.0/26</text><text class="ltr" x="265" y="62">192.168.10.64/26</text><text class="ltr" x="435" y="62">192.168.10.128/26</text><text class="ltr" x="605" y="62">192.168.10.192/26</text></g>
+<g class="t-sm"><text x="95" y="94">المضيفون الصالحون</text><text x="265" y="94">المضيفون الصالحون</text><text x="435" y="94">المضيفون الصالحون</text><text x="605" y="94">المضيفون الصالحون</text></g>
+<g><text class="ltr" x="95" y="118">1 – 62</text><text class="ltr" x="265" y="118">65 – 126</text><text class="ltr" x="435" y="118">129 – 190</text><text class="ltr" x="605" y="118">193 – 254</text></g>
+<g class="t-sm"><text x="95" y="150">عنوان البث</text><text x="265" y="150">عنوان البث</text><text x="435" y="150">عنوان البث</text><text x="605" y="150">عنوان البث</text></g>
+<g><text class="ltr" x="95" y="174">63</text><text class="ltr" x="265" y="174">127</text><text class="ltr" x="435" y="174">191</text><text class="ltr" x="605" y="174">255</text></g>
+<g class="t-b"><text x="95" y="200">62 جهازًا</text><text x="265" y="200">62 جهازًا</text><text x="435" y="200">62 جهازًا</text><text x="605" y="200">62 جهازًا</text></g>
+</g>
+<path class="ln" d="M15 232H685M15 226v12M185 226v12M355 226v12M525 226v12M685 226v12"/>
+<g class="t-sm" text-anchor="middle"><text class="ltr" x="15" y="258">0</text><text class="ltr" x="185" y="258">64</text><text class="ltr" x="355" y="258">128</text><text class="ltr" x="525" y="258">192</text><text class="ltr" x="685" y="258">256</text></g>
+<text x="350" y="288" text-anchor="middle" class="t-sm">الثمانية الرابعة تتزايد من اليسار إلى اليمين</text>
+</svg>
+<figcaption><b>الشكل 2:</b> تقسيم <code>192.168.10.0/24</code> إلى أربع شبكات <code>/26</code>. الأرقام داخل المربعات (مثل <code>1 – 62</code>) هي قيمة الثمانية الأخيرة فقط، أي <code>192.168.10.1</code> إلى <code>192.168.10.62</code> في المربع الأول. أول عنوان في كل كتلة هو الشبكة وآخرها هو البث.</figcaption>
+</figure>
+<p>كان في <code>/24</code> الأصلية 254 جهازًا، وبعد التقسيم صار المجموع 4 × 62 = 248، فخسرنا 6 عناوين (الشبكة والبث في كل كتلة إضافية) مقابل ميزة العزل. لو أردنا أقسامًا بأحجام مختلفة (مثل 50 و20 و10 و2 جهازًا) نستخدم <b>VLSM</b> <span class="en">(Variable Length Subnet Masking)</span>: نمنح كل قسم القناع المناسب لحجمه ونبدأ بالأكبر، فلا نهدر العناوين. ستتدرب عليه في المختبرات لاحقًا.</p>
+</section>
+
+<section id="special">
+<h2>5. العناوين الخاصة والمحجوزة</h2>
+<p>ليست كل عناوين IPv4 متاحة على الإنترنت العام. بعضها محجوز لأغراض محددة:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>النطاق</th><th>الاسم</th><th>الاستخدام</th></tr></thead>
+<tbody>
+<tr><td><code>10.0.0.0/8</code></td><td rowspan="3">خاص <span class="en">(RFC 1918)</span></td><td rowspan="3">شبكات داخلية، لا تُوجَّه على الإنترنت. يمكن لأي جهة استخدامها دون استئذان.</td></tr>
+<tr><td><code>172.16.0.0/12</code> <small>(من 172.16 إلى 172.31)</small></td></tr>
+<tr><td><code>192.168.0.0/16</code></td></tr>
+<tr><td><code>127.0.0.0/8</code></td><td>الحلقة الراجعة <span class="en">(Loopback)</span></td><td>الجهاز يخاطب نفسه، مثل <code>127.0.0.1</code> (localhost).</td></tr>
+<tr><td><code>169.254.0.0/16</code></td><td>عنوان محلي تلقائي <span class="en">(APIPA)</span></td><td>يعطيه الجهاز لنفسه عندما يفشل في الحصول على عنوان من DHCP.</td></tr>
+<tr><td><code>100.64.0.0/10</code></td><td>CGNAT</td><td>يستخدمه مزودو الخدمة بين العميل والمزوّد.</td></tr>
+<tr><td><code>224.0.0.0/4</code></td><td>البث المتعدد <span class="en">(Multicast)</span></td><td>إرسال إلى مجموعة أجهزة مشتركة.</td></tr>
+<tr><td><code>255.255.255.255</code></td><td>بث محدود</td><td>إلى كل أجهزة الشبكة المحلية.</td></tr>
+<tr><td><code>192.0.2.0/24</code> و<code>198.51.100.0/24</code> و<code>203.0.113.0/24</code></td><td>للتوثيق</td><td>أمثلة في الكتب والدورات دون الإضرار بعناوين حقيقية.</td></tr>
+</tbody></table></div>
+<h3>كيف يصل الجهاز الخاص إلى الإنترنت؟ NAT</h3>
+<p>عنوان مثل <code>192.168.1.20</code> لا يُوجَّه على الإنترنت، فيقوم راوتر البيت أو الشركة بخدمة <b>NAT</b> <span class="en">(Network Address Translation)</span>: يستبدل عنوان المصدر الخاص بعنوانه العام ويحتفظ بجدول يربط كل اتصال بالجهاز الأصلي (غالبًا مع تغيير المنفذ، وتسمى <span class="en">PAT</span>). بذلك يشترك عشرات الأجهزة في عنوان عام واحد. وسنعود إليه عند الحديث عن التوجيه والمنافذ.</p>
+</section>
+
+<section id="gateway">
+<h2>6. البوابة وقرار الإرسال</h2>
+<p>الجهاز يُضبط بأربع معلومات: <b>عنوان IP، والقناع، والبوابة الافتراضية</b> <span class="en">(Default Gateway)</span>، وخادم DNS. البوابة هي عنوان الموجّه على شبكتك الذي يُرسَل إليه كل ما ليس محليًا.</p>
+<p>قبل إرسال أي حزمة، يطبّق الجهاز قناعه على عنوانه وعلى عنوان الوجهة ويقارن:</p>
+<figure>
+<svg viewBox="0 0 700 330" role="img" aria-labelledby="f3t f3d">
+<title id="f3t">قرار الإرسال المباشر أو عبر البوابة</title><desc id="f3d">مخطط قرار. الجهاز يقارن شبكة الوجهة بشبكته. إن كانت واحدة يسأل ARP عن MAC الوجهة ويرسل مباشرة. وإن اختلفت يسأل ARP عن MAC البوابة ويرسل الإطار إليها مع إبقاء IP الوجهة كما هو.</desc>
+<rect rx="10" class="bx-navy" x="200" y="12" width="300" height="42"/><text x="350" y="39" text-anchor="middle" class="t-w t-b">الجهاز يريد إرسال حزمة إلى وجهة</text>
+<path class="ln" d="M350 54V84"/><path class="ar" d="M350 88l-6-12h12z"/>
+<rect rx="10" class="bx-amber" x="130" y="88" width="440" height="70"/>
+<text x="350" y="116" text-anchor="middle" class="t-b">هل الوجهة داخل شبكتي؟</text>
+<text x="350" y="140" text-anchor="middle" class="t-sm">نطبّق القناع على الطرفين ونقارن جزء الشبكة</text>
+<path class="ln" d="M500 158V178H535V196"/><path class="ar" d="M535 200l-6-12h12z"/><text x="572" y="176" text-anchor="middle" class="t-b">نعم</text>
+<path class="ln" d="M200 158V178H165V196"/><path class="ar" d="M165 200l-6-12h12z"/><text x="128" y="176" text-anchor="middle" class="t-b">لا</text>
+<rect rx="10" class="bx-green" x="385" y="200" width="300" height="116"/>
+<text x="535" y="228" text-anchor="middle" class="t-b">الوجهة على الوصلة نفسها</text>
+<text x="535" y="254" text-anchor="middle">ARP يسأل عن MAC الوجهة</text>
+<text x="535" y="276" text-anchor="middle">ويُرسَل الإطار إليها مباشرة</text>
+<text x="535" y="302" text-anchor="middle" class="t-sm ltr mono">dst 192.168.10.50</text>
+<rect rx="10" class="bx" x="15" y="200" width="300" height="116"/>
+<text x="165" y="228" text-anchor="middle" class="t-b">الوجهة في شبكة أخرى</text>
+<text x="165" y="254" text-anchor="middle">ARP يسأل عن MAC البوابة</text>
+<text x="165" y="276" text-anchor="middle">والإطار يذهب إلى البوابة</text>
+<text x="165" y="302" text-anchor="middle" class="t-sm ltr mono">dst 8.8.8.8 via 192.168.10.1</text>
+</svg>
+<figcaption><b>الشكل 3:</b> قرار الإرسال لجهاز عنوانه <code>192.168.10.20/24</code>. الوجهة <code>192.168.10.50</code> في الشبكة نفسها فيُرسَل إليها مباشرة. الوجهة <code>8.8.8.8</code> خارجها فيُرسَل الإطار إلى MAC البوابة <code>192.168.10.1</code>، لكن عنوان IP للوجهة داخل الحزمة يبقى <code>8.8.8.8</code>.</figcaption>
+</figure>
+<p>هذا يفسر ما رأيناه في الدرس 2: <b>MAC يتغير في كل قفزة بينما IP الوجهة ثابت</b>. الجهاز لا يعرف الطريق إلى 8.8.8.8، لكنه يعرف أن البوابة تعرف.</p>
+<p><b>نتيجة مهمة:</b> جهازان على المحوّل نفسه لكن بشبكتين فرعيتين مختلفتين (مثل <code>192.168.1.10/24</code> و<code>192.168.2.20/24</code>) <b>لا يتخاطبان</b> دون موجّه، فكل منهما يعتبر الآخر «خارج شبكتي» ويرسل إلى بوابته.</p>
+</section>
+
+<section id="dhcp">
+<h2>7. كيف يحصل الجهاز على عنوانه؟ DHCP وARP</h2>
+<p>ضبط العناوين يدويًا على مئات الأجهزة غير عملي، ولذلك تعتمد الشبكات على <b>DHCP</b> <span class="en">(Dynamic Host Configuration Protocol)</span>، وهو خدمة توزّع العنوان والقناع والبوابة وخادم DNS تلقائيًا بنظام <b>التأجير</b> <span class="en">(Lease)</span> لمدة محددة. تجري العملية بأربع رسائل تُحفظ بالاختصار <b>DORA</b>:</p>
+<figure>
+<svg viewBox="0 0 700 330" role="img" aria-labelledby="f4t f4d">
+<title id="f4t">رسائل DHCP الأربع</title><desc id="f4d">مخطط تسلسل بين العميل وخادم DHCP. العميل يبث Discover، الخادم يرد Offer، العميل يرسل Request، الخادم يؤكد Acknowledge.</desc>
+<rect rx="10" class="bx-green" x="520" y="8" width="160" height="38"/><text x="600" y="33" text-anchor="middle" class="t-b">الحاسوب (العميل)</text>
+<rect rx="10" class="bx-amber" x="20" y="8" width="160" height="38"/><text x="100" y="33" text-anchor="middle" class="t-b">خادم DHCP</text>
+<path class="ln-w" d="M600 46V324M100 46V324"/>
+<path class="ln" d="M600 96H112"/><path class="ar" d="M100 96l12-6v12z"/>
+<text x="350" y="82" text-anchor="middle" class="t-b ltr mono">1  DHCPDISCOVER</text>
+<text x="350" y="118" text-anchor="middle" class="t-sm">العميل يبثّ: هل من خادم DHCP هنا؟</text>
+<path class="ln" d="M100 158H588"/><path class="ar" d="M600 158l-12-6v12z"/>
+<text x="350" y="144" text-anchor="middle" class="t-b ltr mono">2  DHCPOFFER</text>
+<text x="350" y="180" text-anchor="middle" class="t-sm">الخادم يعرض عنوانًا وقناعًا وبوابة ومدة تأجير</text>
+<path class="ln" d="M600 220H112"/><path class="ar" d="M100 220l12-6v12z"/>
+<text x="350" y="206" text-anchor="middle" class="t-b ltr mono">3  DHCPREQUEST</text>
+<text x="350" y="242" text-anchor="middle" class="t-sm">العميل يطلب العرض رسميًا</text>
+<path class="ln" d="M100 282H588"/><path class="ar" d="M600 282l-12-6v12z"/>
+<text x="350" y="268" text-anchor="middle" class="t-b ltr mono">4  DHCPACK</text>
+<text x="350" y="304" text-anchor="middle" class="t-sm">الخادم يؤكد، ويبدأ التأجير</text>
+</svg>
+<figcaption><b>الشكل 4:</b> تبادل DORA. تذهب الرسالتان الأولى والثالثة من العميل (يبدأ بلا عنوان فيبثّ)، وتأتي الثانية والرابعة من الخادم. قبل انتهاء مدة التأجير يجدّد الجهاز عنوانه تلقائيًا.</figcaption>
+</figure>
+<p>أما <b>ARP</b> <span class="en">(Address Resolution Protocol)</span> فهو الجسر بين الطبقتين 3 و2: بعد أن يعرف الجهاز عنوان IP للخطوة التالية (الوجهة أو البوابة)، يبثّ سؤالًا على الشبكة المحلية: «من يملك العنوان <code>192.168.10.1</code>؟ أخبرني بعنوان MAC الخاص بك». يردّ صاحب العنوان، فيخزّن الجهاز الجواب مؤقتًا في <b>جدول ARP</b> (يمكن عرضه بالأمر <code>arp -a</code>).</p>
+</section>
+
+<section id="ipv6">
+<h2>8. مدخل إلى IPv6</h2>
+<p>عنوان <b>IPv6</b> طوله <b>128 بتًا</b> (وليس 32)، يُكتب بالنظام السداسي عشر في ثمانية أقسام يفصل بينها نقطتان رأسيتان، وكل قسم 16 بتًا. يكفي لعدد هائل من الأجهزة بحيث لا نحتاج إلى NAT.</p>
+<pre><code>2001:0db8:0000:0000:0000:0000:0000:0001
+   ↓ احذف الأصفار الأولى في كل قسم
+2001:db8:0:0:0:0:0:1
+   ↓ استبدل أطول سلسلة أقسام صفرية متتالية بـ ::  (مرة واحدة فقط)
+2001:db8::1</code></pre>
+<ul>
+<li><b>البادئة:</b> تُكتب كما في IPv4 (مثل <code>/64</code>)، وهي المعيار لكل شبكة محلية، فيتبقى 64 بتًا للمضيف.</li>
+<li><b>لا يوجد بث:</b> يُستبدل بالبث المتعدد، وبدل ARP يُستخدم بروتوكول <b>NDP</b> (Neighbor Discovery).</li>
+<li><b>الإعداد التلقائي:</b> يستطيع الجهاز توليد عنوانه بنفسه (SLAAC) أو يستلمه من DHCPv6.</li>
+</ul>
+<div class="table-wrap"><table>
+<thead><tr><th>النطاق</th><th>النوع</th></tr></thead>
+<tbody>
+<tr><td><code>2000::/3</code></td><td>عنوان عام قابل للتوجيه <span class="en">(Global Unicast)</span></td></tr>
+<tr><td><code>fe80::/10</code></td><td>محلي على الوصلة <span class="en">(Link-Local)</span>: يُنشأ تلقائيًا لكل واجهة</td></tr>
+<tr><td><code>fc00::/7</code></td><td>محلي فريد <span class="en">(Unique Local)</span>: يقابل العناوين الخاصة في IPv4</td></tr>
+<tr><td><code>ff00::/8</code></td><td>بث متعدد</td></tr>
+<tr><td><code>::1</code></td><td>الحلقة الراجعة</td></tr>
+<tr><td><code>2001:db8::/32</code></td><td>للتوثيق</td></tr>
+</tbody></table></div>
+<p>تعمل معظم الشبكات اليوم بنظام <b>الحزمتين</b> <span class="en">(Dual Stack)</span>: IPv4 وIPv6 معًا، إلى أن تكتمل الهجرة.</p>
+</section>
+
+<section id="trouble">
+<h2>9. استكشاف أخطاء العنونة</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>العَرَض</th><th>السبب المحتمل</th><th>الفحص</th></tr></thead>
+<tbody>
+<tr><td>العنوان يبدأ بـ <code>169.254</code></td><td>فشل الوصول إلى DHCP (الخادم متوقف، أو الكابل، أو VLAN خاطئ)</td><td>اربط جهازًا آخر بالمنفذ نفسه؛ افحص خادم DHCP</td></tr>
+<tr><td>يتصل بأجهزة الشبكة المحلية دون الإنترنت</td><td>بوابة خاطئة أو غير مضبوطة</td><td><code>ip route</code> أو <code>ipconfig</code>؛ <code>ping</code> إلى البوابة</td></tr>
+<tr><td>جهازان على المحوّل نفسه لا يتخاطبان</td><td>شبكتان فرعيتان مختلفتان أو قناع خاطئ</td><td>قارن عنواني الشبكة بعد تطبيق القناع</td></tr>
+<tr><td>انقطاع متقطع مع رسالة «تعارض عناوين»</td><td>عنوانان متطابقان لجهازين <span class="en">(IP Conflict)</span></td><td>عيّن العناوين الثابتة خارج نطاق DHCP</td></tr>
+<tr><td>يعمل بالعنوان ولا يعمل بالاسم</td><td>خادم DNS خاطئ</td><td><code>nslookup</code> (الدرس 2)</td></tr>
+</tbody></table></div>
+<pre><code>ipconfig /all               # Windows: العنوان، القناع، البوابة، DNS، خادم DHCP
+ip addr                     # Linux: العناوين على كل واجهة
+ip route                    # Linux: الجدول والبوابة الافتراضية
+ping 127.0.0.1              # هل حزمة بروتوكولات الجهاز سليمة؟
+ping 192.168.10.1           # هل البوابة تستجيب؟ (ضع عنوان بوابتك)
+arp -a                      # من الجيران الذين عرفتهم محليًا؟</code></pre>
+<div class="note"><b>تنبيه:</b> نفّذ الأوامر على شبكتك أو شبكة لديك إذن باختبارها.</div>
+</section>
+
+<section id="mistakes">
+<h2>10. أخطاء ومفاهيم خاطئة شائعة</h2>
+<ul>
+<li><b>«عنوان IP يعرّف الجهاز».</b> يعرّف الواجهة، ويتغير بتغيير الشبكة أو الخادم DHCP. المعرّف الثابت للواجهة هو MAC (ويمكن تغييره أيضًا برمجيًا).</li>
+<li><b>«القناع <code>255.255.255.0</code> يعني دائمًا /24 ومئتين وأربعة وخمسين جهازًا».</b> هذا صحيح لهذا القناع فقط؛ عدد الأجهزة يتبع عدد بتات المضيف.</li>
+<li><b>نسيان طرح 2</b> (الشبكة والبث) عند حساب الأجهزة.</li>
+<li><b>الاعتقاد بأن الأرقام بعد النقطة متشابهة تعني أنهما في شبكة واحدة.</b> <code>192.168.10.200/26</code> و<code>192.168.10.20/26</code> في شبكتين مختلفتين (الأولى .192 والثانية .0).</li>
+<li><b>«العنوان الخاص آمن بحد ذاته».</b> عدم قابليته للتوجيه على الإنترنت ليس جدار حماية، وسنرى لماذا في قسم الأمن.</li>
+<li><b>استخدام النطاق الخاص نفسه في شبكتين تُربطان لاحقًا</b> (دمج شركتين مثلًا)، فيحدث تعارض يتطلب إعادة ترقيم أو NAT.</li>
+</ul>
+</section>
+
+<section id="security">
+<h2>11. اعتبارات الأمن</h2>
+<ul>
+<li><b>انتحال عنوان IP</b> <span class="en">(IP Spoofing)</span>: أن يضع مهاجم عنوان مصدر مزيفًا. الدفاع: تصفية الدخول والخروج على الحدود، وعدم الاعتماد على العنوان وحده للتحقق.</li>
+<li><b>خادم DHCP مزيّف</b> <span class="en">(Rogue DHCP)</span>: جهاز يرد على DISCOVER قبل الخادم الشرعي ويعطي بوابة أو DNS خبيثين. الدفاع: ميزة <b>DHCP Snooping</b> على المحوّلات التي تسمح بالردود فقط من المنافذ الموثوقة.</li>
+<li><b>تسميم ARP</b> <span class="en">(ARP Spoofing)</span>: ردود ARP كاذبة لتحويل الحركة عبر جهاز المهاجم. الدفاع: Dynamic ARP Inspection وتقسيم الشبكات.</li>
+<li><b>المسح</b> <span class="en">(Scanning)</span>: يستكشف المهاجم الشبكات الداخلية عنوانًا عنوانًا. الدفاع: تقسيم الشبكات إلى شبكات فرعية بقواعد صارمة بينها، ومراقبة الحركة الشاذة.</li>
+<li><b>التقسيم هو أداة أمن أيضًا:</b> وضع الضيوف والخوادم وأجهزة IoT في شبكات فرعية منفصلة يحدّ من انتشار الاختراق. لكن العزل الحقيقي يحتاج قواعد تحكم على الموجّه أو جدار الحماية.</li>
+<li><b>NAT ليس جدار حماية</b>، حتى لو منع الاتصالات الواردة عمليًا. لا تستغنِ عن جدار الحماية.</li>
+<li><b>توثيق العناوين</b> <span class="en">(IPAM)</span> يمنع التعارض ويكشف الأجهزة الدخيلة.</li>
+</ul>
+</section>
+
+<section id="summary">
+<h2>12. الملخص</h2>
+<ul>
+<li>عنوان IPv4 مكوّن من 32 بتًا في أربع ثمانيات، ويعرّف واجهة شبكة.</li>
+<li>القناع يفصل جزء الشبكة (آحاد) عن جزء المضيف (أصفار)، ويُكتب بصيغة CIDR مثل <code>/26</code>.</li>
+<li>عنوان الشبكة: المضيف كله أصفار. عنوان البث: المضيف كله آحاد. عدد الأجهزة = 2<sup>h</sup> − 2.</li>
+<li>التقسيم يستعير بتات من المضيف: كل بت يضاعف عدد الشبكات ويُنصّف حجمها.</li>
+<li>النطاقات الخاصة: <code>10/8</code> و<code>172.16/12</code> و<code>192.168/16</code>، وتصل إلى الإنترنت عبر NAT.</li>
+<li>الجهاز يقارن شبكة الوجهة بشبكته: واحدة فيرسل مباشرة، وإلا يرسل إلى البوابة. ARP يحوّل عنوان IP للخطوة التالية إلى MAC.</li>
+<li>DHCP يوزّع الإعدادات تلقائيًا عبر DORA، والعنوان <code>169.254.x.x</code> دليل فشله.</li>
+<li>IPv6 عنوانه 128 بتًا، بلا بث ولا ARP، والبادئة <code>/64</code> هي المعتادة للشبكة المحلية.</li>
+</ul>
+</section>
+
+<section id="glossary">
+<h2>13. مسرد المصطلحات</h2>
+<dl class="glossary">
+<dt>IP Address / عنوان IP</dt><dd>رقم يعرّف واجهة شبكة في الطبقة 3.</dd>
+<dt>Octet / ثمانية</dt><dd>مجموعة من 8 بتات، قيمتها بين 0 و255.</dd>
+<dt>Subnet Mask / قناع الشبكة</dt><dd>نمط بتات يحدد جزء الشبكة من جزء المضيف.</dd>
+<dt>CIDR / التوجيه بلا فئات</dt><dd>كتابة القناع كعدد الآحاد بعد شرطة مائلة، مثل /24.</dd>
+<dt>Network Address / عنوان الشبكة</dt><dd>أول عنوان في الكتلة، ببتات مضيف كلها صفر.</dd>
+<dt>Broadcast Address / عنوان البث</dt><dd>آخر عنوان في الكتلة، ببتات مضيف كلها واحد.</dd>
+<dt>Subnetting / التقسيم</dt><dd>تجزئة شبكة إلى شبكات فرعية بزيادة بتات الشبكة.</dd>
+<dt>VLSM</dt><dd>تقسيم بأقنعة مختلفة حسب حجم كل شبكة فرعية.</dd>
+<dt>Private Address / عنوان خاص</dt><dd>عنوان من نطاقات RFC 1918 لا يُوجَّه على الإنترنت.</dd>
+<dt>NAT</dt><dd>ترجمة العناوين الخاصة إلى عنوان عام عند الخروج.</dd>
+<dt>Default Gateway / البوابة الافتراضية</dt><dd>الموجّه الذي يُرسَل إليه كل ما هو خارج الشبكة المحلية.</dd>
+<dt>DHCP</dt><dd>خدمة توزيع إعدادات الشبكة تلقائيًا بنظام التأجير.</dd>
+<dt>Lease / تأجير</dt><dd>مدة صلاحية العنوان الممنوح من DHCP.</dd>
+<dt>ARP</dt><dd>بروتوكول يحوّل عنوان IP إلى عنوان MAC على الشبكة المحلية.</dd>
+<dt>APIPA</dt><dd>عنوان 169.254.x.x يمنحه الجهاز لنفسه عند غياب DHCP.</dd>
+<dt>IPv6</dt><dd>الإصدار الجديد من IP بعناوين من 128 بتًا.</dd>
+<dt>Dual Stack / الحزمتان</dt><dd>تشغيل IPv4 وIPv6 معًا على الجهاز.</dd>
+</dl>
+</section>
+
+<section id="quiz">
+<h2>14. اختبر فهمك</h2>
+<p>اضغط على إجابة لترى التفسير. تُسجَّل نتيجتك عند الإجابة عن كل الأسئلة.</p>
+<div id="quiz-box"></div>
+<div id="quiz-result" class="alert info hidden"></div>
+<button id="retry" class="btn secondary hidden" type="button">إعادة المحاولة</button>
+<div style="margin-top:26px">
+  <button id="complete" class="btn success" type="button">وضع علامة «مكتمل»</button>
+  <span id="complete-msg" class="hint" role="status"></span>
+</div>
+</section>
+
+<section id="resources">
+<h2>15. مراجع موثوقة للتعمق</h2>
+<ul>
+<li><a href="https://www.rfc-editor.org/rfc/rfc791" rel="noopener">RFC 791</a> — بروتوكول الإنترنت IPv4 (بالإنجليزية).</li>
+<li><a href="https://www.rfc-editor.org/rfc/rfc1918" rel="noopener">RFC 1918</a> — العناوين الخاصة.</li>
+<li><a href="https://www.rfc-editor.org/rfc/rfc4632" rel="noopener">RFC 4632</a> — CIDR.</li>
+<li><a href="https://www.rfc-editor.org/rfc/rfc2131" rel="noopener">RFC 2131</a> — DHCP.</li>
+<li><a href="https://www.rfc-editor.org/rfc/rfc8200" rel="noopener">RFC 8200</a> — IPv6.</li>
+<li><a href="https://www.rfc-editor.org/rfc/rfc5952" rel="noopener">RFC 5952</a> — توصية كتابة عناوين IPv6 واختصارها.</li>
+<li><a href="https://www.netacad.com" rel="noopener">Cisco Networking Academy</a> — مقررات مجانية.</li>
+</ul>
+<h3>التنقل بين الدروس</h3>
+<p><b>المتطلبات السابقة:</b> <a href="lesson-1.html">الدرس 1</a> و<a href="lesson-2.html">الدرس 2: نموذج OSI</a>.<br>
+<b>الدرس التالي:</b> الدرس 4: التوجيه <a href="lesson-4.html">ابدأ الدرس 4</a> — <a href="curriculum.html">عرض المنهج الكامل</a></p>
+</section>
+</article>
+</div>
+</main>
+<div id="site-footer"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+const LESSON_ID = 3;
+const QUESTIONS = [
+  { q: "كم بتًا في عنوان IPv4؟",
+    o: ["8 بتات", "16 بتًا", "32 بتًا", "128 بتًا"], a: 2,
+    e: "عنوان IPv4 من 32 بتًا مقسمة إلى أربع ثمانيات. أما 128 بتًا فهي عنوان IPv6." },
+  { q: "ما عنوان الشبكة للجهاز 192.168.10.77/26؟",
+    o: ["192.168.10.0", "192.168.10.64", "192.168.10.77", "192.168.10.128"], a: 1,
+    e: "القناع /26 يعطي كتلًا حجمها 64 تبدأ من 0 و64 و128 و192. الرقم 77 يقع في الكتلة التي تبدأ من 64." },
+  { q: "كم جهازًا يمكن إعطاؤه عنوانًا في شبكة /27؟",
+    o: ["32", "28", "62", "30"], a: 3,
+    e: "الشبكة /27 فيها 5 بتات للمضيف: 2^5 = 32 عنوانًا، نطرح عنوان الشبكة وعنوان البث فيبقى 30." },
+  { q: "أي العناوين التالية عنوان خاص (RFC 1918)؟",
+    o: ["172.20.5.9", "172.32.0.1", "100.10.0.1", "11.0.0.1"], a: 0,
+    e: "النطاق الخاص 172.16.0.0/12 يمتد من 172.16 إلى 172.31. أما 172.32 وما بعده فعناوين عامة." },
+  { q: "حاسوب ظهر عنوانه 169.254.33.7 بعد توصيله بالشبكة. ماذا يعني ذلك غالبًا؟",
+    o: ["أنه متصل بالإنترنت مباشرة", "أن الشبكة تستخدم IPv6 فقط", "أنه لم يحصل على عنوان من DHCP فمنح نفسه عنوانًا تلقائيًا", "أن البوابة معطلة فقط"], a: 2,
+    e: "النطاق 169.254.0.0/16 هو عنوان محلي تلقائي (APIPA) يختاره الجهاز عند فشل DHCP، فابحث عن خادم DHCP أو الكابل أو VLAN." },
+  { q: "الجهاز 192.168.10.20/24 يرسل إلى 8.8.8.8. إلى أي MAC يُوجَّه الإطار؟",
+    o: ["MAC الخادم 8.8.8.8 مباشرة", "MAC البوابة الافتراضية", "MAC خادم DNS", "عنوان البث FF:FF:FF:FF:FF:FF"], a: 1,
+    e: "الوجهة خارج الشبكة المحلية، فيُرسل الإطار إلى MAC البوابة. أما عنوان IP للوجهة داخل الحزمة فيبقى 8.8.8.8." },
+  { q: "ما أقصر كتابة صحيحة للعنوان 2001:0db8:0000:0000:0000:0000:0000:0001؟",
+    o: ["2001:db8:1", "2001:db8:0:1", "2001:db8::0::1", "2001:db8::1"], a: 3,
+    e: "نحذف الأصفار الأولى في كل قسم ونستبدل أطول سلسلة أصفار متتالية بـ :: مرة واحدة فقط، فينتج 2001:db8::1." }
+];
+</script>
+<script src="assets/js/lesson.js"></script>
+</body>
+</html>

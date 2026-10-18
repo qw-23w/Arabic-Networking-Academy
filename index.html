@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>أكاديمية الشبكات العربية — تعلّم الشبكات من الصفر</title>
+<meta name="description" content="منصة مجانية ومفتوحة المصدر لتعلم شبكات الحاسوب باللغة العربية من مستوى المبتدئ حتى أساسيات الأمن السيبراني.">
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="assets/img/academy-icon.png">
+<script>try{var t=localStorage.getItem("ana_theme")||(matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light");document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<a class="skip" href="#main">تخطَّ إلى المحتوى</a>
+<div id="site-header"></div>
+<main id="main">
+  <section class="hero modern-hero">
+    <div class="container">
+      <div class="hero-layout"><div><span class="eyebrow">رحلتك التقنية تبدأ هنا</span><h1>تعلّم شبكات الحاسوب بالعربية، من الصفر</h1>
+      <p>دروس منظّمة تشرح كيف تعمل الشبكات فعلًا: من الشبكات المحلية وعنونة IP إلى VLAN وTCP/IP واستكشاف الأخطاء. شروحات مبسّطة، رسومات أصلية، واختبارات تفاعلية.</p>
+      <p><a id="start" class="btn" href="register.html">ابدأ التعلم</a>
+         <a class="btn secondary" href="curriculum.html">استعرض المنهج</a></p>
+<div class="hero-stats"><span>تعلم بالسرعة التي تناسبك</span></div></div><div class="hero-art hero-motion"><img src="assets/img/network-motion.svg" alt="رسم متحرك يوضح اتصال أجهزة الشبكة" width="800" height="520"></div></div></div>
+  </section>
+
+  <section class="section container">
+    <h2>ماذا ستجد في الأكاديمية؟</h2>
+    <div class="grid cols-3">
+      <div class="card feature-card"><img src="assets/img/feature-explain.svg" alt="كتاب مفتوح يرمز إلى الشرح المبسط" loading="lazy"><h3>شرح عميق وبسيط</h3><p>نشرح لماذا وكيف يعمل كل مفهوم، وليس تعريفات للحفظ فقط، مع المصطلحات بالعربية والإنجليزية.</p></div>
+      <div class="card feature-card"><img src="assets/img/feature-diagrams.svg" alt="مخطط مترابط يرمز إلى الرسومات التوضيحية" loading="lazy"><h3>رسومات توضيحية</h3><p>مخططات أصلية لكل درس مع شرح مفصّل لكل رسم.</p></div>
+      <div class="card feature-card"><img src="assets/img/feature-progress.svg" alt="قائمة إنجاز ترمز للاختبارات وحفظ التقدم" loading="lazy"><h3>اختبارات وتقدّم محفوظ</h3><p>أسئلة تفاعلية مع تفسير كل إجابة، ويُحفظ تقدمك في حسابك لتكمل من أي جهاز.</p></div>
+    </div>
+  </section>
+
+
+</main>
+<div id="site-footer"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+(async () => {
+  const { session } = await ANA.renderLayout("home");
+  if (session) document.getElementById("start").href = "lesson-1.html";
+
+})();
+</script>
+</body>
+</html>

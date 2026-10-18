@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>استعادة كلمة المرور — أكاديمية الشبكات العربية</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="assets/img/academy-icon.png">
+<script>try{var t=localStorage.getItem("ana_theme")||(matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light");document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<a class="skip" href="#main">تخطَّ إلى المحتوى</a>
+<div id="site-header"></div>
+<main id="main" class="container narrow section">
+  <div class="card">
+    <h1>استعادة كلمة المرور</h1>
+    <div id="msg" class="alert hidden"></div>
+    <form id="req-form" novalidate>
+      <p>أدخل بريدك الإلكتروني وسنرسل لك رابطًا لتعيين كلمة مرور جديدة.</p>
+      <label for="email">البريد الإلكتروني</label>
+      <input id="email" type="email" autocomplete="email" dir="ltr" required>
+      <p><button class="btn block" type="submit">إرسال الرابط</button></p>
+    </form>
+    <form id="new-form" class="hidden" novalidate>
+      <p>اختر كلمة مرور جديدة.</p>
+      <label for="pw">كلمة المرور الجديدة</label>
+      <div class="password-field"><input id="pw" type="password" autocomplete="new-password" dir="ltr" required><button type="button" class="password-toggle" aria-label="إظهار كلمة المرور" aria-pressed="false">إظهار</button></div>
+      <div class="hint">8 أحرف على الأقل، وتحتوي على حرف ورقم.</div>
+      <label for="pw2">تأكيد كلمة المرور</label>
+      <div class="password-field"><input id="pw2" type="password" autocomplete="new-password" dir="ltr" required><button type="button" class="password-toggle" aria-label="إظهار كلمة المرور" aria-pressed="false">إظهار</button></div>
+      <p><button class="btn block" type="submit">حفظ كلمة المرور</button></p>
+    </form>
+    <p><a href="login.html">العودة لتسجيل الدخول</a></p>
+  </div>
+</main>
+<div id="site-footer"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+(async () => {
+  const { sb, showAlert } = ANA;
+  const msg = document.getElementById("msg");
+  const reqForm = document.getElementById("req-form"), newForm = document.getElementById("new-form");
+  const recovering = /type=recovery/.test(location.hash);
+  const linkExpired = /error_code=(otp_expired|access_denied)|error=access_denied/.test(location.hash);
+  if (!recovering) await ANA.renderLayout("login"); else await ANA.renderLayout("");
+  if (!sb) return showAlert(msg, "error", "الموقع غير مرتبط بقاعدة البيانات بعد. راجع ملف README.");
+
+  sb.auth.onAuthStateChange((event) => {
+    if (event === "PASSWORD_RECOVERY") { reqForm.classList.add("hidden"); newForm.classList.remove("hidden"); }
+  });
+  if (recovering) { reqForm.classList.add("hidden"); newForm.classList.remove("hidden"); }
+  if (linkExpired) showAlert(msg, "error", "رابط الاستعادة منتهي الصلاحية أو مستخدم من قبل. اطلب رابطًا جديدًا.");
+
+  reqForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const email = document.getElementById("email").value.trim().toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return showAlert(msg, "error", "صيغة البريد الإلكتروني غير صحيحة.");
+    const rb = reqForm.querySelector("button[type=submit]");
+    if (rb.disabled) return; rb.disabled = true;
+    let err;
+    try { ({ error: err } = await sb.auth.resetPasswordForEmail(email, { redirectTo: location.origin + location.pathname })); } catch (ex) { err = ex; }
+    rb.disabled = false;
+    if (err && ANA.isNetworkError(err)) return showAlert(msg, "error", "تعذّر الاتصال بالخادم. تحقق من الإنترنت وحاول مجددًا.");
+    if (err && (err.status === 429 || /rate_limit/.test(err.code || ""))) return showAlert(msg, "error", "تم إرسال عدد كبير من الطلبات. انتظر قليلًا ثم حاول مجددًا.");
+    // Same message whether or not the account exists, to avoid leaking who is registered.
+    showAlert(msg, "ok", "إذا كان هذا البريد مسجّلًا لدينا فقد أرسلنا إليه رابط الاستعادة.");
+  });
+
+  newForm.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const pw = document.getElementById("pw").value, pw2 = document.getElementById("pw2").value;
+    if (pw.length < 8 || !/[A-Za-z\u0600-\u06FF]/.test(pw) || !/\d/.test(pw)) return showAlert(msg, "error", "كلمة المرور يجب ألا تقل عن 8 أحرف وتحتوي على حرف ورقم.");
+    if (pw !== pw2) return showAlert(msg, "error", "كلمتا المرور غير متطابقتين.");
+    const nb = newForm.querySelector("button[type=submit]");
+    if (nb.disabled) return; nb.disabled = true;
+    let error;
+    try { ({ error } = await sb.auth.updateUser({ password: pw })); } catch (ex) { error = ex; }
+    nb.disabled = false;
+    if (error) return showAlert(msg, "error", ANA.isNetworkError(error) ? "تعذّر الاتصال بالخادم. حاول مجددًا."
+      : error.code === "same_password" ? "اختر كلمة مرور مختلفة عن الحالية."
+      : "تعذّر تحديث كلمة المرور. اطلب رابطًا جديدًا وحاول مجددًا.");
+    showAlert(msg, "ok", "تم تحديث كلمة المرور. جارٍ تحويلك...");
+    setTimeout(() => location.href = "lesson-1.html", 1200);
+  });
+})();
+</script>
+<script src="assets/js/password-toggle.js" defer></script>
+</body>
+</html>

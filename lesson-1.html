@@ -1,0 +1,480 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>الدرس 1: الشبكات المحلية والواسعة — أكاديمية الشبكات العربية</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="assets/img/academy-icon.png">
+<script>try{var t=localStorage.getItem("ana_theme")||(matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light");document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<a class="skip" href="#main">تخطَّ إلى المحتوى</a>
+<div id="site-header"></div>
+<main id="main" class="container">
+<div class="lesson-layout">
+<nav class="toc" aria-label="قائمة الدروس والأقسام"><div class="course-sidebar-title">المنهج الدراسي</div><div id="lesson-navigation"></div><div class="original-toc" hidden>
+  <strong>محتويات الدرس</strong>
+  <ol>
+    <li><a href="#intro">مقدمة</a></li>
+    <li><a href="#objectives">الأهداف والمتطلبات</a></li>
+    <li><a href="#what">ما هي الشبكة؟</a></li>
+    <li><a href="#types">أنواع الشبكات حسب النطاق</a></li>
+    <li><a href="#media">الوسائط: سلكي ولاسلكي</a></li>
+    <li><a href="#topologies">التوبولوجيا</a></li>
+    <li><a href="#devices">أجهزة الشبكة</a></li>
+    <li><a href="#models">الإنترنت والنماذج</a></li>
+    <li><a href="#perf">أداء الشبكة</a></li>
+    <li><a href="#designs">تصاميم وأمثلة</a></li>
+    <li><a href="#pros">المزايا والحدود</a></li>
+    <li><a href="#mistakes">أخطاء شائعة</a></li>
+    <li><a href="#trouble">استكشاف الأخطاء</a></li>
+    <li><a href="#relations">العلاقة بما بعده</a></li>
+    <li><a href="#security">الأمن</a></li>
+    <li><a href="#summary">الملخص</a></li>
+    <li><a href="#glossary">المسرد</a></li>
+    <li><a href="#quiz">الاختبار</a></li>
+    <li><a href="#resources">مراجع والدرس التالي</a></li>
+  </ol></div>
+</nav>
+
+<article class="lesson">
+<div id="welcome" class="alert ok hidden"></div>
+
+<section id="intro">
+<h1>الدرس 1: الشبكات المحلية والواسعة <span class="en">(LANs and WANs)</span></h1>
+<p>كل ما تفعله على الإنترنت، من فتح موقع إلى إرسال رسالة أو مشاهدة فيديو، يعتمد على أجهزة تتواصل مع بعضها عبر <b>شبكة</b>. في هذا الدرس نبني الصورة الكبرى: ما هي الشبكة، وما أنواعها، وما الأجهزة والوسائط التي تكوّنها، وكيف نقيس جودتها، وكيف نبدأ في إصلاح أعطالها. هذه هي القاعدة التي تقوم عليها الدروس السبعة التالية.</p>
+</section>
+
+<section id="objectives">
+<h2>أهداف التعلم</h2>
+<p>بعد إنهاء الدرس ستكون قادرًا على:</p>
+<ul>
+<li>تعريف الشبكة وتعداد مكوناتها الأساسية.</li>
+<li>التمييز بين <span class="en">PAN</span> و<span class="en">LAN</span> و<span class="en">MAN</span> و<span class="en">WAN</span> مع أمثلة لكل نوع.</li>
+<li>وصف التوبولوجيات الخمس (نجمة، ناقل، حلقة، شبكية، هجينة) وتحديد مزايا كل منها.</li>
+<li>شرح دور المحوّل والموجّه ونقطة الوصول والمودم وجدار الحماية وبطاقة الشبكة.</li>
+<li>التفريق بين عرض النطاق والإنتاجية والتأخير والتذبذب وفقد الحزم.</li>
+<li>قراءة مخططات الشبكات المنزلية والمدرسية وشبكات الفروع.</li>
+<li>تطبيق خطوات أولية لاستكشاف مشكلة اتصال.</li>
+</ul>
+<h3>المعرفة المسبقة المطلوبة</h3>
+<p>لا شيء سوى استخدام الحاسوب أو الهاتف والإنترنت. نشرح كل مصطلح عند أول ظهور له.</p>
+</section>
+
+<section id="what">
+<h2>1. ما هي شبكة الحاسوب ولماذا نحتاجها؟</h2>
+<p><b>شبكة الحاسوب</b> <span class="en">(Computer Network)</span> هي مجموعة من الأجهزة المتصلة ببعضها بحيث تتبادل البيانات وتتشارك الموارد. الجهاز هنا قد يكون حاسوبًا أو هاتفًا أو طابعة أو كاميرا مراقبة أو تلفازًا ذكيًا. يُسمى أي جهاز متصل بالشبكة <b>عقدة</b> أو <b>مضيفًا</b> <span class="en">(Node / Host)</span>.</p>
+<h3>لماذا نحتاج الشبكات؟</h3>
+<ul>
+<li><b>مشاركة الموارد:</b> طابعة واحدة تخدم عشرين جهازًا بدل طابعة لكل جهاز.</li>
+<li><b>مشاركة البيانات والتعاون:</b> ملفات مشتركة على خادم، يعمل عليها عدة أشخاص.</li>
+<li><b>الاتصال:</b> بريد، مكالمات فيديو، رسائل فورية.</li>
+<li><b>الاتصال بالإنترنت:</b> وصلة واحدة تُشارَك بين كل أجهزة المنزل.</li>
+<li><b>الإدارة المركزية والنسخ الاحتياطي:</b> تحديث وحماية مئات الأجهزة من مكان واحد.</li>
+</ul>
+<h3>المكونات الأساسية لأي شبكة</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>المكوّن</th><th>الدور</th><th>أمثلة</th></tr></thead>
+<tbody>
+<tr><td>الأجهزة الطرفية <span class="en">End devices</span></td><td>تنشئ البيانات أو تستقبلها</td><td>حاسوب، هاتف، طابعة، خادم</td></tr>
+<tr><td>أجهزة الشبكة الوسيطة <span class="en">Intermediary devices</span></td><td>توجّه البيانات بين الأجهزة</td><td>محوّل، موجّه، نقطة وصول</td></tr>
+<tr><td>الوسائط <span class="en">Media</span></td><td>تنقل الإشارات</td><td>كابل نحاسي، ليف ضوئي، موجات راديو</td></tr>
+<tr><td>البروتوكولات <span class="en">Protocols</span></td><td>قواعد متفق عليها للتخاطب</td><td>Ethernet، IP، TCP، HTTP</td></tr>
+<tr><td>البرمجيات والخدمات</td><td>تتيح للمستخدم استعمال الشبكة</td><td>متصفح، DNS، DHCP</td></tr>
+</tbody></table></div>
+<div class="analogy"><b>تشبيه:</b> فكّر في الشبكة كنظام بريد. الأجهزة الطرفية هي البيوت، والوسائط هي الطرق، والأجهزة الوسيطة هي مراكز الفرز، والبروتوكولات هي القواعد التي تحدد كيف تُكتب العناوين وتُسلَّم الطرود.</div>
+</section>
+
+<section id="types">
+<h2>2. أنواع الشبكات حسب النطاق الجغرافي</h2>
+<ul>
+<li><b>الشبكة الشخصية <span class="en">PAN (Personal Area Network)</span>:</b> نطاق بضعة أمتار حول الشخص، مثل اتصال هاتف بسماعة أو ساعة عبر البلوتوث.</li>
+<li><b>الشبكة المحلية <span class="en">LAN (Local Area Network)</span>:</b> تربط أجهزة في موقع واحد: منزل، مدرسة، مكتب، مبنى. يملكها ويديرها عادةً صاحب الموقع.</li>
+<li><b>شبكة المدينة <span class="en">MAN (Metropolitan Area Network)</span>:</b> تغطي مدينة أو منطقة كبيرة، كشبكة بلدية أو جامعة موزعة على المدينة.</li>
+<li><b>الشبكة الواسعة <span class="en">WAN (Wide Area Network)</span>:</b> تربط مواقع متباعدة جغرافيًا، من مدينتين إلى قارات. أشهر مثال هو الإنترنت. تعتمد عادةً على خطوط تؤجّرها الشركات من مزوّدي الخدمة.</li>
+</ul>
+<h3>الفرق بين LAN وWAN</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>الخاصية</th><th>LAN</th><th>WAN</th></tr></thead>
+<tbody>
+<tr><td>النطاق</td><td>موقع واحد</td><td>مدن ودول</td></tr>
+<tr><td>الملكية</td><td>المؤسسة نفسها</td><td>غالبًا مزوّد خدمة تستأجر منه</td></tr>
+<tr><td>السرعة النموذجية</td><td>مرتفعة (من 100 ميغابت/ث إلى عدة غيغابت)</td><td>أقل غالبًا وبحسب الاشتراك</td></tr>
+<tr><td>التأخير</td><td>منخفض جدًا (غالبًا أقل من 1–2 مللي ثانية)</td><td>أعلى، ويزيد مع المسافة</td></tr>
+<tr><td>التكلفة</td><td>رخيصة نسبيًا</td><td>اشتراكات شهرية أعلى</td></tr>
+<tr><td>التقنيات</td><td>Ethernet، Wi-Fi</td><td>ألياف مؤجّرة، MPLS، VPN عبر الإنترنت، اتصالات خلوية</td></tr>
+</tbody></table></div>
+<p>لاحظ أن الحدّ بينهما ليس رقمًا محددًا من الكيلومترات، بل هو في الأساس <b>من يملك الوصلة وكيف تُدار</b>. شبكة تربط مبنيين في الحرم الجامعي بألياف تملكها الجامعة تُعدّ شبكة محلية موسّعة <span class="en">(Campus LAN)</span>.</p>
+
+<figure>
+<svg viewBox="0 0 700 330" role="img" aria-labelledby="d5t d5d">
+<title id="d5t">مقارنة بين LAN وWAN</title><desc id="d5d">عمودان: الشبكة المحلية في موقع واحد وسريعة، والشبكة الواسعة تربط مواقع بعيدة عبر مزوّد خدمة.</desc>
+<rect rx="10" class="bx-green" x="20" y="15" width="320" height="300"/><rect rx="10" class="bx-amber" x="360" y="15" width="320" height="300"/>
+<text x="180" y="45" text-anchor="middle" class="t-b" font-size="18">LAN — شبكة محلية</text>
+<text x="520" y="45" text-anchor="middle" class="t-b" font-size="18">WAN — شبكة واسعة</text>
+<g class="t-sm" text-anchor="middle">
+<text x="180" y="85">النطاق: مبنى أو موقع واحد</text><text x="180" y="120">الملكية: المؤسسة نفسها</text><text x="180" y="155">السرعة: مرتفعة</text><text x="180" y="190">التأخير: منخفض جدًا</text><text x="180" y="225">التقنيات: Ethernet و Wi-Fi</text><text x="180" y="260">التكلفة: منخفضة بعد التركيب</text>
+<text x="520" y="85">النطاق: مدن وبلدان</text><text x="520" y="120">الملكية: مزوّد الخدمة غالبًا</text><text x="520" y="155">السرعة: بحسب الاشتراك</text><text x="520" y="190">التأخير: أعلى ويتأثر بالمسافة</text><text x="520" y="225">التقنيات: ألياف، MPLS، VPN</text><text x="520" y="260">التكلفة: اشتراك دوري</text></g>
+</svg>
+<figcaption><b>الشكل 1:</b> مقارنة بين LAN وWAN. اقرأ الصفوف أفقيًا: كل خاصية تقابلها قيمتها في النوعين. الأهم أن LAN تحت سيطرتك وسريعة، أما WAN فتعتمد على طرف ثالث وتتأثر بالمسافة.</figcaption>
+</figure>
+</section>
+
+<section id="media">
+<h2>3. الوسائط: سلكي ولاسلكي</h2>
+<h3>الوسائط السلكية</h3>
+<ul>
+<li><b>الكابل النحاسي المجدول <span class="en">(Twisted Pair — Cat5e / Cat6)</span>:</b> الأكثر استخدامًا في الشبكات المحلية. أقصى طول لقطعة واحدة في Ethernet هو 100 متر. رخيص وسهل التركيب، لكنه يتأثر بالتشويش الكهرومغناطيسي.</li>
+<li><b>الليف الضوئي <span class="en">(Fiber-optic)</span>:</b> ينقل النبضات الضوئية. لا يتأثر بالتشويش الكهربائي، ويصل لمسافات أطول بكثير وبسرعات أعلى. نوعان: <span class="en">Multimode</span> للمسافات القصيرة داخل المباني، و<span class="en">Single-mode</span> للمسافات الطويلة. أغلى ويحتاج إلى عناية في التركيب.</li>
+</ul>
+<h3>الوسائط اللاسلكية</h3>
+<p>تستخدم موجات الراديو. أشهرها <b>Wi-Fi</b> (معيار IEEE 802.11) على نطاقات 2.4 و5 و6 غيغاهرتز. المزايا: الحركة والمرونة. العيوب: تتأثر بالجدران والتداخل والمسافة، وهي وسط مشترك يسمعه كل من في المدى، لذا يلزم تشفيرها (WPA2 أو WPA3).</p>
+<div class="table-wrap"><table>
+<thead><tr><th>الوسط</th><th>المدى النموذجي</th><th>السرعة</th><th>يتأثر بالتشويش</th><th>الاستخدام</th></tr></thead>
+<tbody>
+<tr><td>نحاس مجدول</td><td>حتى 100 م للقطعة</td><td>عالية</td><td>نعم نسبيًا</td><td>وصل الأجهزة بالمحوّل</td></tr>
+<tr><td>ليف ضوئي</td><td>مئات الأمتار إلى عشرات الكيلومترات</td><td>الأعلى</td><td>لا</td><td>الربط بين المباني، العمود الفقري، WAN</td></tr>
+<tr><td>Wi-Fi</td><td>عشرات الأمتار</td><td>متوسطة إلى عالية، مشتركة</td><td>نعم</td><td>الهواتف والحواسيب المحمولة</td></tr>
+</tbody></table></div>
+<h3>أساسيات Ethernet وWi-Fi</h3>
+<p><b>Ethernet</b> <span class="en">(IEEE 802.3)</span> هو معيار الشبكات السلكية المحلية. يعرّف نوع الكابلات والإشارات وشكل الإطار <span class="en">(Frame)</span>. كل بطاقة شبكة لها عنوان فيزيائي فريد تقريبًا يسمى <b>عنوان MAC</b>، ويستخدمه Ethernet لتحديد المرسل والمستقبل داخل الشبكة المحلية. <b>Wi-Fi</b> <span class="en">(IEEE 802.11)</span> يحقق الفكرة نفسها لاسلكيًا، ويُنتج أجيالًا مثل Wi-Fi 5 (802.11ac) وWi-Fi 6 (802.11ax). سنرى لاحقًا أن كليهما يعمل في الطبقتين الأولى والثانية من نموذج OSI.</p>
+</section>
+
+<section id="topologies">
+<h2>4. توبولوجيا الشبكة <span class="en">(Network Topologies)</span></h2>
+<p>التوبولوجيا هي <b>شكل ترابط الأجهزة</b>، وتنقسم إلى <i>فيزيائية</i> (كيف توصَّل الكابلات فعلًا) و<i>منطقية</i> (كيف تتدفق البيانات).</p>
+<div class="table-wrap"><table>
+<thead><tr><th>النوع</th><th>الوصف</th><th>المزايا</th><th>العيوب</th></tr></thead>
+<tbody>
+<tr><td>نجمة <span class="en">Star</span></td><td>كل جهاز موصول بمحوّل مركزي</td><td>سهلة الإدارة؛ عطل كابل يعزل جهازًا واحدًا فقط</td><td>عطل المحوّل المركزي يوقف الجميع</td></tr>
+<tr><td>ناقل <span class="en">Bus</span></td><td>كل الأجهزة على كابل مشترك واحد</td><td>رخيصة وبسيطة</td><td>عطل الكابل يوقف الشبكة، وتصادمات كثيرة. قديمة ولا تُستخدم اليوم في Ethernet</td></tr>
+<tr><td>حلقة <span class="en">Ring</span></td><td>كل جهاز موصول بجاره ليكوّن دائرة</td><td>تنظيم جيد لمرور البيانات</td><td>قطع واحد قد يعطّلها إن لم توجد حلقة مزدوجة</td></tr>
+<tr><td>شبكية <span class="en">Mesh</span></td><td>روابط متعددة بين الأجهزة (كاملة أو جزئية)</td><td>تكرار ومتانة عالية</td><td>مكلفة ومعقدة</td></tr>
+<tr><td>هجينة <span class="en">Hybrid</span></td><td>دمج عدة أنواع</td><td>مرونة لتلبية الاحتياج</td><td>تصميمها وإدارتها أعقد</td></tr>
+</tbody></table></div>
+<div class="note">الشبكات المحلية الحديثة السلكية هي عمليًا <b>نجمة</b> أو <b>نجمة ممتدة</b> (محوّلات متصلة بمحوّلات)، بينما شبكات WAN غالبًا <b>شبكية جزئية</b> لتأمين مسارات بديلة.</div>
+</section>
+
+<section id="devices">
+<h2>5. أجهزة الشبكة</h2>
+<ul>
+<li><b>بطاقة واجهة الشبكة <span class="en">(NIC)</span>:</b> العتاد داخل الجهاز الذي يوصله بالشبكة سلكيًا أو لاسلكيًا، ولها عنوان MAC.</li>
+<li><b>المحوّل <span class="en">(Switch)</span>:</b> يربط أجهزة الشبكة المحلية. يتعلم عنوان MAC لكل جهاز على كل منفذ، ثم يرسل الإطار <b>إلى المنفذ المقصود فقط</b> بدل بثه للجميع.</li>
+<li><b>الموجّه <span class="en">(Router)</span>:</b> يربط <b>شبكات مختلفة</b> ببعضها ويقرر المسار التالي للحزمة اعتمادًا على عنوان IP. هو بوابة الشبكة المحلية نحو الخارج.</li>
+<li><b>نقطة الوصول <span class="en">(Access Point - AP)</span>:</b> تحوّل الشبكة السلكية إلى Wi-Fi، فتتيح للأجهزة اللاسلكية الانضمام للشبكة.</li>
+<li><b>المودم <span class="en">(Modem)</span>:</b> يحوّل إشارات خط مزوّد الخدمة (هاتف DSL أو كابل تلفزيوني أو ليف عبر ONT) إلى إشارات يفهمها Ethernet. كثيرًا ما يكون جهازًا واحدًا مع الموجّه ونقطة الوصول، فيُسمى «راوتر المنزل».</li>
+<li><b>جدار الحماية <span class="en">(Firewall)</span>:</b> يسمح بالمرور أو يمنعه وفق قواعد (مثل: اسمح بالتصفح، وامنع الدخول من الخارج لخدمة معينة).</li>
+</ul>
+<div class="analogy"><b>تشبيه:</b> المحوّل ساعي بريد داخل المبنى يعرف كل غرفة. الموجّه مكتب بريد يعرف الطريق بين المدن. جدار الحماية حارس البوابة يفحص من يدخل ومن يخرج.</div>
+
+<figure>
+<svg viewBox="0 0 700 250" role="img" aria-labelledby="d4t d4d">
+<title id="d4t">أدوار الموجّه والمحوّل ونقطة الوصول وجدار الحماية</title><desc id="d4d">الإنترنت ثم جدار الحماية ثم الموجّه ثم المحوّل ثم الأجهزة السلكية ونقطة الوصول للأجهزة اللاسلكية.</desc>
+<rect rx="10" class="bx-gray" x="570" y="95" width="110" height="60"/><text x="625" y="130" text-anchor="middle" class="t-b">الإنترنت</text>
+<rect rx="10" class="bx-amber" x="430" y="95" width="110" height="60"/><text x="485" y="122" text-anchor="middle" class="t-b">جدار الحماية</text><text x="485" y="142" text-anchor="middle" class="t-sm">يفلتر الحركة</text>
+<rect rx="10" class="bx" x="290" y="95" width="110" height="60"/><text x="345" y="122" text-anchor="middle" class="t-b">الموجّه</text><text x="345" y="142" text-anchor="middle" class="t-sm">يربط الشبكات (IP)</text>
+<rect rx="10" class="bx-green" x="150" y="95" width="110" height="60"/><text x="205" y="122" text-anchor="middle" class="t-b">المحوّل</text><text x="205" y="142" text-anchor="middle" class="t-sm">يوصل الأجهزة</text>
+<path class="ln" d="M570 125H540M430 125H400M290 125H260"/>
+<rect rx="10" class="bx" x="20" y="20" width="110" height="50"/><text x="75" y="50" text-anchor="middle">حاسوب سلكي</text>
+<rect rx="10" class="bx" x="20" y="180" width="110" height="50"/><text x="75" y="205" text-anchor="middle">نقطة الوصول</text><text x="75" y="222" text-anchor="middle" class="t-sm">Wi-Fi</text>
+<path class="ln" d="M150 110L130 55M150 140L130 195"/>
+</svg>
+<figcaption><b>الشكل 2:</b> تسلسل الأجهزة من الإنترنت إلى المستخدم. تدخل الحركة من اليمين: جدار الحماية يفحصها، الموجّه يقرر أنها موجّهة إلى شبكتك المحلية، المحوّل يسلمه لجهاز معين عبر MAC، ونقطة الوصول تنقله لاسلكيًا لمن لا يستخدم الكابل.</figcaption>
+</figure>
+</section>
+
+<section id="models">
+<h2>6. الإنترنت والإنترانت والإكسترانت ونماذج التشغيل</h2>
+<ul>
+<li><b>الإنترنت <span class="en">(Internet)</span>:</b> شبكة عالمية مكوّنة من آلاف الشبكات المترابطة، لا يملكها طرف واحد.</li>
+<li><b>الإنترانت <span class="en">(Intranet)</span>:</b> شبكة خاصة بمؤسسة تستخدم تقنيات الإنترنت نفسها (مواقع داخلية، خوادم ملفات) وتقتصر على موظفيها.</li>
+<li><b>الإكسترانت <span class="en">(Extranet)</span>:</b> جزء مضبوط من الإنترانت يُتاح لأطراف خارجية موثوقة كالموردين أو الشركاء.</li>
+</ul>
+<h3>نموذج العميل والخادم مقابل الند للند</h3>
+<div class="table-wrap"><table>
+<thead><tr><th></th><th>العميل/الخادم <span class="en">Client-Server</span></th><th>الند للند <span class="en">Peer-to-Peer</span></th></tr></thead>
+<tbody>
+<tr><td>الفكرة</td><td>خادم مركزي يقدّم الخدمة وعملاء يطلبونها</td><td>كل جهاز يقدّم ويطلب</td></tr>
+<tr><td>مثال</td><td>متصفح يطلب صفحة من خادم موقع</td><td>مشاركة طابعة بين حاسوبين في المنزل</td></tr>
+<tr><td>الإدارة والأمان</td><td>مركزية وأسهل في الضبط</td><td>موزعة وأصعب في الضبط</td></tr>
+<tr><td>التوسع</td><td>جيد مع خوادم قوية</td><td>يصلح للأعداد الصغيرة</td></tr>
+</tbody></table></div>
+</section>
+
+<section id="perf">
+<h2>7. أداء الشبكة وموثوقيتها</h2>
+<p>خمسة مقاييس تحتاج لفهمها بدقة، لأن الخلط بينها من أكثر الأخطاء شيوعًا:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>المقياس</th><th>المعنى</th><th>الوحدة</th><th>تشبيه الطريق</th></tr></thead>
+<tbody>
+<tr><td>عرض النطاق <span class="en">Bandwidth</span></td><td>أقصى سعة نظرية للوصلة</td><td>Mbps / Gbps</td><td>عدد حارات الطريق</td></tr>
+<tr><td>الإنتاجية <span class="en">Throughput</span></td><td>المعدل الفعلي المحقق للبيانات المفيدة</td><td>Mbps</td><td>عدد السيارات التي تعبر فعليًا في الساعة</td></tr>
+<tr><td>التأخير <span class="en">Latency</span></td><td>زمن وصول الحزمة من المصدر للوجهة (أو ذهابًا وإيابًا RTT)</td><td>ms</td><td>زمن الرحلة</td></tr>
+<tr><td>التذبذب <span class="en">Jitter</span></td><td>تغيّر التأخير من حزمة لأخرى</td><td>ms</td><td>رحلات يختلف زمنها كل مرة</td></tr>
+<tr><td>فقد الحزم <span class="en">Packet Loss</span></td><td>نسبة الحزم التي لا تصل</td><td>%</td><td>سيارات تضيع في الطريق</td></tr>
+</tbody></table></div>
+<div class="note">اشتراك 100 ميغابت لا يعني أنك ستحصل دائمًا على 100. الإنتاجية تتأثر بالتشويش والازدحام وقدرة الخادم وجودة الكابل. وانخفاض <b>التأخير</b> أهم من ارتفاع عرض النطاق في المكالمات والألعاب.</div>
+<p><b>مثال:</b> مكالمة فيديو تتقطع رغم أن السرعة عالية؟ غالبًا المشكلة في <b>التذبذب</b> أو <b>فقد الحزم</b>، وليس في عرض النطاق. ويمكنك قياسها بالأمر <code>ping</code> الذي يظهر زمن الرحلة ونسبة الفقد.</p>
+<h3>الموثوقية</h3>
+<p>تتحسن بالتكرار <span class="en">(Redundancy)</span>: وصلتان للإنترنت، محوّلان بدل واحد، مصدرا طاقة. والهدف تجنّب «نقطة الفشل الواحدة» <span class="en">(Single Point of Failure)</span>.</p>
+</section>
+
+<section id="designs">
+<h2>8. تصاميم الشبكات وأمثلة واقعية</h2>
+<h3>أ) الشبكة المنزلية</h3>
+<p>جهاز واحد يؤدي أدوار المودم والموجّه والمحوّل ونقطة الوصول وجدار حماية بسيط. تحصل الأجهزة على عناوين IP تلقائيًا (من DHCP) وتخرج للإنترنت عبر عنوان عام واحد.</p>
+<figure>
+<svg viewBox="0 0 700 300" role="img" aria-labelledby="d1t d1d">
+<title id="d1t">شبكة منزلية نموذجية</title><desc id="d1d">الإنترنت متصل براوتر المنزل، ومنه كابل إلى حاسوب مكتبي وتلفاز، ومنه Wi-Fi إلى هاتف وحاسوب محمول.</desc>
+<rect rx="10" class="bx-gray" x="290" y="15" width="120" height="50"/><text x="350" y="46" text-anchor="middle" class="t-b">الإنترنت</text>
+<path class="ln-wan" d="M350 65V115"/><text x="360" y="95" class="t-sm">خط المزوّد</text>
+<rect rx="10" class="bx-navy" x="240" y="115" width="220" height="70"/><text x="350" y="143" text-anchor="middle" class="t-w t-b">راوتر المنزل</text><text x="350" y="165" text-anchor="middle" class="t-w t-sm">مودم + موجّه + محوّل + Wi-Fi</text>
+<path class="ln" d="M240 150H170M460 150H530"/>
+<rect rx="10" class="bx" x="40" y="125" width="130" height="50"/><text x="105" y="155" text-anchor="middle">حاسوب مكتبي</text>
+<rect rx="10" class="bx" x="530" y="125" width="130" height="50"/><text x="595" y="155" text-anchor="middle">تلفاز ذكي</text>
+<path class="ln-w" d="M320 185L190 245M380 185L510 245"/>
+<rect rx="10" class="bx-green" x="60" y="230" width="130" height="50"/><text x="125" y="260" text-anchor="middle">حاسوب محمول</text>
+<rect rx="10" class="bx-green" x="510" y="230" width="130" height="50"/><text x="575" y="260" text-anchor="middle">هاتف</text>
+<text x="350" y="285" text-anchor="middle" class="t-sm">خط متصل = كابل  |  خط متقطع = Wi-Fi</text>
+</svg>
+<figcaption><b>الشكل 3:</b> شبكة منزلية. الخط المتصل كابل Ethernet والمتقطع Wi-Fi. كل الأجهزة تمر عبر راوتر المنزل، وهو الوحيد الذي يتصل بالإنترنت. لهذا لو تعطل توقفت الشبكة بأكملها (نقطة فشل واحدة).</figcaption>
+</figure>
+
+<h3>ب) شبكة مدرسة أو مكتب</h3>
+<p>هنا نفصل الأدوار في أجهزة مستقلة: جدار حماية على الحدود، وموجّه، ومحوّل مركزي <span class="en">(Core / Distribution)</span>، ومحوّلات طرفية <span class="en">(Access)</span> في كل طابق أو مختبر، ونقاط وصول للـWi-Fi، وخوادم. وهو تصميم هرمي يسهل توسعه وإدارته.</p>
+<figure>
+<svg viewBox="0 0 700 340" role="img" aria-labelledby="d2t d2d">
+<title id="d2t">شبكة مدرسة أو مكتب</title><desc id="d2d">الإنترنت ثم جدار حماية ثم موجّه ثم محوّل مركزي، ويتفرع منه محوّلان طرفيان لمختبر وإدارة، وخادم، ونقاط وصول.</desc>
+<rect rx="10" class="bx-gray" x="290" y="10" width="120" height="40"/><text x="350" y="36" text-anchor="middle" class="t-b">الإنترنت</text>
+<rect rx="10" class="bx-amber" x="290" y="75" width="120" height="40"/><text x="350" y="101" text-anchor="middle" class="t-b">جدار الحماية</text>
+<rect rx="10" class="bx" x="290" y="140" width="120" height="40"/><text x="350" y="166" text-anchor="middle" class="t-b">الموجّه</text>
+<rect rx="10" class="bx-navy" x="270" y="205" width="160" height="40"/><text x="350" y="231" text-anchor="middle" class="t-w t-b">المحوّل المركزي</text>
+<path class="ln" d="M350 50V75M350 115V140M350 180V205"/>
+<path class="ln" d="M300 245L150 275M350 245V275M400 245L550 275"/>
+<rect rx="10" class="bx-green" x="60" y="275" width="180" height="50"/><text x="150" y="298" text-anchor="middle" class="t-b">محوّل المختبر</text><text x="150" y="316" text-anchor="middle" class="t-sm">30 حاسوبًا</text>
+<rect rx="10" class="bx-green" x="260" y="275" width="180" height="50"/><text x="350" y="298" text-anchor="middle" class="t-b">الخوادم</text><text x="350" y="316" text-anchor="middle" class="t-sm">ملفات، طباعة، DNS</text>
+<rect rx="10" class="bx-green" x="460" y="275" width="180" height="50"/><text x="550" y="298" text-anchor="middle" class="t-b">محوّل الإدارة</text><text x="550" y="316" text-anchor="middle" class="t-sm">+ نقاط وصول Wi-Fi</text>
+</svg>
+<figcaption><b>الشكل 4:</b> شبكة مدرسة. حركة كل قسم تتجمع في محوّل طرفي ثم تصعد إلى المحوّل المركزي. فصل الأدوار يتيح تطبيق قواعد أمنية على الحدود، وتوسيع القسم الواحد دون المساس ببقية الشبكة.</figcaption>
+</figure>
+
+<h3>ج) شبكة WAN لشركة متعددة الفروع</h3>
+<p>شركة لها مقر رئيسي وثلاثة فروع في مدن مختلفة. كل موقع شبكة محلية بحد ذاتها، وموجّه كل موقع يربطها بالآخرين عبر خطوط مؤجّرة أو <b>VPN</b> فوق الإنترنت. المزوّد يملك البنية التحتية بين المواقع.</p>
+<figure>
+<svg viewBox="0 0 700 300" role="img" aria-labelledby="d3t d3d">
+<title id="d3t">شبكة WAN تربط عدة فروع</title><desc id="d3d">سحابة مزوّد الخدمة في الوسط، متصلة بالمقر الرئيسي وثلاثة فروع، كل موقع فيه موجّه وشبكة محلية.</desc>
+<ellipse cx="350" cy="150" rx="110" ry="55" fill="#fff6e0" stroke="#b7791f" stroke-width="2"/><text x="350" y="146" text-anchor="middle" class="t-b">شبكة المزوّد / الإنترنت</text><text x="350" y="168" text-anchor="middle" class="t-sm">WAN</text>
+<path class="ln-wan" d="M270 115L170 60M430 115L530 60M270 185L170 240M430 185L530 240"/>
+<rect rx="10" class="bx-navy" x="30" y="30" width="170" height="60"/><text x="115" y="56" text-anchor="middle" class="t-w t-b">المقر الرئيسي</text><text x="115" y="76" text-anchor="middle" class="t-w t-sm">LAN + خوادم</text>
+<rect rx="10" class="bx-green" x="500" y="30" width="170" height="60"/><text x="585" y="56" text-anchor="middle" class="t-b">فرع 1</text><text x="585" y="76" text-anchor="middle" class="t-sm">LAN</text>
+<rect rx="10" class="bx-green" x="30" y="210" width="170" height="60"/><text x="115" y="236" text-anchor="middle" class="t-b">فرع 2</text><text x="115" y="256" text-anchor="middle" class="t-sm">LAN</text>
+<rect rx="10" class="bx-green" x="500" y="210" width="170" height="60"/><text x="585" y="236" text-anchor="middle" class="t-b">فرع 3</text><text x="585" y="256" text-anchor="middle" class="t-sm">LAN</text>
+</svg>
+<figcaption><b>الشكل 5:</b> كل مربع شبكة محلية مستقلة، والخطوط السميكة وصلات WAN عبر المزوّد. إذا انقطعت وصلة فرع واحد بقي الباقون يعملون، لكن الفرع المقطوع ينعزل عن المقر. ولذلك تُضاف وصلة احتياطية للمواقع المهمة.</figcaption>
+</figure>
+<h3>أمثلة أخرى</h3>
+<ul>
+<li><b>الحرم الجامعي:</b> عدة شبكات LAN في المباني مرتبطة بعمود فقري من الألياف الضوئية.</li>
+<li><b>مقهى إنترنت:</b> شبكة LAN صغيرة بمحوّل وموجّه واحد وعدة حواسيب.</li>
+</ul>
+</section>
+
+<section id="pros">
+<h2>9. المزايا والحدود وحالات الاستخدام</h2>
+<div class="grid cols-2">
+<div class="card"><h3 style="margin-top:0">LAN</h3><p><b>مزايا:</b> سرعة عالية، تأخير منخفض، تحكم كامل، تكلفة تشغيل قليلة.<br><b>حدود:</b> نطاق جغرافي محدود، مسؤولية الصيانة والأمن عليك.</p><p><b>استخدامها:</b> مشاركة الملفات والطابعات، الألعاب المحلية، الخوادم الداخلية.</p></div>
+<div class="card"><h3 style="margin-top:0">WAN</h3><p><b>مزايا:</b> تربط مواقع متباعدة وتتيح الخدمات المركزية.<br><b>حدود:</b> تكلفة أعلى، تأخير أكبر، اعتماد على المزوّد.</p><p><b>استخدامها:</b> ربط الفروع، الوصول إلى السحابة، العمل عن بُعد.</p></div>
+</div>
+</section>
+
+<section id="mistakes">
+<h2>10. أخطاء ومفاهيم خاطئة شائعة</h2>
+<ul>
+<li><b>«الراوتر والمحوّل شيء واحد».</b> لا؛ المحوّل يعمل داخل الشبكة بالـMAC، والموجّه يربط بين الشبكات بالـIP.</li>
+<li><b>«الإنترنت هو الواي فاي».</b> Wi-Fi مجرد طريقة وصول لاسلكية للشبكة المحلية. قد تكون متصلًا بـWi-Fi دون إنترنت.</li>
+<li><b>«سرعة أعلى تعني استجابة أسرع دائمًا».</b> الاستجابة مرتبطة بالتأخير أكثر.</li>
+<li><b>«تتجاوز الكابلات 100 متر دون مشكلة».</b> يزداد الفقد وتصبح الشبكة غير مستقرة.</li>
+<li><b>«الـWAN أي شبكة كبيرة».</b> المعيار الأساسي هو ربط مواقع متباعدة عبر وصلات مزوّد.</li>
+</ul>
+</section>
+
+<section id="trouble">
+<h2>11. استكشاف الأخطاء: البداية الصحيحة</h2>
+<p>لا تخمّن. اتبع تسلسلًا من الأقرب إلى الأبعد:</p>
+<ol>
+<li><b>الفيزيائي:</b> هل الكابل موصول؟ هل ضوء المنفذ يعمل؟ هل Wi-Fi مفعّل والإشارة جيدة؟ هل الجهاز الوسيط يعمل؟</li>
+<li><b>إعدادات الجهاز:</b> هل حصل الجهاز على عنوان IP؟ في ويندوز: <code>ipconfig</code>، وفي لينكس: <code>ip addr</code>. إن بدأ العنوان بـ169.254 فالغالب أن DHCP لم يستجب.</li>
+<li><b>البوابة:</b> اختبر <code>ping</code> لعنوان الراوتر. إن نجح فالشبكة المحلية سليمة.</li>
+<li><b>خارج الشبكة المحلية:</b> اختبر <code>ping 8.8.8.8</code>. إن نجح فالإنترنت يعمل من حيث الاتصال.</li>
+<li><b>الأسماء:</b> اختبر <code>ping example.com</code>. إن فشل هنا بينما نجح السابق فالمشكلة في DNS.</li>
+</ol>
+<pre><code>ping 192.168.1.1        # الراوتر؟
+ping 8.8.8.8            # الإنترنت بالعنوان؟
+ping example.com        # الإنترنت بالاسم؟</code></pre>
+<div class="tip">هذا الأسلوب «من الأسفل إلى الأعلى» سنربطه بنموذج OSI في الدرس القادم، وسنتوسع في أدوات التشخيص في الدرس الثامن.</div>
+<div class="note"><b>تنبيه:</b> نفّذ الأوامر والاختبارات فقط على شبكتك أو شبكة لديك إذن صريح باختبارها.</div>
+</section>
+
+<section id="relations">
+<h2>12. كيف يرتبط هذا الدرس بما بعده؟</h2>
+<ul>
+<li><b>عنونة IP (الدرس 3):</b> كل جهاز في الشبكة المحلية يحتاج عنوان IP، وتنتمي الأجهزة التي تشترك في شبكة فرعية واحدة لـLAN واحدة.</li>
+<li><b>التبديل (Switching):</b> يحدث داخل الشبكة المحلية بالـMAC (المحوّل).</li>
+<li><b>التوجيه (الدرس 4):</b> ينقل الحزم بين الشبكات المحلية وعبر WAN (الموجّه).</li>
+<li><b>VLAN (الدرس 5):</b> يقسم شبكة محلية فيزيائية واحدة إلى عدة شبكات منطقية.</li>
+</ul>
+</section>
+
+<section id="security">
+<h2>13. اعتبارات الأمن</h2>
+<ul>
+<li>غيّر كلمات المرور الافتراضية لأجهزة الشبكة، وفعّل WPA2 أو WPA3 للـWi-Fi.</li>
+<li>حدّث البرامج الثابتة <span class="en">(Firmware)</span> للأجهزة دوريًا.</li>
+<li>افصل شبكة الضيوف عن الشبكة الداخلية.</li>
+<li>على الـWAN، استخدم اتصالات مشفّرة مثل VPN بين المواقع.</li>
+<li>الوسط اللاسلكي مشترك، لذا لا تعتمد على إخفاء اسم الشبكة كحماية.</li>
+</ul>
+</section>
+
+<section id="summary">
+<h2>14. الملخص</h2>
+<ul>
+<li>الشبكة هي أجهزة ووسائط وبروتوكولات تتشارك البيانات والموارد.</li>
+<li>LAN في موقع واحد وتحت سيطرتك، وWAN تربط مواقع متباعدة عبر مزوّد.</li>
+<li>المحوّل يعمل بالـMAC داخل الشبكة، والموجّه يربط الشبكات بالـIP، ونقطة الوصول تقدم Wi-Fi، وجدار الحماية يفلتر.</li>
+<li>الإنتاجية تختلف عن عرض النطاق، والتأخير والتذبذب والفقد تؤثر في التجربة أكثر مما تتوقع.</li>
+<li>الاستكشاف يبدأ بالفيزيائي ثم IP ثم البوابة ثم الإنترنت ثم DNS.</li>
+</ul>
+</section>
+
+<section id="glossary">
+<h2>15. مسرد المصطلحات</h2>
+<dl class="glossary">
+<dt>Node / عقدة</dt><dd>أي جهاز متصل بالشبكة.</dd>
+<dt>LAN / شبكة محلية</dt><dd>شبكة في موقع جغرافي واحد.</dd>
+<dt>WAN / شبكة واسعة</dt><dd>شبكة تربط مواقع متباعدة.</dd>
+<dt>Switch / محوّل</dt><dd>جهاز يمرر الإطارات داخل الشبكة المحلية اعتمادًا على عناوين MAC.</dd>
+<dt>Router / موجّه</dt><dd>جهاز يمرر الحزم بين الشبكات اعتمادًا على عناوين IP.</dd>
+<dt>Access Point / نقطة وصول</dt><dd>جهاز يوفر اتصال Wi-Fi.</dd>
+<dt>Modem / مودم</dt><dd>جهاز يحوّل بين إشارة خط المزوّد وإشارة الشبكة المحلية.</dd>
+<dt>Firewall / جدار حماية</dt><dd>نظام يسمح أو يمنع حركة الشبكة وفق قواعد.</dd>
+<dt>NIC / بطاقة الشبكة</dt><dd>العتاد الذي يوصل الجهاز بالشبكة.</dd>
+<dt>MAC Address</dt><dd>عنوان فيزيائي للبطاقة يُستخدم داخل الشبكة المحلية.</dd>
+<dt>Topology / توبولوجيا</dt><dd>شكل ترابط الأجهزة في الشبكة.</dd>
+<dt>Bandwidth / عرض النطاق</dt><dd>أقصى سعة نظرية للوصلة.</dd>
+<dt>Throughput / الإنتاجية</dt><dd>المعدل الفعلي لنقل البيانات المفيدة.</dd>
+<dt>Latency / التأخير</dt><dd>زمن انتقال الحزمة.</dd>
+<dt>Jitter / التذبذب</dt><dd>تغيّر التأخير بين الحزم.</dd>
+<dt>Packet Loss / فقد الحزم</dt><dd>نسبة الحزم التي لم تصل.</dd>
+<dt>Intranet / Extranet</dt><dd>شبكة خاصة بمؤسسة / جزء منها متاح لشركاء موثوقين.</dd>
+<dt>Redundancy / التكرار</dt><dd>وجود مسارات أو أجهزة بديلة لتفادي التوقف.</dd>
+</dl>
+</section>
+
+<section id="quiz">
+<h2>16. اختبر فهمك</h2>
+<p>اضغط على إجابة لترى التفسير. تُسجَّل نتيجتك عند الإجابة عن كل الأسئلة.</p>
+<div id="quiz-box"></div>
+<div id="quiz-result" class="alert info hidden"></div>
+<button id="retry" class="btn secondary hidden" type="button">إعادة المحاولة</button>
+<div style="margin-top:26px">
+  <button id="complete" class="btn success" type="button">وضع علامة «مكتمل»</button>
+  <span id="complete-msg" class="hint" role="status"></span>
+</div>
+</section>
+
+<section id="resources">
+<h2>17. مراجع موثوقة للتعمق</h2>
+<ul>
+<li><a href="https://www.netacad.com" rel="noopener">Cisco Networking Academy</a> — مقررات مجانية في أساسيات الشبكات.</li>
+<li><a href="https://www.professormesser.com/network-plus/" rel="noopener">Professor Messer — Network+</a> — فيديوهات مجانية (بالإنجليزية).</li>
+<li><a href="https://standards.ieee.org/ieee/802.3/7071/" rel="noopener">IEEE 802.3</a> و<a href="https://www.ieee802.org/11/" rel="noopener">IEEE 802.11</a> — المعياران الرسميان لـEthernet وWi-Fi.</li>
+<li><a href="https://www.cloudflare.com/learning/" rel="noopener">Cloudflare Learning Center</a> — شروحات مبسطة (بالإنجليزية).</li>
+</ul>
+<h3>التنقل بين الدروس</h3>
+<p><b>المتطلبات السابقة:</b> لا يوجد (هذا أول درس).<br>
+<b>الدرس التالي:</b> الدرس 2: نموذج OSI <a href="lesson-2.html">ابدأ الدرس 2</a> — <a href="curriculum.html">عرض المنهج الكامل</a></p>
+</section>
+</article>
+</div>
+</main>
+<div id="site-footer"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+const LESSON_ID = 1;
+const QUESTIONS = [
+ {
+  "q": "ما الفرق الأساسي بين المحوّل (Switch) والموجّه (Router)؟",
+  "o": [
+   "المحوّل يربط شبكات مختلفة والموجّه يربط أجهزة الشبكة نفسها",
+   "لا فرق بينهما",
+   "المحوّل يمرر الإطارات داخل الشبكة بالـMAC والموجّه يربط الشبكات بالـIP",
+   "المحوّل لاسلكي والموجّه سلكي"
+  ],
+  "a": 2,
+  "e": "المحوّل يعمل داخل شبكة محلية واحدة ويستخدم عناوين MAC، أما الموجّه فيربط شبكات مختلفة ويقرر المسار بالـIP. الخيار الأول معكوس، والرابع غير صحيح لأن كلاهما قد يكون سلكيًا."
+ },
+ {
+  "q": "شركة لها فروع في ثلاث مدن وتربطها عبر مزوّد خدمة. هذا مثال على:",
+  "o": [
+   "WAN",
+   "PAN",
+   "LAN",
+   "نقطة وصول"
+  ],
+  "a": 0,
+  "e": "ربط مواقع متباعدة جغرافيًا عبر وصلات مزوّد الخدمة هو WAN. كل فرع بذاته LAN، أما PAN فهي شبكة شخصية بنطاق أمتار."
+ },
+ {
+  "q": "اشتراكك 100 ميغابت لكنك تحصل فعليًا على 70 ميغابت أثناء التحميل. الرقم 70 يمثل:",
+  "o": [
+   "عرض النطاق",
+   "التأخير",
+   "التذبذب",
+   "الإنتاجية (Throughput)"
+  ],
+  "a": 3,
+  "e": "الإنتاجية هي المعدل الفعلي المحقق، وغالبًا أقل من عرض النطاق (السعة النظرية) بسبب الازدحام والتشويش وغيرها."
+ },
+ {
+  "q": "مكالمة فيديو تتقطع رغم أن السرعة عالية. أي مقياس تفحصه أولًا؟",
+  "o": [
+   "لون الكابل",
+   "التذبذب وفقد الحزم",
+   "عدد الأجهزة المصنّعة",
+   "اسم الشبكة"
+  ],
+  "a": 1,
+  "e": "المكالمات الصوتية والمرئية حساسة للتذبذب وفقد الحزم أكثر من حساسيتها للسرعة العالية. يمكن قياسها مبدئيًا بـping."
+ },
+ {
+  "q": "في الشبكات المحلية السلكية الحديثة، أي توبولوجيا هي الأكثر استخدامًا؟",
+  "o": [
+   "الناقل",
+   "الحلقة",
+   "النجمة (أو النجمة الممتدة)",
+   "لا توجد توبولوجيا"
+  ],
+  "a": 2,
+  "e": "تُوصَّل الأجهزة بمحوّل مركزي في شكل نجمة، لأنها سهلة الإدارة وعطل كابل واحد لا يؤثر إلا في جهاز واحد. الناقل قديم."
+ },
+ {
+  "q": "جهاز يحصل على عنوان يبدأ بـ169.254 ولا يصل للإنترنت. ما السبب المرجّح؟",
+  "o": [
+   "لم يحصل على عنوان من DHCP",
+   "الإنترنت مقطوع عن العالم كله",
+   "الشاشة معطلة",
+   "الكابل مصنوع من الألياف"
+  ],
+  "a": 0,
+  "e": "عناوين 169.254.x.x يعيّنها الجهاز لنفسه ذاتيًا (APIPA) عندما لا يجد خادم DHCP. افحص الاتصال بالراوتر أو خدمة DHCP. سنتعمق فيها في درس IP."
+ }
+];
+</script>
+<script src="assets/js/lesson.js"></script>
+</body>
+</html>

@@ -1,0 +1,431 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>الدرس 8: استكشاف الأخطاء والأمن الأساسي — أكاديمية الشبكات العربية</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="assets/img/academy-icon.png">
+<script>try{var t=localStorage.getItem("ana_theme")||(matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light");document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<a class="skip" href="#main">تخطَّ إلى المحتوى</a>
+<div id="site-header"></div>
+<main id="main" class="container">
+<div class="lesson-layout">
+<nav class="toc" aria-label="قائمة الدروس والأقسام"><div class="course-sidebar-title">المنهج الدراسي</div><div id="lesson-navigation"></div><div class="original-toc" hidden>
+  <strong>محتويات الدرس</strong>
+  <ol>
+    <li><a href="#intro">مقدمة</a></li>
+    <li><a href="#objectives">الأهداف</a></li>
+    <li><a href="#method">منهجية استكشاف الأخطاء</a></li>
+    <li><a href="#tools">الأدوات حسب الطبقة</a></li>
+    <li><a href="#scenario">سيناريو: «لا يفتح الموقع»</a></li>
+    <li><a href="#device">فحص الأجهزة</a></li>
+    <li><a href="#symptoms">أعراض شائعة وأسبابها</a></li>
+    <li><a href="#principles">مبادئ الأمن</a></li>
+    <li><a href="#hardening">تقوية الأجهزة</a></li>
+    <li><a href="#controls">ضوابط الشبكة</a></li>
+    <li><a href="#threats">تهديدات شائعة</a></li>
+    <li><a href="#summary">الملخص</a></li>
+    <li><a href="#glossary">المسرد</a></li>
+    <li><a href="#quiz">الاختبار</a></li>
+    <li><a href="#resources">مراجع وخاتمة المنهج</a></li>
+  </ol></div>
+</nav>
+
+<article class="lesson">
+<div id="welcome" class="alert ok hidden"></div>
+
+<section id="intro">
+<h1>الدرس 8: استكشاف الأخطاء والأمن الأساسي <span class="en">(Troubleshooting and Basic Security)</span></h1>
+<p>تعلمنا في الدروس السابقة كيف تعمل الشبكة: الطبقات والعناوين والتوجيه وVLAN والأنفاق وTCP/IP. في هذا الدرس الأخير نستخدم كل ذلك في مهارتين يحتاجهما كل مهندس شبكات يوميًا: <b>تشخيص العطل</b> بطريقة منظمة بدل التجريب العشوائي، و<b>حماية الشبكة</b> بإجراءات أساسية تمنع معظم المشاكل الشائعة قبل وقوعها.</p>
+<p>الفكرة التي تجمع الموضوعين: الشبكة المفهومة جيدًا يسهل إصلاحها ويسهل تأمينها، لأنك تعرف ما الذي يجب أن يحدث، فتلاحظ ما لا يجب أن يحدث.</p>
+</section>
+
+<section id="objectives">
+<h2>أهداف التعلم</h2>
+<ul>
+<li>تطبيق منهجية من خطوات واضحة لتحديد العطل وإصلاحه وتوثيقه.</li>
+<li>اختيار أداة الفحص المناسبة لكل طبقة وقراءة نتائجها.</li>
+<li>تتبّع عطل «لا يفتح الموقع» من الجهاز حتى الخدمة وعزل الطبقة المسؤولة.</li>
+<li>قراءة حالة الواجهات والجداول على المبدلات والموجّهات.</li>
+<li>شرح مبادئ الأمن الأساسية: السرية والسلامة والتوافر، وأقل الصلاحيات، والدفاع المتعدد الطبقات.</li>
+<li>تطبيق إجراءات تقوية للأجهزة، وفهم دور الجدار الناري وقوائم التحكم ACL وضوابط الطبقة الثانية.</li>
+</ul>
+<p><b>المعرفة المسبقة:</b> الدروس 2 إلى 7، وخاصة DHCP وNAT (الدرس 3)، والتوجيه (الدرس 4)، وVLAN (الدرس 5)، وTCP/IP وأدوات الفحص (الدرس 7).</p>
+</section>
+
+<section id="method">
+<h2>1. منهجية استكشاف الأخطاء</h2>
+<p>أسوأ ما يفعله المبتدئ أن يغيّر عدة أشياء دفعة واحدة على أمل أن يعمل شيء ما. قد ينجح ذلك أحيانًا لكنك لن تعرف السبب، وقد تضيف أعطالًا جديدة. المنهجية المنظمة أسرع في المتوسط وأضمن. وهي قريبة من المنهجيات المعتمدة في الشهادات المهنية:</p>
+<ol>
+<li><b>حدّد المشكلة:</b> ماذا يحدث بالضبط؟ منذ متى؟ من المتأثر: جهاز واحد أم قسم كامل؟ هل تغيّر شيء قبل ظهورها (ضبط جديد، تحديث، نقل كابل)؟ قارن بين ما يعمل وما لا يعمل.</li>
+<li><b>ضع فرضية:</b> ابدأ بالأسباب الأبسط والأكثر شيوعًا، كالكابل والعنوان والتفعيل، قبل الأسباب النادرة.</li>
+<li><b>اختبر الفرضية:</b> بأمر أو فحص يؤكدها أو ينفيها دون إحداث ضرر. إذا نُفيت فاقترح فرضية أخرى.</li>
+<li><b>أصلح بتغيير واحد:</b> غيّر شيئًا واحدًا في كل مرة، وسجّل ما غيّرته لتستطيع التراجع عنه.</li>
+<li><b>تحقق:</b> هل عادت الخدمة فعلًا للمستخدم؟ وهل ظهر أثر جانبي على غيره؟</li>
+<li><b>وثّق:</b> اكتب العَرَض والسبب والحل. العطل الذي لا يُوثَّق يتكرر ويضيّع وقتًا من جديد.</li>
+</ol>
+<h3>اتجاهات التتبع</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>الأسلوب</th><th>كيف يعمل</th><th>متى يناسب</th></tr></thead>
+<tbody>
+<tr><td>من الأسفل إلى الأعلى <span class="en">(Bottom-up)</span></td><td>تبدأ بالطبقة 1 (الكابل والإضاءة) ثم تصعد</td><td>العَرَض يوحي بمشكلة فيزيائية، أو الشبكة جديدة</td></tr>
+<tr><td>من الأعلى إلى الأسفل <span class="en">(Top-down)</span></td><td>تبدأ من التطبيق ثم تنزل</td><td>مشكلة في تطبيق واحد وبقية الخدمات سليمة</td></tr>
+<tr><td>التقسيم <span class="en">(Divide and Conquer)</span></td><td>تبدأ من الطبقة 3 (<span class="ltr mono">ping</span>) ثم تتجه صعودًا أو نزولًا بحسب النتيجة</td><td>الأسلوب الأكثر عملية في أغلب الحالات</td></tr>
+<tr><td>تتبّع المسار <span class="en">(Follow the Path)</span></td><td>تتبع الحزمة جهازًا بعد جهاز من المصدر إلى الوجهة</td><td>الشبكات ذات عدة قفزات وجدران نارية</td></tr>
+<tr><td>المقارنة <span class="en">(Spot the Difference)</span></td><td>تقارن جهازًا يعمل بجهاز لا يعمل (ضبط، منفذ، VLAN)</td><td>عندما يتعطل جهاز واحد من مجموعة متماثلة</td></tr>
+</tbody></table></div>
+<div class="note"><b>قاعدة ذهبية:</b> قبل أي تشخيص عميق تأكد من الأمور البسيطة: هل الكابل موصول والإضاءة تعمل؟ هل الواجهة مفعّلة؟ هل الجهاز مشغّل؟ نسبة كبيرة من الأعطال سببها هذه الأشياء.</div>
+</section>
+
+<section id="tools">
+<h2>2. الأدوات حسب الطبقة</h2>
+<p>ربط الأداة بالطبقة يجعل التشخيص منظمًا: كل أداة تجيب عن سؤال في طبقة محددة (راجع نموذج OSI في الدرس 2).</p>
+<div class="table-wrap"><table>
+<thead><tr><th>الطبقة</th><th>السؤال</th><th>الأدوات</th></tr></thead>
+<tbody>
+<tr><td>1 — الفيزيائية</td><td>هل الرابط موصول وبأي سرعة؟</td><td>إضاءة المنفذ، <span class="ltr mono">ip link</span>، <span class="ltr mono">ethtool</span>، <span class="ltr mono">show interfaces</span></td></tr>
+<tr><td>2 — ربط البيانات</td><td>هل الجار المحلي مرئي؟ هل VLAN صحيحة؟</td><td><span class="ltr mono">arp -a</span>، <span class="ltr mono">ip neigh</span>، <span class="ltr mono">show mac address-table</span>، <span class="ltr mono">show vlan brief</span></td></tr>
+<tr><td>3 — الشبكة</td><td>هل عنواني صحيح؟ هل يوجد مسار؟</td><td><span class="ltr mono">ip addr</span> / <span class="ltr mono">ipconfig</span>، <span class="ltr mono">ping</span>، <span class="ltr mono">traceroute</span> / <span class="ltr mono">tracert</span>، <span class="ltr mono">ip route</span> / <span class="ltr mono">route print</span></td></tr>
+<tr><td>4 — النقل</td><td>هل المنفذ مفتوح؟ هل الاتصال يكتمل؟</td><td><span class="ltr mono">nc -vz</span>، <span class="ltr mono">Test-NetConnection</span>، <span class="ltr mono">ss -tuln</span>، <span class="ltr mono">tcpdump</span></td></tr>
+<tr><td>7 — التطبيق</td><td>هل الاسم يُحلّ؟ هل يستجيب الخادم؟</td><td><span class="ltr mono">dig</span> / <span class="ltr mono">nslookup</span>، <span class="ltr mono">curl -v</span>، سجلات الخدمة</td></tr>
+</tbody></table></div>
+<pre><code># Linux
+ip addr                    # العناوين والحالة
+ip route                   # جدول التوجيه والبوابة الافتراضية
+ip neigh                   # جدول ARP
+resolvectl status          # خوادم DNS (على الأنظمة التي تستخدم systemd-resolved)
+mtr example.com            # ping وtraceroute معًا بشكل مستمر
+
+# Windows
+ipconfig /all              # العنوان والبوابة وDNS وحالة DHCP
+ipconfig /release &amp; ipconfig /renew   # طلب عنوان جديد من DHCP
+ipconfig /flushdns         # مسح ذاكرة DNS المؤقتة
+tracert example.com        # تتبع المسار
+nslookup example.com       # استعلام DNS
+route print                # جدول التوجيه</code></pre>
+<p>أداة <span class="ltr mono">ping</span> تفيد في المقارنة لا في الحكم المطلق: كثير من الأجهزة والجدران النارية تحجب ICMP عمدًا، فعدم الرد لا يعني بالضرورة أن الجهاز متوقف. أكّد دائمًا بفحص المنفذ الفعلي للخدمة (<span class="ltr mono">nc -vz</span> أو <span class="ltr mono">curl</span>).</p>
+</section>
+
+<section id="scenario">
+<h2>3. سيناريو: «لا يفتح الموقع»</h2>
+<p>يشكو مستخدم من أن صفحات الويب لا تفتح. بدل التخمين، نسير على <b>سلّم</b> من الفحوص يعزل الطبقة المسؤولة. كل فحص ينجح يعني أن ما تحته سليم، وأول فحص يفشل يدلّك على موضع العطل.</p>
+<figure>
+<svg viewBox="0 0 700 415" role="img" aria-labelledby="f1t f1d">
+<title id="f1t">سلّم فحوص «لا يفتح الموقع»</title><desc id="f1d">خمسة فحوص متتالية: عنوان IP، ثم ping للبوابة، ثم ping لعنوان خارجي، ثم ping لاسم، ثم curl. عند فشل كل فحص يظهر السبب المحتمل: DHCP أو الرابط، ثم VLAN أو المنفذ أو البوابة، ثم التوجيه أو NAT أو المزوّد، ثم DNS، ثم المنفذ أو الجدار الناري أو الخدمة. إذا نجحت كلها فالشبكة سليمة والمشكلة في التطبيق.</desc>
+<rect rx="10" class="bx-green" x="400" y="10" width="270" height="44"/><rect rx="10" class="bx-green" x="400" y="80" width="270" height="44"/><rect rx="10" class="bx-green" x="400" y="150" width="270" height="44"/><rect rx="10" class="bx-green" x="400" y="220" width="270" height="44"/><rect rx="10" class="bx-green" x="400" y="290" width="270" height="44"/><rect rx="10" class="bx-gray" x="400" y="360" width="270" height="44"/>
+<rect rx="10" class="bx-amber" x="30" y="10" width="290" height="44"/><rect rx="10" class="bx-amber" x="30" y="80" width="290" height="44"/><rect rx="10" class="bx-amber" x="30" y="150" width="290" height="44"/><rect rx="10" class="bx-amber" x="30" y="220" width="290" height="44"/><rect rx="10" class="bx-amber" x="30" y="290" width="290" height="44"/>
+<path class="ln" d="M535 54V80M535 124V150M535 194V220M535 264V290M535 334V360M400 32H320M400 102H320M400 172H320M400 242H320M400 312H320"/>
+<polygon class="bx-navy" points="535,80 529,68 541,68"/><polygon class="bx-navy" points="535,150 529,138 541,138"/><polygon class="bx-navy" points="535,220 529,208 541,208"/><polygon class="bx-navy" points="535,290 529,278 541,278"/><polygon class="bx-navy" points="535,360 529,348 541,348"/>
+<polygon class="bx-navy" points="320,32 332,26 332,38"/><polygon class="bx-navy" points="320,102 332,96 332,108"/><polygon class="bx-navy" points="320,172 332,166 332,178"/><polygon class="bx-navy" points="320,242 332,236 332,248"/><polygon class="bx-navy" points="320,312 332,306 332,318"/>
+<g text-anchor="middle" class="t-b">
+<text x="535" y="37">1) <tspan class="ltr mono">ip addr / ipconfig</tspan></text>
+<text x="535" y="107">2) <tspan class="ltr mono">ping</tspan> البوابة الافتراضية</text>
+<text x="535" y="177">3) <tspan class="ltr mono">ping 8.8.8.8</tspan> (بالعنوان)</text>
+<text x="535" y="247">4) <tspan class="ltr mono">ping example.com</tspan> (بالاسم)</text>
+<text x="535" y="317">5) <tspan class="ltr mono">curl -v https://…</tspan></text>
+<text x="535" y="387">الشبكة سليمة: افحص التطبيق</text></g>
+<g text-anchor="middle" class="t-sm">
+<text x="175" y="37">لا عنوان أو <tspan class="ltr mono">169.254.x.x</tspan>: DHCP أو الرابط</text>
+<text x="175" y="107">VLAN أو المنفذ أو ARP أو البوابة</text>
+<text x="175" y="177">التوجيه أو NAT أو المزوّد</text>
+<text x="175" y="247">مشكلة DNS</text>
+<text x="175" y="317">المنفذ أو الجدار الناري أو الخدمة</text>
+<text x="360" y="24">فشل</text><text x="360" y="94">فشل</text><text x="360" y="164">فشل</text><text x="360" y="234">فشل</text><text x="360" y="304">فشل</text>
+<text x="568" y="72">نجح</text><text x="568" y="142">نجح</text><text x="568" y="212">نجح</text><text x="568" y="282">نجح</text><text x="568" y="352">نجح</text></g>
+</svg>
+<figcaption><b>الشكل 1:</b> سلّم الفحوص من الجهاز إلى الخدمة. العنوان <span class="ltr mono">169.254.x.x</span> يسمى APIPA: يعطيه نظام التشغيل لنفسه حين لا يجد خادم DHCP (الدرس 3).</figcaption>
+</figure>
+<h3>قراءة النتائج</h3>
+<ul>
+<li><b>الفحص 1:</b> إن كان العنوان من نطاق شبكتك فاستمر. وإن كان <span class="ltr mono">169.254.x.x</span> فالجهاز لم يحصل على عنوان: افحص الكابل أو Wi-Fi، ثم VLAN المنفذ، ثم خادم DHCP أو مرحّل DHCP (الدرس 5).</li>
+<li><b>الفحص 2:</b> فشل <span class="ltr mono">ping</span> للبوابة مع عنوان صحيح يعني مشكلة محلية في الطبقتين 1 و2: منفذ في VLAN خطأ، أو قناع شبكة خطأ، أو عنوان بوابة خطأ. تحقق من <span class="ltr mono">arp -a</span>: هل ظهر عنوان MAC للبوابة؟</li>
+<li><b>الفحص 3:</b> نجاح البوابة وفشل العنوان الخارجي يعني أن المشكلة بعد البوابة: مسار افتراضي ناقص، أو NAT لا يعمل، أو انقطاع عند المزوّد (الدرس 4).</li>
+<li><b>الفحص 4:</b> نجاح العنوان وفشل الاسم هو <b>DNS</b> تقريبًا دائمًا. جرّب <span class="ltr mono">nslookup example.com</span> ثم أعد المحاولة بخادم آخر، مثل <span class="ltr mono">nslookup example.com 1.1.1.1</span>، لتعرف أهو الخادم المضبوط أم الاتصال به.</li>
+<li><b>الفحص 5:</b> إذا نجح كل ما سبق وفشل الموقع، فاقرأ مخرجات <span class="ltr mono">curl -v</span> لتعرف أين توقفت: عند الاتصال (<i>timed out</i> أو <i>refused</i> كما في الدرس 7)، أم عند مصافحة TLS (شهادة منتهية أو وقت خاطئ على الجهاز)، أم عند ردّ HTTP برمز خطأ (4xx من العميل، 5xx من الخادم).</li>
+</ul>
+<h3>تمرين</h3>
+<p>في مخبرك (أو جهازين افتراضيين): (1) أوقف خادم DHCP وأعد طلب العنوان وسجّل ما يظهر. (2) غيّر خادم DNS في جهازك إلى عنوان غير موجود وجرّب <span class="ltr mono">ping</span> بالعنوان وبالاسم. (3) انقل منفذ الجهاز إلى VLAN أخرى وأعد السلّم. في كل مرة اكتب أول فحص فشل وما استنتجته منه.</p>
+</section>
+
+<section id="device">
+<h2>4. فحص الأجهزة: المبدلات والموجّهات</h2>
+<p>حين تصل المشكلة إلى جهاز الشبكة نفسه، تقرأ حالته من سطر الأوامر. هذه أوامر على أجهزة Cisco IOS، ولها نظائر على أنظمة الشركات الأخرى بأسماء قريبة.</p>
+<pre><code>show ip interface brief          # حالة وعناوين كل الواجهات
+show interfaces gi0/1            # التفاصيل: السرعة، الأخطاء، العدّادات
+show interfaces status           # ملخص المنافذ: VLAN، السرعة، الحالة
+show interfaces status err-disabled   # المنافذ المعطّلة تلقائيًا ولماذا
+show vlan brief                  # أي منفذ في أي VLAN
+show mac address-table           # أين تعلّم المبدّل عناوين MAC
+show ip route                    # جدول التوجيه
+show logging                     # آخر الأحداث والتنبيهات
+show cdp neighbors               # الأجهزة المجاورة (أو show lldp neighbors)</code></pre>
+<h3>قراءة حالة الواجهة</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>الحالة</th><th>المعنى</th><th>الإجراء</th></tr></thead>
+<tbody>
+<tr><td><span class="ltr mono">administratively down</span></td><td>أُغلقت يدويًا بأمر <span class="ltr mono">shutdown</span></td><td>نفّذ <span class="ltr mono">no shutdown</span> إن كان ذلك مقصودًا</td></tr>
+<tr><td><span class="ltr mono">down / down</span></td><td>لا إشارة فيزيائية: كابل أو جهاز الطرف الآخر أو وحدة الإرسال</td><td>افحص الكابل والمنفذ وجرّب كابلًا آخر</td></tr>
+<tr><td><span class="ltr mono">up / up</span></td><td>الرابط والبروتوكول يعملان</td><td>انتقل إلى فحص الأخطاء والعناوين</td></tr>
+<tr><td><span class="ltr mono">err-disabled</span></td><td>عطّل المبدّل المنفذ لمخالفة (أمن المنفذ، BPDU Guard، حلقة)</td><td>عالج السبب أولًا ثم أعد التفعيل بـ <span class="ltr mono">shutdown</span> ثم <span class="ltr mono">no shutdown</span></td></tr>
+</tbody></table></div>
+<div class="note"><b>عدّادات الأخطاء:</b> إذا رأيت في <span class="ltr mono">show interfaces</span> أرقام <span class="ltr mono">CRC</span> أو <span class="ltr mono">input errors</span> تتزايد باستمرار فالسبب الغالب كابل تالف أو موصل رديء أو تداخل أو عدم توافق في السرعة والازدواج <span class="en">(Duplex Mismatch)</span>. اقرأ العدّاد مرتين بفاصل زمني لترى هل يتزايد الآن، لأن الأرقام القديمة تبقى حتى تُصفَّر.</div>
+<div class="note"><b>قبل تغيير خطر على جهاز بعيد:</b> اطلب من الجهاز إعادة التشغيل تلقائيًا بالأمر <span class="ltr mono">reload in 10</span> قبل التغيير، فإذا قطعك التغيير عن الجهاز عاد بالضبط المحفوظ بعد عشر دقائق. وإذا نجح التغيير فألغِ الإعادة بـ <span class="ltr mono">reload cancel</span> ثم احفظ الضبط. وهذا يكمل تنبيه الدرس 6 عن النسخ الاحتياطي قبل التغيير.</div>
+</section>
+
+<section id="symptoms">
+<h2>5. أعراض شائعة وأسبابها</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>العَرَض</th><th>السبب المحتمل</th><th>الفحص</th></tr></thead>
+<tbody>
+<tr><td>العنوان <span class="ltr mono">169.254.x.x</span></td><td>لا يصل الجهاز إلى DHCP: VLAN خطأ أو الخادم متوقف أو نفدت العناوين</td><td><span class="ltr mono">ipconfig /renew</span>، ثم VLAN المنفذ وحالة الخادم</td></tr>
+<tr><td>ping البوابة يفشل</td><td>منفذ في VLAN خطأ، أو قناع أو بوابة خطأ، أو كابل</td><td><span class="ltr mono">show vlan brief</span>، <span class="ltr mono">arp -a</span></td></tr>
+<tr><td>انقطاع متقطع وبطء</td><td>كابل تالف أو عدم توافق ازدواج أو تداخل لاسلكي</td><td>عدّادات الأخطاء في <span class="ltr mono">show interfaces</span></td></tr>
+<tr><td>جهازان يفقدان الاتصال بالتناوب</td><td>تعارض عنوان IP (الجهازان بالعنوان نفسه)</td><td><span class="ltr mono">arp -a</span> وراقب تغيّر MAC لنفس العنوان</td></tr>
+<tr><td>ping بالعنوان ينجح وبالاسم يفشل</td><td>DNS غير مضبوط أو لا يستجيب</td><td><span class="ltr mono">nslookup</span>، <span class="ltr mono">dig</span></td></tr>
+<tr><td>مواقع معينة فقط لا تفتح</td><td>قاعدة جدار ناري أو ACL أو مسار خاص أو MTU</td><td><span class="ltr mono">traceroute</span>، <span class="ltr mono">curl -v</span>، راجع الدرس 7</td></tr>
+<tr><td>تحذير شهادة HTTPS</td><td>شهادة منتهية، أو تاريخ ووقت الجهاز خاطئان، أو اعتراض للاتصال</td><td><span class="ltr mono">curl -v</span>، وتحقق من ساعة الجهاز ومن NTP</td></tr>
+<tr><td>منفذ مبدّل توقف فجأة</td><td><span class="ltr mono">err-disabled</span> بسبب أمن المنفذ أو BPDU Guard أو حلقة</td><td><span class="ltr mono">show interfaces status err-disabled</span>، <span class="ltr mono">show logging</span></td></tr>
+<tr><td>عطل بعد تغيير حديث</td><td>التغيير نفسه</td><td>قارن الضبط الحالي بالنسخة الاحتياطية وتراجع إن لزم</td></tr>
+</tbody></table></div>
+</section>
+
+<section id="principles">
+<h2>6. مبادئ الأمن الأساسية</h2>
+<p>الأمن ليس منتجًا يُشترى بل ممارسة مستمرة. يقوم على ثلاثة أهداف تُعرف بـ <b>ثالوث CIA</b>:</p>
+<ul>
+<li><b>السرية</b> <span class="en">(Confidentiality)</span>: لا يطّلع على البيانات إلا من يحق له. تُحقَّق بالتشفير والتحكم بالوصول.</li>
+<li><b>السلامة</b> <span class="en">(Integrity)</span>: لا تتغير البيانات دون إذن، وتُكتشف أي تغييرات. تُحقَّق بالتجزئة والتوقيعات الرقمية والتحكم بالتغيير.</li>
+<li><b>التوافر</b> <span class="en">(Availability)</span>: تبقى الخدمة متاحة عند الحاجة. تُحقَّق بالتكرار والنسخ الاحتياطي والحماية من هجمات الحجب.</li>
+</ul>
+<h3>مبادئ تصميمية</h3>
+<ul>
+<li><b>أقل الصلاحيات</b> <span class="en">(Least Privilege)</span>: امنح كل مستخدم أو خدمة ما يحتاجه فقط، ولا تستخدم حساب المدير في الأعمال اليومية.</li>
+<li><b>الدفاع المتعدد الطبقات</b> <span class="en">(Defense in Depth)</span>: لا تعتمد على ضابط واحد، فإذا سقط بقيت ضوابط أخرى.</li>
+<li><b>الرفض افتراضيًا</b> <span class="en">(Default Deny)</span>: امنع كل شيء ثم اسمح بما يلزم صراحةً.</li>
+<li><b>التقسيم</b> <span class="en">(Segmentation)</span>: فصل الشبكات (VLAN وVRF من الدروس 5 و6) يحصر الضرر إن اخترق أحد الأجهزة.</li>
+<li><b>البساطة والتحديث:</b> كل خدمة غير ضرورية سطح هجوم إضافي، والثغرات المعروفة تُستغل بعد نشرها بسرعة.</li>
+</ul>
+<figure>
+<svg viewBox="0 0 700 260" role="img" aria-labelledby="f2t f2d">
+<title id="f2t">طبقات الدفاع</title><desc id="f2d">خمس طبقات متداخلة من الخارج إلى الداخل: المحيط بالجدار الناري، ثم الشبكة الداخلية بـ VLAN وACL، ثم الأجهزة بالتحديث والتقوية، ثم التطبيق بالمصادقة والصلاحيات، وفي المركز البيانات بالتشفير والنسخ الاحتياطي.</desc>
+<rect rx="10" class="bx-gray" x="10" y="5" width="680" height="250"/>
+<rect rx="10" class="bx-amber" x="50" y="40" width="600" height="205"/>
+<rect rx="10" class="bx-green" x="90" y="75" width="520" height="160"/>
+<rect rx="10" class="bx-navy" x="130" y="110" width="440" height="115"/>
+<rect rx="10" class="bx-green" x="170" y="145" width="360" height="70"/>
+<g text-anchor="middle" class="t-b">
+<text x="350" y="27">1) المحيط: جدار ناري وفصل الشبكات</text>
+<text x="350" y="62">2) الشبكة الداخلية: VLAN وACL وتقسيم</text>
+<text x="350" y="97">3) الأجهزة: تحديثات وتقوية الضبط</text>
+<text x="350" y="132" class="t-w">4) التطبيق: مصادقة وصلاحيات</text>
+<text x="350" y="185">5) البيانات: تشفير ونسخ احتياطي</text></g>
+</svg>
+<figcaption><b>الشكل 2:</b> الدفاع المتعدد الطبقات: على المهاجم أن يتجاوز عدة ضوابط متتالية للوصول إلى البيانات.</figcaption>
+</figure>
+</section>
+
+<section id="hardening">
+<h2>7. تقوية الأجهزة</h2>
+<p>التقوية <span class="en">(Hardening)</span> تعني تقليل ما يمكن مهاجمته في الجهاز نفسه. هذه قائمة عملية لأي مبدّل أو موجّه أو جدار ناري:</p>
+<ul>
+<li><b>غيّر الحسابات وكلمات المرور الافتراضية</b> فورًا. كلمات المرور الافتراضية معروفة للجميع وتُجرَّب أولًا في أي هجوم.</li>
+<li><b>كلمات مرور طويلة وفريدة</b> لكل جهاز، مع مدير كلمات مرور، و<b>مصادقة متعددة العوامل</b> <span class="en">(MFA)</span> حيث تتوفر.</li>
+<li><b>استخدم SSH بدل Telnet</b>، وHTTPS بدل HTTP للإدارة. Telnet يرسل كلمة المرور نصًا مكشوفًا (الدرس 7).</li>
+<li><b>قيّد الإدارة</b> على شبكة أو VLAN إدارة مخصصة، وعلى عناوين مديرين محددين.</li>
+<li><b>عطّل ما لا تستخدمه:</b> المنافذ الفارغة والخدمات غير الضرورية وواجهة الويب إن لم تلزم.</li>
+<li><b>حدّث البرمجيات</b> <span class="en">(Firmware)</span> بانتظام بعد قراءة ملاحظات الإصدار واختباره.</li>
+<li><b>فعّل السجلات والتوقيت:</b> أرسل السجلات إلى خادم مركزي، وزامن الساعة بـ NTP حتى تتطابق الأوقات بين الأجهزة عند التحقيق.</li>
+<li><b>احتفظ بنسخ احتياطية من الضبط</b> وجرّب استعادتها، فالنسخة التي لم تجرَّب قد لا تعمل وقت الحاجة.</li>
+</ul>
+<pre><code>! أمثلة ضبط على Cisco IOS (غيّر الأسماء والعناوين بما يناسب شبكتك)
+hostname SW1
+ip domain-name lab.local
+username admin secret &lt;كلمة-مرور-طويلة&gt;
+enable secret &lt;كلمة-مرور-أخرى&gt;
+crypto key generate rsa modulus 2048
+ip ssh version 2
+
+ip access-list standard ADMIN-ONLY
+ permit 10.0.99.0 0.0.0.255          ! شبكة الإدارة فقط
+line vty 0 4
+ access-class ADMIN-ONLY in
+ transport input ssh                 ! SSH فقط بدل Telnet
+ login local
+ exec-timeout 10 0                   ! إنهاء الجلسة الخاملة بعد 10 دقائق
+no ip http server                    ! تعطيل واجهة HTTP إن لم تلزم
+
+interface range gi0/10 - 24          ! المنافذ الفارغة
+ switchport mode access
+ switchport access vlan 999          ! VLAN غير مستخدمة
+ shutdown</code></pre>
+<div class="note"><b>ملاحظة:</b> الأمر <span class="ltr mono">service password-encryption</span> يخفي كلمات المرور بتشفير ضعيف قابل للعكس بسهولة، فلا تعتمد عليه للحماية. استخدم <span class="ltr mono">secret</span> الذي يخزّن تجزئة، وحدّد خوارزميتها بحسب إصدار النظام لديك.</div>
+</section>
+
+<section id="controls">
+<h2>8. ضوابط الشبكة</h2>
+<h3>الجدار الناري وقوائم التحكم ACL</h3>
+<p>الجدار الناري يفحص الحزم ويسمح أو يمنع بحسب قواعد. وتعمل قوائم التحكم <span class="en">(ACL)</span> بالفكرة نفسها على الموجّهات والمبدلات. المهم أن تعرف ثلاثة أمور:</p>
+<ul>
+<li><b>الترتيب مهم:</b> تُفحص القواعد من الأعلى إلى الأسفل ويُطبَّق أول تطابق، فتوضع القواعد الأخص قبل الأعم.</li>
+<li><b>الرفض الضمني</b> <span class="en">(Implicit Deny)</span>: في نهاية كل قائمة ACL قاعدة غير مرئية تمنع كل ما لم يُسمح به. لذلك قد تعطّل شبكتك إذا طبّقت قائمة فيها «سماح» واحد فقط.</li>
+<li><b>الجدار الحافظ للحالة</b> <span class="en">(Stateful)</span> يسجّل الاتصالات الخارجة من الداخل ويسمح تلقائيًا بردودها، فلا تحتاج إلى فتح المنافذ العليا للردود.</li>
+</ul>
+<div class="table-wrap"><table>
+<thead><tr><th>#</th><th>المصدر</th><th>الوجهة</th><th>المنفذ</th><th>الإجراء</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>الإنترنت</td><td>خادم الويب <span class="ltr mono">203.0.113.10</span></td><td><span class="ltr mono">TCP 443</span></td><td>سماح</td></tr>
+<tr><td>2</td><td>شبكة الإدارة <span class="ltr mono">10.0.99.0/24</span></td><td>أجهزة الشبكة</td><td><span class="ltr mono">TCP 22</span></td><td>سماح</td></tr>
+<tr><td>3</td><td>الشبكة الداخلية</td><td>الإنترنت</td><td>أي منفذ</td><td>سماح (والردود تلقائيًا)</td></tr>
+<tr><td>4</td><td>أي مصدر</td><td>أي وجهة</td><td>أي منفذ</td><td>رفض وتسجيل</td></tr>
+</tbody></table></div>
+<p>لاحظ أن القاعدة الأخيرة تسجّل المحاولات المرفوضة، فتكشف السجلات من يحاول الوصول إلى ما لا يجوز. وكما ذكرنا في الدرس 7، لا تحجب ICMP كله بل اسمح بالأنواع اللازمة لعمل MTU والتشخيص.</p>
+<h3>ضوابط الطبقة الثانية على المبدلات</h3>
+<p>كثير من الهجمات تحدث داخل الشبكة المحلية نفسها لأن الجهاز المخترق أو الدخيل يصل إلى منفذ في المبدّل. هذه ميزات شائعة تحميك:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>الميزة</th><th>ما تحميه منه</th></tr></thead>
+<tbody>
+<tr><td>أمن المنفذ <span class="en">(Port Security)</span></td><td>تحديد عدد عناوين MAC المسموح بها على المنفذ، فيُقيَّد توصيل أجهزة غير مرخصة</td></tr>
+<tr><td><span class="en">DHCP Snooping</span></td><td>خادم DHCP مزيّف يوزّع بوابة أو DNS خبيثين؛ يسمح بردود DHCP من المنافذ الموثوقة فقط</td></tr>
+<tr><td><span class="en">Dynamic ARP Inspection</span></td><td>انتحال ARP (الدرس 2)؛ يتحقق من ردود ARP بمقارنتها بجدول DHCP Snooping</td></tr>
+<tr><td><span class="en">BPDU Guard</span></td><td>جهاز دخيل يرسل رسائل STP أو حلقة على منفذ طرفي؛ يعطّل المنفذ</td></tr>
+<tr><td>تعطيل المنافذ الفارغة وإبقاؤها في VLAN غير مستخدمة</td><td>توصيل جهاز غريب بمنفذ منسي</td></tr>
+</tbody></table></div>
+<pre><code>interface gi0/5
+ switchport mode access
+ switchport access vlan 20
+ switchport port-security
+ switchport port-security maximum 2
+ switchport port-security violation restrict
+ spanning-tree portfast
+ spanning-tree bpduguard enable</code></pre>
+<h3>الشبكات اللاسلكية والوصول عن بُعد</h3>
+<ul>
+<li><b>Wi-Fi:</b> استخدم <b>WPA3</b>، أو WPA2 بتشفير AES (CCMP) إن لم يتوفر. لا تستخدم WEP ولا WPA القديم ولا TKIP. عطّل WPS، وضع كلمة مرور طويلة، وأنشئ <b>شبكة ضيوف</b> مفصولة بـ VLAN عن الشبكة الداخلية.</li>
+<li><b>VPN:</b> يشفّر الاتصال بين طرفين عبر شبكة غير موثوقة (IPsec أو WireGuard أو OpenVPN). يُستخدم لوصول الموظفين عن بُعد وللربط بين الفروع، ويُفضَّل أن يكون مع مصادقة متعددة العوامل.</li>
+<li><b>الإدارة خارج النطاق</b> <span class="en">(Out-of-Band)</span>: شبكة أو منفذ إدارة منفصل يبقى متاحًا حين تتعطل الشبكة الرئيسية.</li>
+</ul>
+</section>
+
+<section id="threats">
+<h2>9. تهديدات شائعة وكيف تُقابَل</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>التهديد</th><th>ما هو</th><th>الدفاع</th></tr></thead>
+<tbody>
+<tr><td>التصيد <span class="en">(Phishing)</span></td><td>رسالة تنتحل جهة موثوقة لتسرق بيانات الدخول أو تنصّب برمجية</td><td>توعية المستخدمين، المصادقة المتعددة العوامل، تصفية البريد</td></tr>
+<tr><td>تخمين كلمات المرور</td><td>تجربة كلمات مرور كثيرة على خدمة مكشوفة (SSH مثلًا)</td><td>كلمات مرور قوية، قفل الحساب مؤقتًا، تقييد الوصول بالعنوان، المفاتيح بدل كلمات المرور</td></tr>
+<tr><td>انتحال ARP / الوسيط <span class="en">(MITM)</span></td><td>جهاز يوهم الآخرين أنه البوابة ليمرّ الاتصال عبره</td><td>Dynamic ARP Inspection، والتشفير (HTTPS وSSH) ليبقى المحتوى محميًا حتى لو اعتُرض</td></tr>
+<tr><td>خادم DHCP مزيّف</td><td>جهاز يوزّع إعدادات شبكة خبيثة</td><td>DHCP Snooping</td></tr>
+<tr><td>حجب الخدمة <span class="en">(DoS / DDoS)</span></td><td>إغراق الخدمة بالطلبات حتى لا تستجيب (راجع الدرس 7)</td><td>تحديد المعدل، SYN cookies، خدمات التخفيف لدى المزوّد</td></tr>
+<tr><td>البرمجيات الخبيثة وفدية التشفير</td><td>برمجية تنفّذ أوامر المهاجم أو تشفّر الملفات وتطلب فدية</td><td>التحديثات، التقسيم، أقل الصلاحيات، نسخ احتياطية غير متصلة بالشبكة الرئيسية</td></tr>
+<tr><td>بيانات الدخول الافتراضية</td><td>أجهزة تُركت بكلمة المرور الأصلية</td><td>تغييرها عند التركيب وجرد دوري للأجهزة</td></tr>
+</tbody></table></div>
+<div class="note"><b>الحدود الأخلاقية والقانونية:</b> فهم الهجمات هدفه الدفاع. لا تفحص منافذ شبكة أو تجرّب أدوات اختبار الاختراق إلا على شبكتك أو مخبر لديك إذن مكتوب باختباره. الدخول غير المصرح به إلى الأنظمة جريمة في معظم الدول حتى لو كانت النية «التجربة فقط».</div>
+<h3>الاستجابة للحوادث باختصار</h3>
+<ol>
+<li><b>اكتشف وتأكد:</b> من السجلات والتنبيهات وشكاوى المستخدمين.</li>
+<li><b>احصر الضرر:</b> افصل الجهاز المصاب عن الشبكة (افصل الكابل أو انقله إلى VLAN معزولة) ولا تُطفئه فورًا إن كنت تريد حفظ الأدلة.</li>
+<li><b>استأصل السبب وأعد التشغيل:</b> أزل الثغرة أو الحساب المخترق، واستعد من نسخة نظيفة.</li>
+<li><b>تعلّم:</b> وثّق ما حدث وغيّر الضوابط حتى لا يتكرر.</li>
+</ol>
+</section>
+
+<section id="summary">
+<h2>10. الملخص</h2>
+<ul>
+<li>اتبع منهجية: حدّد المشكلة، ضع فرضية، اختبرها، أصلح بتغيير واحد، تحقق، ووثّق.</li>
+<li>اربط الفحص بالطبقة: <span class="ltr mono">ip addr</span> ثم <span class="ltr mono">ping</span> البوابة ثم عنوان خارجي ثم اسم ثم <span class="ltr mono">curl</span>؛ وأول فحص يفشل يحدد موضع العطل.</li>
+<li>اقرأ حالة الواجهات والعدّادات والجداول على الأجهزة، وانتبه إلى <span class="ltr mono">err-disabled</span> وأخطاء CRC.</li>
+<li>الأمن ثلاثية CIA: السرية والسلامة والتوافر، ويقوم على أقل الصلاحيات والدفاع المتعدد والرفض افتراضيًا والتقسيم.</li>
+<li>قوِّ الأجهزة: كلمات مرور قوية، SSH فقط، إدارة محصورة، تعطيل غير المستخدم، تحديثات وسجلات ونسخ احتياطية.</li>
+<li>الجدار الناري وACL تُقرأ من الأعلى إلى الأسفل وتنتهي برفض ضمني، وميزات الطبقة الثانية (أمن المنفذ وDHCP Snooping وDAI وBPDU Guard) تحمي الشبكة المحلية.</li>
+</ul>
+</section>
+
+<section id="glossary">
+<h2>11. مسرد المصطلحات</h2>
+<dl class="glossary">
+<dt>Troubleshooting</dt><dd>عملية منظمة لتحديد سبب العطل وإصلاحه.</dd>
+<dt>APIPA</dt><dd>عنوان <span class="ltr mono">169.254.x.x</span> الذي يعطيه الجهاز لنفسه حين لا يجد DHCP.</dd>
+<dt>err-disabled</dt><dd>حالة منفذ عطّله المبدّل تلقائيًا بسبب مخالفة.</dd>
+<dt>CIA Triad</dt><dd>السرية والسلامة والتوافر: أهداف الأمن الثلاثة.</dd>
+<dt>Least Privilege</dt><dd>منح أقل صلاحيات لازمة للمهمة.</dd>
+<dt>Defense in Depth</dt><dd>طبقات متعددة من الضوابط بدل ضابط واحد.</dd>
+<dt>Hardening</dt><dd>تقليل سطح الهجوم بتقوية ضبط الجهاز.</dd>
+<dt>ACL</dt><dd>قائمة قواعد تسمح أو تمنع الحزم، ويُطبَّق فيها أول تطابق وتنتهي برفض ضمني.</dd>
+<dt>Stateful Firewall</dt><dd>جدار ناري يتتبع حالة الاتصالات ويسمح بردودها تلقائيًا.</dd>
+<dt>DHCP Snooping</dt><dd>ميزة مبدّل تسمح بردود DHCP من منافذ موثوقة فقط.</dd>
+<dt>MFA</dt><dd>المصادقة متعددة العوامل: أكثر من وسيلة للتحقق من الهوية.</dd>
+<dt>VPN</dt><dd>نفق مشفّر بين طرفين عبر شبكة غير موثوقة.</dd>
+</dl>
+</section>
+
+<section id="quiz">
+<h2>12. اختبر فهمك</h2>
+<p>اضغط على إجابة لترى التفسير. تُسجَّل نتيجتك عند الإجابة عن كل الأسئلة.</p>
+<div id="quiz-box"></div>
+<div id="quiz-result" class="alert info hidden"></div>
+<button id="retry" class="btn secondary hidden" type="button">إعادة المحاولة</button>
+<div style="margin-top:26px">
+  <button id="complete" class="btn success" type="button">وضع علامة «مكتمل»</button>
+  <span id="complete-msg" class="hint" role="status"></span>
+</div>
+</section>
+
+<section id="resources">
+<h2>13. مراجع موثوقة للتعمق</h2>
+<ul>
+<li><a href="https://csrc.nist.gov/pubs/sp/800/41/r1/final" rel="noopener">NIST SP 800-41 Rev. 1</a> — إرشادات الجدران النارية وسياساتها.</li>
+<li><a href="https://www.cisecurity.org/controls" rel="noopener">CIS Critical Security Controls</a> — قائمة مرتبة بالأولويات لضوابط الأمن العملية.</li>
+<li><a href="https://www.nist.gov/cyberframework" rel="noopener">NIST Cybersecurity Framework</a> — إطار لإدارة مخاطر الأمن السيبراني.</li>
+<li><a href="https://www.rfc-editor.org/rfc/rfc2827" rel="noopener">RFC 2827 (BCP 38)</a> — تصفية الدخول ضد انتحال العناوين.</li>
+<li><a href="https://www.wireshark.org/docs/" rel="noopener">وثائق Wireshark</a> — تحليل الحزم لاستكشاف الأخطاء.</li>
+</ul>
+<h3>خاتمة المنهج والخطوات التالية</h3>
+<p>بإكمالك هذا الدرس تكون قد أنهيت دروس المنهج الثمانية: من الشبكات المحلية والواسعة، إلى OSI والعنونة والتوجيه وVLAN وVXLAN وTCP/IP، وصولًا إلى التشخيص والأمن. أفضل ما تفعله الآن هو <b>التطبيق</b>: ابنِ مخبرًا بمحاكٍ مجاني أو أجهزة افتراضية، وأعد ما تعلمته بنفسك، وتعمّد إحداث أعطال لتتدرب على السلّم. ومن أراد التوسع فالشهادات المهنية العامة في الشبكات والأمن تنظّم المسار وتغطي ما بعد هذا المنهج.</p>
+<h3>التنقل بين الدروس</h3>
+<p><b>المتطلبات السابقة:</b> <a href="lesson-3.html">الدرس 3</a> و<a href="lesson-5.html">الدرس 5</a> و<a href="lesson-7.html">الدرس 7</a>.<br>
+<b>هذا آخر دروس المنهج.</b> <a href="lesson-7.html">الدرس السابق</a> — <a href="curriculum.html">عرض المنهج الكامل</a></p>
+</section>
+</article>
+</div>
+</main>
+<div id="site-footer"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+const LESSON_ID = 8;
+const QUESTIONS = [
+  { q: "تعمل على عطل في الشبكة. ما الأسلوب الأصح في الإصلاح؟",
+    o: ["تغيير عدة إعدادات معًا لتسريع الحل", "إعادة تشغيل كل الأجهزة أولًا دائمًا", "تغيير شيء واحد في كل مرة مع تسجيل ما غُيّر", "تجاهل التوثيق إذا عاد الاتصال"], a: 2,
+    e: "تغيير واحد في كل مرة يبيّن ما أصلح العطل فعلًا ويسهّل التراجع، والتوثيق يمنع تكرار المشكلة." },
+  { q: "أظهر ipconfig على جهاز العنوان 169.254.12.7. ما التفسير الأرجح؟",
+    o: ["لم يحصل الجهاز على عنوان من DHCP", "خادم DNS معطّل", "جدار ناري يمنع المنفذ 443", "البوابة الافتراضية تعمل بشكل سليم"], a: 0,
+    e: "العناوين 169.254.x.x يعيّنها الجهاز لنفسه (APIPA) حين لا يجد خادم DHCP، فابدأ بالكابل أو VLAN أو خادم DHCP." },
+  { q: "ينجح ping للبوابة ولـ 8.8.8.8 لكن يفشل ping لـ example.com. ما الطبقة المشتبه بها؟",
+    o: ["الكابل", "VLAN خطأ", "بوابة خطأ", "DNS"], a: 3,
+    e: "الوصول بالعنوان ينجح، فالتوجيه والرابط سليمان. الفشل بالاسم وحده يشير إلى تحليل الأسماء DNS." },
+  { q: "رأيت في show interfaces أرقام CRC تتزايد باستمرار على منفذ. ما السبب الأرجح؟",
+    o: ["شبكة VLAN غير موجودة", "مشكلة فيزيائية: كابل أو موصل أو ازدواج أو تداخل", "خادم DHCP متوقف", "قاعدة ACL تمنع الموقع"], a: 1,
+    e: "أخطاء CRC المتزايدة تدل عادة على مشكلة في الطبقة 1 مثل كابل تالف أو عدم توافق الازدواج." },
+  { q: "أي مبدأ يعني منح كل مستخدم الصلاحيات اللازمة لعمله فقط؟",
+    o: ["الرفض الضمني", "التقسيم", "أقل الصلاحيات", "التوافر"], a: 2,
+    e: "مبدأ أقل الصلاحيات يحدّ من الضرر إن اخترق حساب أو أخطأ مستخدم." },
+  { q: "لماذا نستبدل Telnet بـ SSH لإدارة الأجهزة؟",
+    o: ["لأن SSH أسرع دائمًا", "لأن Telnet يرسل كلمة المرور والبيانات بنص مكشوف وSSH يشفّرها", "لأن Telnet لا يعمل على TCP", "لأن SSH لا يحتاج إلى منفذ"], a: 1,
+    e: "Telnet لا يشفّر شيئًا، فيمكن التقاط كلمة المرور من الشبكة. SSH يشفّر الجلسة بالكامل." },
+  { q: "طبّقت قائمة ACL فيها قاعدة سماح واحدة فقط فانقطعت بقية الحركة. ما السبب؟",
+    o: ["ACL تعمل من الأسفل إلى الأعلى", "الجهاز لا يدعم ACL", "قواعد السماح تُحذف بعد دقيقة", "وجود رفض ضمني في نهاية كل قائمة"], a: 3,
+    e: "في نهاية كل ACL قاعدة غير مرئية تمنع كل ما لم يُسمح به صراحةً، فيجب إضافة السماح لما تريده أيضًا." },
+  { q: "أي ميزة تحمي الشبكة المحلية من خادم DHCP مزيّف؟",
+    o: ["DHCP Snooping", "BPDU Guard", "NAT", "VXLAN"], a: 0,
+    e: "DHCP Snooping يسمح بردود DHCP من المنافذ الموثوقة فقط، فيُحجب الخادم المزيّف." }
+];
+</script>
+<script src="assets/js/lesson.js"></script>
+</body>
+</html>

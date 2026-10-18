@@ -1,0 +1,362 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>الدرس 2: نموذج OSI — أكاديمية الشبكات العربية</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="assets/img/academy-icon.png">
+<script>try{var t=localStorage.getItem("ana_theme")||(matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light");document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<a class="skip" href="#main">تخطَّ إلى المحتوى</a>
+<div id="site-header"></div>
+<main id="main" class="container">
+<div class="lesson-layout">
+<nav class="toc" aria-label="قائمة الدروس والأقسام"><div class="course-sidebar-title">المنهج الدراسي</div><div id="lesson-navigation"></div><div class="original-toc" hidden>
+  <strong>محتويات الدرس</strong>
+  <ol>
+    <li><a href="#intro">مقدمة</a></li>
+    <li><a href="#objectives">الأهداف والمتطلبات</a></li>
+    <li><a href="#why">لماذا نموذج الطبقات؟</a></li>
+    <li><a href="#layers">الطبقات السبع</a></li>
+    <li><a href="#encap">التغليف: رحلة البيانات</a></li>
+    <li><a href="#hops">ماذا يتغير في كل قفزة؟</a></li>
+    <li><a href="#tcpip">OSI مقابل TCP/IP</a></li>
+    <li><a href="#transport">الطبقة 4 بعمق: TCP وUDP</a></li>
+    <li><a href="#trouble">استكشاف الأخطاء بالطبقات</a></li>
+    <li><a href="#mistakes">أخطاء شائعة</a></li>
+    <li><a href="#security">الأمن لكل طبقة</a></li>
+    <li><a href="#summary">الملخص</a></li>
+    <li><a href="#glossary">المسرد</a></li>
+    <li><a href="#quiz">الاختبار</a></li>
+    <li><a href="#resources">مراجع والدرس التالي</a></li>
+  </ol></div>
+</nav>
+
+<article class="lesson">
+<div id="welcome" class="alert ok hidden"></div>
+
+<section id="intro">
+<h1>الدرس 2: نموذج OSI <span class="en">(The OSI Model)</span></h1>
+<p>عندما تفتح صفحة ويب يحدث أمر معقّد: تطبيق يطلب بيانات، وعناوين تُحسب، وكابلات تنقل إشارات، وأجهزة تقرر المسار. لو حاولنا فهم كل ذلك دفعة واحدة لضعنا. الحل الذي اعتمده المهندسون هو <b>تقسيم المشكلة إلى طبقات</b>، لكل طبقة مهمة واحدة واضحة. هذا الدرس يعطيك «الخريطة» التي ستستخدمها في كل ما بعده: عنونة IP والتوجيه وVLAN وTCP وحتى الأمن.</p>
+</section>
+
+<section id="objectives">
+<h2>أهداف التعلم</h2>
+<ul>
+<li>شرح سبب تقسيم الشبكات إلى طبقات وفوائد ذلك.</li>
+<li>تعداد الطبقات السبع بترتيبها ومهمة كل منها وبروتوكولات وأجهزة تنتمي إليها.</li>
+<li>شرح عملية <b>التغليف</b> <span class="en">(Encapsulation)</span> وفكّه، وتسمية وحدة البيانات في كل طبقة.</li>
+<li>التفريق بين ما يتغير في كل قفزة (MAC) وما يبقى ثابتًا (IP).</li>
+<li>مقارنة OSI بنموذج TCP/IP العملي، وفهم الفرق بين TCP وUDP.</li>
+<li>استخدام الطبقات كخطة منظّمة لاستكشاف الأعطال.</li>
+</ul>
+<h3>المعرفة المسبقة</h3>
+<p>الدرس الأول (الشبكات المحلية والواسعة، المحوّل والموجّه، وعنوان MAC). لا شيء غير ذلك.</p>
+</section>
+
+<section id="why">
+<h2>1. لماذا نموذج الطبقات؟</h2>
+<p><b>نموذج OSI</b> <span class="en">(Open Systems Interconnection)</span> وضعته منظمة ISO كنموذج مرجعي. هو <b>ليس بروتوكولًا ولا برنامجًا</b>، بل طريقة للتفكير: نقسم عملية الاتصال إلى سبع مراحل، وكل مرحلة تقدّم خدمة للمرحلة التي فوقها وتستخدم خدمة التي تحتها.</p>
+<ul>
+<li><b>التبسيط:</b> تتعامل مع مشكلة صغيرة في كل مرة.</li>
+<li><b>الاستقلالية:</b> يمكن تغيير Wi-Fi إلى كابل (الطبقتان 1 و2) دون أن يتغير المتصفح (الطبقة 7).</li>
+<li><b>التوافق:</b> شركات مختلفة تصنع أجهزة تتفاهم لأنها تلتزم بالمعايير نفسها لكل طبقة.</li>
+<li><b>لغة مشتركة:</b> عندما يقول زميلك «المشكلة في الطبقة الثالثة» تعرفان فورًا أين تبحثان.</li>
+</ul>
+<div class="analogy"><b>تشبيه:</b> إرسال طرد بالبريد. أنت (التطبيق) تكتب الرسالة. موظف التغليف (النقل) يقسمها في صناديق مرقّمة. موظف العناوين (الشبكة) يكتب عنوان المستلم النهائي. شركة الشحن المحلية (ربط البيانات) تضع ملصقًا للحلقة التالية من الطريق. والشاحنة والطريق هما الطبقة الفيزيائية. لا يعرف سائق الشاحنة محتوى الرسالة، ولا يحتاج.</div>
+<p>الفكرة الأهم: <b>كل طبقة في المرسل «تتحدث» مع الطبقة المناظرة لها في المستقبل</b> عبر ما تضيفه من معلومات تسمى <b>ترويسة</b> <span class="en">(Header)</span>، لكنها فعليًا تمرر البيانات إلى الطبقة التي تحتها.</p>
+</section>
+
+<section id="layers">
+<h2>2. الطبقات السبع</h2>
+<p>نقرأها من الأعلى (الأقرب للمستخدم) إلى الأسفل (الأقرب للكابل). ولحفظ ترتيبها من 1 إلى 7 يستخدم الناس الجملة الإنجليزية: <span class="en">Please Do Not Throw Sausage Pizza Away</span> (Physical, Data link, Network, Transport, Session, Presentation, Application).</p>
+
+<figure>
+<svg viewBox="0 0 700 420" role="img" aria-labelledby="f1t f1d">
+<title id="f1t">الطبقات السبع لنموذج OSI</title><desc id="f1d">جدول من سبعة صفوف: اسم الطبقة، ووحدة البيانات فيها، وأمثلة من البروتوكولات والأجهزة.</desc>
+<text x="125" y="18" text-anchor="middle" class="t-b t-sm">أمثلة</text><text x="335" y="18" text-anchor="middle" class="t-b t-sm">وحدة البيانات</text><text x="560" y="18" text-anchor="middle" class="t-b t-sm">الطبقة</text>
+<rect rx="10" class="bx" x="440" y="30" width="240" height="46"/><text x="560" y="52" text-anchor="middle" class="t-b">7. التطبيق</text><text x="560" y="69" text-anchor="middle" class="t-sm">Application</text>
+<rect rx="10" class="bx" x="240" y="30" width="190" height="46"/><text x="335" y="58" text-anchor="middle">بيانات (Data)</text>
+<rect rx="10" class="bx" x="20" y="30" width="210" height="46"/><text x="125" y="58" text-anchor="middle" class="t-sm">HTTP · DNS · SMTP</text>
+<rect rx="10" class="bx" x="440" y="85" width="240" height="46"/><text x="560" y="107" text-anchor="middle" class="t-b">6. العرض</text><text x="560" y="124" text-anchor="middle" class="t-sm">Presentation</text>
+<rect rx="10" class="bx" x="240" y="85" width="190" height="46"/><text x="335" y="113" text-anchor="middle">بيانات (Data)</text>
+<rect rx="10" class="bx" x="20" y="85" width="210" height="46"/><text x="125" y="113" text-anchor="middle" class="t-sm">TLS · JPEG · UTF-8</text>
+<rect rx="10" class="bx" x="440" y="140" width="240" height="46"/><text x="560" y="162" text-anchor="middle" class="t-b">5. الجلسة</text><text x="560" y="179" text-anchor="middle" class="t-sm">Session</text>
+<rect rx="10" class="bx" x="240" y="140" width="190" height="46"/><text x="335" y="168" text-anchor="middle">بيانات (Data)</text>
+<rect rx="10" class="bx" x="20" y="140" width="210" height="46"/><text x="125" y="168" text-anchor="middle" class="t-sm">فتح الجلسة وإنهاؤها</text>
+<rect rx="10" class="bx-green" x="440" y="195" width="240" height="46"/><text x="560" y="217" text-anchor="middle" class="t-b">4. النقل</text><text x="560" y="234" text-anchor="middle" class="t-sm">Transport</text>
+<rect rx="10" class="bx-green" x="240" y="195" width="190" height="46"/><text x="335" y="223" text-anchor="middle">مقطع (Segment)</text>
+<rect rx="10" class="bx-green" x="20" y="195" width="210" height="46"/><text x="125" y="223" text-anchor="middle" class="t-sm">TCP · UDP · المنافذ</text>
+<rect rx="10" class="bx-amber" x="440" y="250" width="240" height="46"/><text x="560" y="272" text-anchor="middle" class="t-b">3. الشبكة</text><text x="560" y="289" text-anchor="middle" class="t-sm">Network</text>
+<rect rx="10" class="bx-amber" x="240" y="250" width="190" height="46"/><text x="335" y="278" text-anchor="middle">حزمة (Packet)</text>
+<rect rx="10" class="bx-amber" x="20" y="250" width="210" height="46"/><text x="125" y="278" text-anchor="middle" class="t-sm">IP · ICMP · الموجّه</text>
+<rect rx="10" class="bx-gray" x="440" y="305" width="240" height="46"/><text x="560" y="327" text-anchor="middle" class="t-b">2. ربط البيانات</text><text x="560" y="344" text-anchor="middle" class="t-sm">Data Link</text>
+<rect rx="10" class="bx-gray" x="240" y="305" width="190" height="46"/><text x="335" y="333" text-anchor="middle">إطار (Frame)</text>
+<rect rx="10" class="bx-gray" x="20" y="305" width="210" height="46"/><text x="125" y="333" text-anchor="middle" class="t-sm">Ethernet · MAC · المحوّل</text>
+<rect rx="10" class="bx-navy" x="440" y="360" width="240" height="46"/><text x="560" y="382" text-anchor="middle" class="t-w t-b">1. الفيزيائية</text><text x="560" y="399" text-anchor="middle" class="t-w t-sm">Physical</text>
+<rect rx="10" class="bx-navy" x="240" y="360" width="190" height="46"/><text x="335" y="388" text-anchor="middle" class="t-w">بتات (Bits)</text>
+<rect rx="10" class="bx-navy" x="20" y="360" width="210" height="46"/><text x="125" y="388" text-anchor="middle" class="t-w t-sm">كابل · ليف · Wi-Fi</text>
+</svg>
+<figcaption><b>الشكل 1:</b> الطبقات السبع. اقرأ كل صف أفقيًا من اليمين: اسم الطبقة، ثم الاسم الذي تُسمّى به البيانات عندها، ثم أمثلة. لاحظ أن الطبقات 5 و6 و7 تتشارك اسم «بيانات»، وأن الاسم يتغير من الطبقة 4 نزولًا.</figcaption>
+</figure>
+
+<h3>الطبقة 7: التطبيق <span class="en">(Application)</span></h3>
+<p>هي الواجهة بين برنامجك والشبكة. <b>ليست</b> المتصفح نفسه، بل البروتوكولات التي يستخدمها: HTTP لطلب الصفحات، وDNS لتحويل الأسماء إلى عناوين، وSMTP لإرسال البريد. عندما تكتب <code>example.com</code> يبدأ العمل هنا.</p>
+<h3>الطبقة 6: العرض <span class="en">(Presentation)</span></h3>
+<p>تهتم بـ<b>شكل البيانات</b>: الترميز (مثل UTF-8 للحروف العربية)، والضغط، والتشفير. في الواقع العملي يعمل التشفير TLS الذي يحمي HTTPS فوق طبقة النقل وتحت التطبيق، ويُنسب عادةً إلى هذه الطبقة، لكن الحدود بين 5 و6 و7 غير حادة في الممارسة.</p>
+<h3>الطبقة 5: الجلسة <span class="en">(Session)</span></h3>
+<p>تفتح «الحوار» بين طرفين وتديره وتغلقه، وتتيح نقاط استئناف. في معظم الشبكات اليوم تتولى التطبيقات والبروتوكولات هذا العمل بنفسها، فلن تتعامل معها كثيرًا، لكنها تفسّر فكرة أن الاتصال له بداية ونهاية.</p>
+<h3>الطبقة 4: النقل <span class="en">(Transport)</span></h3>
+<p>مسؤولة عن الاتصال بين <b>تطبيقين</b> (لا بين جهازين فقط). تقسم البيانات الكبيرة إلى <b>مقاطع</b> <span class="en">(Segments)</span>، وتستخدم <b>أرقام المنافذ</b> <span class="en">(Ports)</span> لتعرف أي تطبيق يستقبل: المنفذ 443 لـHTTPS و53 لـDNS و22 لـSSH. وهنا يُقرَّر هل التسليم مضمون (TCP) أم سريع بلا ضمان (UDP). سنتوسع فيها في القسم 7.</p>
+<h3>الطبقة 3: الشبكة <span class="en">(Network)</span></h3>
+<p>تعطي كل جهاز <b>عنوانًا منطقيًا</b> (IP) وتحدد <b>المسار</b> عبر الشبكات المختلفة. وحدتها <b>الحزمة</b> <span class="en">(Packet)</span>. جهازها النموذجي <b>الموجّه</b>. وتتبع بروتوكول ICMP الذي يعمل خلف الأمر <code>ping</code>.</p>
+<h3>الطبقة 2: ربط البيانات <span class="en">(Data Link)</span></h3>
+<p>تنقل البيانات بين <b>جهازين متجاورين</b> على الوصلة نفسها، وتستخدم عناوين <b>MAC</b>. وحدتها <b>الإطار</b> <span class="en">(Frame)</span>، وفي نهايته حقل <span class="en">FCS</span> لكشف الأخطاء. جهازها النموذجي <b>المحوّل</b>. هنا أيضًا تعمل الشبكات المحلية الافتراضية VLAN (الدرس 5).</p>
+<h3>الطبقة 1: الفيزيائية <span class="en">(Physical)</span></h3>
+<p>تحوّل البتات (0 و1) إلى <b>إشارات</b> كهربائية أو ضوئية أو راديوية، وتحدد الكابلات والموصلات والجهد والتردد. أعطالها «ملموسة»: كابل مفكوك، منفذ تالف، ضعف إشارة.</p>
+<div class="tip">تذكّر: <b>كلما نزلنا في الطبقات اقتربنا من العتاد، وكلما صعدنا اقتربنا من المستخدم.</b></div>
+</section>
+
+<section id="encap">
+<h2>3. التغليف: رحلة البيانات من التطبيق إلى السلك</h2>
+<p>عندما ترسل جهازك طلب صفحة، تنزل البيانات من الطبقة 7 إلى 1، وكل طبقة <b>تلفّ</b> ما وصلها بترويسة خاصة بها. هذا هو <b>التغليف</b> <span class="en">(Encapsulation)</span>. عند المستقبل يحدث العكس: كل طبقة تفتح ترويستها وتمرر الباقي للأعلى، وهذا <b>فك التغليف</b> <span class="en">(Decapsulation)</span>.</p>
+<figure>
+<svg viewBox="0 0 700 330" role="img" aria-labelledby="f2t f2d">
+<title id="f2t">مراحل التغليف</title><desc id="f2d">خمسة صفوف تنزل من التطبيق إلى الفيزيائية، وفي كل صف تُضاف ترويسة جديدة حول البيانات حتى تتحول إلى بتات.</desc>
+<rect rx="10" class="bx-green" x="146" y="14" width="150" height="40"/><text x="221" y="39" text-anchor="middle">بيانات HTTP</text>
+<text x="620" y="39" text-anchor="middle" class="t-b">7: بيانات</text>
+<rect rx="10" class="bx-green" x="146" y="72" width="150" height="40"/><text x="221" y="97" text-anchor="middle">بيانات HTTP</text>
+<rect rx="10" class="bx-amber" x="296" y="72" width="66" height="40"/><text x="329" y="97" text-anchor="middle" class="t-b">TCP</text>
+<text x="620" y="97" text-anchor="middle" class="t-b">4: مقطع</text>
+<rect rx="10" class="bx-green" x="146" y="130" width="150" height="40"/><text x="221" y="155" text-anchor="middle">بيانات HTTP</text>
+<rect rx="10" class="bx-amber" x="296" y="130" width="66" height="40"/><text x="329" y="155" text-anchor="middle" class="t-b">TCP</text>
+<rect rx="10" class="bx" x="362" y="130" width="66" height="40"/><text x="395" y="155" text-anchor="middle" class="t-b">IP</text>
+<text x="620" y="155" text-anchor="middle" class="t-b">3: حزمة</text>
+<rect rx="10" class="bx-gray" x="86" y="188" width="60" height="40"/><text x="116" y="213" text-anchor="middle" class="t-b">FCS</text>
+<rect rx="10" class="bx-green" x="146" y="188" width="150" height="40"/><text x="221" y="213" text-anchor="middle">بيانات HTTP</text>
+<rect rx="10" class="bx-amber" x="296" y="188" width="66" height="40"/><text x="329" y="213" text-anchor="middle" class="t-b">TCP</text>
+<rect rx="10" class="bx" x="362" y="188" width="66" height="40"/><text x="395" y="213" text-anchor="middle" class="t-b">IP</text>
+<rect rx="10" class="bx-navy" x="428" y="188" width="66" height="40"/><text x="461" y="213" text-anchor="middle" class="t-w t-b">Eth</text>
+<text x="620" y="213" text-anchor="middle" class="t-b">2: إطار</text>
+<rect rx="10" class="bx-navy" x="86" y="246" width="408" height="40"/><text x="290" y="271" text-anchor="middle" class="t-w">0101 1100 1010 0111 …</text>
+<text x="620" y="271" text-anchor="middle" class="t-b">1: بتات</text>
+<text x="290" y="316" text-anchor="middle" class="t-sm">الترويسة الأولى (الأبعد عن البيانات) على اليمين، والذيل FCS على اليسار</text>
+</svg>
+<figcaption><b>الشكل 2:</b> التغليف. تبدأ بالبيانات الخضراء في الأعلى. النقل يضيف ترويسة TCP (المنافذ)، والشبكة تضيف IP (العناوين)، وربط البيانات يضيف ترويسة Ethernet (MAC) وذيل FCS، ثم تتحول كل الكتلة إلى بتات تسري في الوسط.</figcaption>
+</figure>
+<h3>مثال خطوة بخطوة: طلب صفحة</h3>
+<ol>
+<li><b>التطبيق:</b> المتصفح ينشئ طلب <code>GET /</code>. DNS يحوّل الاسم إلى عنوان IP.</li>
+<li><b>النقل:</b> TCP يضيف منفذ المصدر (عشوائي مؤقت مثل 51514) ومنفذ الوجهة (443).</li>
+<li><b>الشبكة:</b> IP يضيف عنوان مصدرك وعنوان الخادم.</li>
+<li><b>ربط البيانات:</b> Ethernet يضيف MAC المصدر وMAC <b>الخطوة التالية</b> (غالبًا الراوتر) وFCS.</li>
+<li><b>الفيزيائية:</b> البطاقة ترسل الإشارات.</li>
+</ol>
+</section>
+
+<section id="hops">
+<h2>4. ماذا يتغير في كل قفزة؟ (النقطة التي تحيّر المبتدئين)</h2>
+<p>الحزمة تعبر عدة أجهزة. كل جهاز يفك قدرًا من الطبقات ثم يعيد تغليفها:</p>
+<figure>
+<svg viewBox="0 0 700 290" role="img" aria-labelledby="f3t f3d">
+<title id="f3t">الطبقات التي يعالجها كل جهاز</title><desc id="f3d">أربعة أعمدة: حاسوب مرسل، محوّل، موجّه، خادم. الحاسوب والخادم يعالجان الطبقات السبع، والمحوّل الطبقتين 1 و2، والموجّه الطبقات 1 إلى 3.</desc>
+<text x="605" y="22" text-anchor="middle" class="t-b">المرسل</text><text x="445" y="22" text-anchor="middle" class="t-b">المحوّل</text><text x="285" y="22" text-anchor="middle" class="t-b">الموجّه</text><text x="125" y="22" text-anchor="middle" class="t-b">الخادم</text>
+<g class="t-sm" text-anchor="middle">
+<rect rx="10" class="bx-green" x="540" y="36" width="130" height="24"/><text x="605" y="53">7 التطبيق</text><rect rx="10" class="bx-green" x="540" y="62" width="130" height="24"/><text x="605" y="79">6 العرض</text><rect rx="10" class="bx-green" x="540" y="88" width="130" height="24"/><text x="605" y="105">5 الجلسة</text><rect rx="10" class="bx-green" x="540" y="114" width="130" height="24"/><text x="605" y="131">4 النقل</text><rect rx="10" class="bx-green" x="540" y="140" width="130" height="24"/><text x="605" y="157">3 الشبكة</text><rect rx="10" class="bx-green" x="540" y="166" width="130" height="24"/><text x="605" y="183">2 ربط البيانات</text><rect rx="10" class="bx-green" x="540" y="192" width="130" height="24"/><text x="605" y="209">1 الفيزيائية</text>
+<rect rx="10" class="bx-gray" x="380" y="36" width="130" height="24"/><text x="445" y="53">7 التطبيق</text><rect rx="10" class="bx-gray" x="380" y="62" width="130" height="24"/><text x="445" y="79">6 العرض</text><rect rx="10" class="bx-gray" x="380" y="88" width="130" height="24"/><text x="445" y="105">5 الجلسة</text><rect rx="10" class="bx-gray" x="380" y="114" width="130" height="24"/><text x="445" y="131">4 النقل</text><rect rx="10" class="bx-gray" x="380" y="140" width="130" height="24"/><text x="445" y="157">3 الشبكة</text><rect rx="10" class="bx-green" x="380" y="166" width="130" height="24"/><text x="445" y="183">2 ربط البيانات</text><rect rx="10" class="bx-green" x="380" y="192" width="130" height="24"/><text x="445" y="209">1 الفيزيائية</text>
+<rect rx="10" class="bx-gray" x="220" y="36" width="130" height="24"/><text x="285" y="53">7 التطبيق</text><rect rx="10" class="bx-gray" x="220" y="62" width="130" height="24"/><text x="285" y="79">6 العرض</text><rect rx="10" class="bx-gray" x="220" y="88" width="130" height="24"/><text x="285" y="105">5 الجلسة</text><rect rx="10" class="bx-gray" x="220" y="114" width="130" height="24"/><text x="285" y="131">4 النقل</text><rect rx="10" class="bx-green" x="220" y="140" width="130" height="24"/><text x="285" y="157">3 الشبكة</text><rect rx="10" class="bx-green" x="220" y="166" width="130" height="24"/><text x="285" y="183">2 ربط البيانات</text><rect rx="10" class="bx-green" x="220" y="192" width="130" height="24"/><text x="285" y="209">1 الفيزيائية</text>
+<rect rx="10" class="bx-green" x="60" y="36" width="130" height="24"/><text x="125" y="53">7 التطبيق</text><rect rx="10" class="bx-green" x="60" y="62" width="130" height="24"/><text x="125" y="79">6 العرض</text><rect rx="10" class="bx-green" x="60" y="88" width="130" height="24"/><text x="125" y="105">5 الجلسة</text><rect rx="10" class="bx-green" x="60" y="114" width="130" height="24"/><text x="125" y="131">4 النقل</text><rect rx="10" class="bx-green" x="60" y="140" width="130" height="24"/><text x="125" y="157">3 الشبكة</text><rect rx="10" class="bx-green" x="60" y="166" width="130" height="24"/><text x="125" y="183">2 ربط البيانات</text><rect rx="10" class="bx-green" x="60" y="192" width="130" height="24"/><text x="125" y="209">1 الفيزيائية</text></g>
+<path class="ln" d="M540 204H510M380 204H350M220 204H190"/>
+<text x="605" y="244" text-anchor="middle" class="t-sm">يبني الإطار كاملًا</text><text x="445" y="244" text-anchor="middle" class="t-sm">يقرأ MAC فقط</text><text x="285" y="244" text-anchor="middle" class="t-sm">يقرأ IP ويقرر المسار</text><text x="125" y="244" text-anchor="middle" class="t-sm">يفك كل الطبقات</text>
+<text x="350" y="276" text-anchor="middle" class="t-sm">الأخضر = تعالجه الطبقة · الرمادي = يمر دون قراءة</text>
+</svg>
+<figcaption><b>الشكل 3:</b> المحوّل لا يهتم بـIP أو بالمنافذ، فهو يقف عند الطبقة 2. الموجّه يصعد حتى الطبقة 3 ليقرأ عنوان الوجهة ويقرر المسار التالي، ثم يعيد بناء إطار جديد. فقط المرسل والمستقبل يمرّان على الطبقات كلها.</figcaption>
+</figure>
+<div class="table-wrap"><table>
+<thead><tr><th>العنوان</th><th>الطبقة</th><th>هل يتغير في الطريق؟</th><th>لماذا؟</th></tr></thead>
+<tbody>
+<tr><td>عنوان IP للمصدر والوجهة</td><td>3</td><td>يبقى ثابتًا (إلا عند NAT، وسنراه لاحقًا)</td><td>يحدد «من أنا» و«إلى أين أريد الوصول» نهائيًا</td></tr>
+<tr><td>عنوان MAC للمصدر والوجهة</td><td>2</td><td><b>يتغير في كل قفزة</b></td><td>صالح فقط على الوصلة الواحدة بين جهازين متجاورين</td></tr>
+<tr><td>رقم المنفذ</td><td>4</td><td>يبقى ثابتًا</td><td>يحدد التطبيق على الجهاز</td></tr>
+</tbody></table></div>
+<div class="analogy"><b>تشبيه:</b> أرسلت طردًا إلى صديق في مدينة بعيدة. العنوان على الطرد (IP) لا يتغير. لكن كل شاحنة تنقله تحمل <b>ملصقًا مؤقتًا</b> يقول «من المستودع أ إلى المستودع ب» (MAC)، ويُستبدل عند كل مستودع.</div>
+</section>
+
+<section id="tcpip">
+<h2>5. OSI مقابل TCP/IP</h2>
+<p>الإنترنت لا يعمل بنموذج OSI حرفيًا، بل بنموذج <b>TCP/IP</b> الأبسط ذي الطبقات الأربع. OSI هو الأداة التعليمية والمرجع في الحديث، وTCP/IP هو ما يُنفَّذ فعلًا. يمكنك دمج الطبقات كما يلي:</p>
+<figure>
+<svg viewBox="0 0 700 335" role="img" aria-labelledby="f4t f4d">
+<title id="f4t">مقارنة OSI وTCP/IP</title><desc id="f4d">عمود OSI بسبع طبقات وعمود TCP/IP بأربع طبقات، والتطبيق في TCP/IP يغطي الطبقات 5 إلى 7، والوصول للشبكة يغطي 1 و2.</desc>
+<text x="530" y="20" text-anchor="middle" class="t-b">نموذج OSI</text><text x="170" y="20" text-anchor="middle" class="t-b">نموذج TCP/IP</text>
+<rect rx="10" class="bx" x="380" y="30" width="300" height="38"/><text x="530" y="55" text-anchor="middle">7 التطبيق</text>
+<rect rx="10" class="bx" x="380" y="72" width="300" height="38"/><text x="530" y="97" text-anchor="middle">6 العرض</text>
+<rect rx="10" class="bx" x="380" y="114" width="300" height="38"/><text x="530" y="139" text-anchor="middle">5 الجلسة</text>
+<rect rx="10" class="bx-green" x="380" y="156" width="300" height="38"/><text x="530" y="181" text-anchor="middle">4 النقل</text>
+<rect rx="10" class="bx-amber" x="380" y="198" width="300" height="38"/><text x="530" y="223" text-anchor="middle">3 الشبكة</text>
+<rect rx="10" class="bx-gray" x="380" y="240" width="300" height="38"/><text x="530" y="265" text-anchor="middle">2 ربط البيانات</text>
+<rect rx="10" class="bx-navy" x="380" y="282" width="300" height="38"/><text x="530" y="307" text-anchor="middle" class="t-w">1 الفيزيائية</text>
+<rect rx="10" class="bx" x="20" y="30" width="300" height="122"/><text x="170" y="86" text-anchor="middle" class="t-b">التطبيق</text><text x="170" y="108" text-anchor="middle" class="t-sm">HTTP · DNS · TLS</text>
+<rect rx="10" class="bx-green" x="20" y="156" width="300" height="38"/><text x="170" y="181" text-anchor="middle">النقل: TCP · UDP</text>
+<rect rx="10" class="bx-amber" x="20" y="198" width="300" height="38"/><text x="170" y="223" text-anchor="middle">الإنترنت: IP</text>
+<rect rx="10" class="bx-navy" x="20" y="240" width="300" height="80"/><text x="170" y="274" text-anchor="middle" class="t-w t-b">وصول الشبكة</text><text x="170" y="296" text-anchor="middle" class="t-w t-sm">Ethernet · Wi-Fi</text>
+</svg>
+<figcaption><b>الشكل 4:</b> الصفوف المتقابلة أفقيًا متكافئة. «التطبيق» في TCP/IP يجمع الطبقات 5 و6 و7، و«وصول الشبكة» يجمع 1 و2. الطبقتان 3 و4 متطابقتان تقريبًا في النموذجين.</figcaption>
+</figure>
+</section>
+
+<section id="transport">
+<h2>6. الطبقة 4 بعمق: TCP وUDP</h2>
+<p>بروتوكولان للنقل بفلسفتين مختلفتين:</p>
+<div class="table-wrap"><table>
+<thead><tr><th></th><th>TCP</th><th>UDP</th></tr></thead>
+<tbody>
+<tr><td>الاتصال</td><td>يبدأ بمصافحة ثلاثية (SYN، SYN-ACK، ACK)</td><td>بلا اتصال، يرسل مباشرة</td></tr>
+<tr><td>الضمان</td><td>يؤكد الاستلام ويعيد إرسال المفقود ويرتّب المقاطع</td><td>لا ضمان ولا ترتيب</td></tr>
+<tr><td>السرعة والحمل</td><td>أبطأ قليلًا وأثقل</td><td>أخف وأسرع</td></tr>
+<tr><td>الاستخدام</td><td>الويب، البريد، نقل الملفات، SSH</td><td>DNS، المكالمات، البث، الألعاب</td></tr>
+</tbody></table></div>
+<p><b>لماذا يستخدم الصوت UDP؟</b> لو ضاعت حزمة صوت فإعادة إرسالها بعد فوات وقتها لا تفيد، والأفضل تجاوزها والمتابعة. أما تنزيل ملف فلا يحتمل نقص بايت واحد.</p>
+<p>ورقم المنفذ مع عنوان IP يكوّنان <b>«المقبس»</b> <span class="en">(Socket)</span>، مثل <code>93.184.216.34:443</code>. ولهذا يمكنك فتح عدة مواقع معًا: كل اتصال له منفذ مصدر مختلف.</p>
+</section>
+
+<section id="trouble">
+<h2>7. استكشاف الأخطاء بالطبقات</h2>
+<p>أقوى استخدام لـOSI هو أنه يعطيك <b>ترتيبًا</b> للتفكير. ابدأ من الأسفل (الأرخص فحصًا) واصعد، أو من الأعلى إذا كان العَرَض واضحًا:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>الطبقة</th><th>الأعراض</th><th>ما تفحصه</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>لا اتصال إطلاقًا، لا ضوء في المنفذ</td><td>الكابل، المنفذ، قوة إشارة Wi-Fi، تشغيل الجهاز</td></tr>
+<tr><td>2</td><td>الاتصال موجود لكن لا تواصل مع جيران الشبكة</td><td>الاتصال بالمحوّل الصحيح، VLAN، <code>arp -a</code></td></tr>
+<tr><td>3</td><td>لا يصل الراوتر أو الإنترنت بالعنوان</td><td>عنوان IP والبوابة، <code>ping</code>، <code>traceroute</code></td></tr>
+<tr><td>4</td><td><code>ping</code> ينجح لكن التطبيق لا يعمل</td><td>المنفذ مغلق أو محجوب بجدار حماية</td></tr>
+<tr><td>7</td><td>يعمل بالعنوان ولا يعمل بالاسم، أو خطأ من الخادم</td><td>DNS (<code>nslookup</code>)، إعدادات التطبيق، رمز الخطأ</td></tr>
+</tbody></table></div>
+<pre><code>ping 192.168.1.1                 # الطبقة 3: الراوتر؟
+nslookup example.com             # الطبقة 7: هل يعمل DNS؟
+curl -I https://example.com      # الطبقة 7: هل يستجيب الموقع؟
+traceroute example.com           # (Windows: tracert) أين ينقطع المسار؟</code></pre>
+<div class="note"><b>تنبيه:</b> نفّذ الأوامر على شبكتك أو شبكة لديك إذن باختبارها.</div>
+</section>
+
+<section id="mistakes">
+<h2>8. أخطاء ومفاهيم خاطئة شائعة</h2>
+<ul>
+<li><b>«الإنترنت يعمل بنموذج OSI».</b> هو يعمل بـTCP/IP؛ OSI نموذج مرجعي للتعلم والتواصل.</li>
+<li><b>«كل بروتوكول يقع في طبقة واحدة بوضوح».</b> بعضها يتجاوز الحدود (مثل TLS وARP). الطبقات أداة تفكير وليست قانونًا صارمًا.</li>
+<li><b>«المحوّل دائمًا طبقة 2».</b> هناك محوّلات الطبقة 3 تدمج التبديل والتوجيه.</li>
+<li><b>«عنوان MAC يعبر الإنترنت مع الحزمة».</b> لا؛ يتبدل عند كل قفزة، ولا يصل إلى الخادم البعيد.</li>
+<li><b>«المتصفح هو طبقة التطبيق».</b> التطبيق برنامج، وطبقة التطبيق هي البروتوكولات التي يتكلمها.</li>
+</ul>
+</section>
+
+<section id="security">
+<h2>9. الأمن لكل طبقة</h2>
+<p>الهجمات والدفاعات تُصنَّف بالطبقة، وهذا يوضح لماذا نحتاج <b>دفاعًا متعدد الطبقات</b> <span class="en">(Defense in Depth)</span>:</p>
+<div class="table-wrap"><table>
+<thead><tr><th>الطبقة</th><th>تهديد نموذجي</th><th>دفاع</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>الوصول المادي لكابل أو منفذ</td><td>غرف مقفلة، تعطيل المنافذ غير المستخدمة</td></tr>
+<tr><td>2</td><td>انتحال ARP، إغراق جدول MAC</td><td>Port Security، تقسيم VLAN</td></tr>
+<tr><td>3</td><td>انتحال عناوين IP</td><td>قوائم التحكم، تصفية على الحدود</td></tr>
+<tr><td>4</td><td>مسح المنافذ، إغراق SYN</td><td>جدار حماية، إغلاق المنافذ غير الضرورية</td></tr>
+<tr><td>7</td><td>تصيّد، حقن SQL، كلمات مرور ضعيفة</td><td>تحديثات، مصادقة قوية، تشفير TLS</td></tr>
+</tbody></table></div>
+<p>القاعدة: أمن طبقة واحدة لا يغني عن البقية. تشفير ممتاز (7) لا ينفع إن كان الكابل متاحًا لأي شخص (1).</p>
+</section>
+
+<section id="summary">
+<h2>10. الملخص</h2>
+<ul>
+<li>OSI نموذج مرجعي من سبع طبقات يبسّط الاتصال ويوحّد اللغة. وTCP/IP هو النموذج العملي بأربع طبقات.</li>
+<li>الطبقات من الأعلى: التطبيق، العرض، الجلسة، النقل، الشبكة، ربط البيانات، الفيزيائية.</li>
+<li>وحدات البيانات: بيانات، مقطع، حزمة، إطار، بتات.</li>
+<li>التغليف يضيف ترويسة في كل طبقة عند الإرسال، وفكّه يزيلها عند الاستقبال.</li>
+<li>MAC يتغير في كل قفزة، وIP والمنفذ يبقيان ثابتين.</li>
+<li>المحوّل في الطبقة 2، والموجّه في 3، وTCP/UDP في 4.</li>
+<li>تتبع الأعطال من الطبقة 1 صعودًا يوفر وقتًا كبيرًا.</li>
+</ul>
+</section>
+
+<section id="glossary">
+<h2>11. مسرد المصطلحات</h2>
+<dl class="glossary">
+<dt>OSI Model / نموذج OSI</dt><dd>نموذج مرجعي من سبع طبقات لوصف الاتصال.</dd>
+<dt>Layer / طبقة</dt><dd>مرحلة تؤدي وظيفة محددة وتخدم ما فوقها.</dd>
+<dt>Header / ترويسة</dt><dd>معلومات تضيفها الطبقة في بداية بياناتها.</dd>
+<dt>Encapsulation / التغليف</dt><dd>إضافة ترويسة كل طبقة أثناء النزول.</dd>
+<dt>Decapsulation / فك التغليف</dt><dd>إزالة الترويسات أثناء الصعود عند المستقبل.</dd>
+<dt>PDU / وحدة بيانات البروتوكول</dt><dd>اسم البيانات في كل طبقة: Data، Segment، Packet، Frame، Bits.</dd>
+<dt>Segment / مقطع</dt><dd>وحدة بيانات طبقة النقل (TCP).</dd>
+<dt>Packet / حزمة</dt><dd>وحدة بيانات طبقة الشبكة (IP).</dd>
+<dt>Frame / إطار</dt><dd>وحدة بيانات طبقة ربط البيانات.</dd>
+<dt>Port / منفذ</dt><dd>رقم يحدد التطبيق المقصود على الجهاز.</dd>
+<dt>Socket / مقبس</dt><dd>عنوان IP مع رقم منفذ.</dd>
+<dt>TCP</dt><dd>بروتوكول نقل موثوق يعتمد الاتصال.</dd>
+<dt>UDP</dt><dd>بروتوكول نقل سريع بلا ضمان.</dd>
+<dt>Hop / قفزة</dt><dd>انتقال الحزمة من جهاز إلى الجهاز التالي.</dd>
+<dt>FCS</dt><dd>حقل في نهاية الإطار لكشف الأخطاء.</dd>
+<dt>Defense in Depth / دفاع متعدد الطبقات</dt><dd>حماية الشبكة بعدة ضوابط مستقلة.</dd>
+</dl>
+</section>
+
+<section id="quiz">
+<h2>12. اختبر فهمك</h2>
+<p>اضغط على إجابة لترى التفسير. تُسجَّل نتيجتك عند الإجابة عن كل الأسئلة.</p>
+<div id="quiz-box"></div>
+<div id="quiz-result" class="alert info hidden"></div>
+<button id="retry" class="btn secondary hidden" type="button">إعادة المحاولة</button>
+<div style="margin-top:26px">
+  <button id="complete" class="btn success" type="button">وضع علامة «مكتمل»</button>
+  <span id="complete-msg" class="hint" role="status"></span>
+</div>
+</section>
+
+<section id="resources">
+<h2>13. مراجع موثوقة للتعمق</h2>
+<ul>
+<li><a href="https://www.rfc-editor.org/rfc/rfc9293" rel="noopener">RFC 9293</a> — المواصفة الرسمية لبروتوكول TCP (بالإنجليزية).</li>
+<li><a href="https://www.rfc-editor.org/rfc/rfc1122" rel="noopener">RFC 1122</a> — متطلبات مضيفات الإنترنت، وهو أساس نموذج TCP/IP (بالإنجليزية).</li>
+<li><a href="https://www.cloudflare.com/learning/" rel="noopener">Cloudflare Learning Center</a> — شروحات مبسطة.</li>
+<li><a href="https://www.netacad.com" rel="noopener">Cisco Networking Academy</a> — مقررات مجانية.</li>
+</ul>
+<h3>التنقل بين الدروس</h3>
+<p><b>المتطلبات السابقة:</b> <a href="lesson-1.html">الدرس 1: الشبكات المحلية والواسعة</a>.<br>
+<b>الدرس التالي:</b> الدرس 3: عنونة IP <a href="lesson-3.html">ابدأ الدرس 3</a> — <a href="curriculum.html">عرض المنهج الكامل</a></p>
+</section>
+</article>
+</div>
+</main>
+<div id="site-footer"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+const LESSON_ID = 2;
+const QUESTIONS = [
+  { q: "على أي طبقة يتخذ الموجّه (Router) قرار توجيه الحزمة؟",
+    o: ["الطبقة 2 (ربط البيانات)", "الطبقة 3 (الشبكة)", "الطبقة 4 (النقل)", "الطبقة 7 (التطبيق)"], a: 1,
+    e: "الموجّه يقرأ عنوان IP في ترويسة الطبقة 3 ليحدد المسار التالي. المحوّل هو من يعمل بالطبقة 2 عبر عناوين MAC." },
+  { q: "ما اسم وحدة البيانات في طبقة ربط البيانات؟",
+    o: ["حزمة (Packet)", "مقطع (Segment)", "بتات (Bits)", "إطار (Frame)"], a: 3,
+    e: "الإطار هو وحدة الطبقة 2. الحزمة للطبقة 3، والمقطع للطبقة 4، والبتات للطبقة 1." },
+  { q: "أثناء عبور الحزمة عدة موجّهات، أي عنوان يتغير عند كل قفزة؟",
+    o: ["عنوان MAC في ترويسة الإطار", "عنوان IP للوجهة", "رقم المنفذ للوجهة", "اسم النطاق"], a: 0,
+    e: "MAC صالح فقط بين جهازين متجاورين، فيُستبدل في كل قفزة. أما IP للوجهة والمنفذ فيبقيان ثابتين." },
+  { q: "الموقع يفتح عند كتابة عنوان IP الخاص به ولا يفتح باسمه. أين تبحث أولًا؟",
+    o: ["الكابل (الطبقة 1)", "المحوّل (الطبقة 2)", "خدمة DNS (الطبقة 7)", "عنوان البوابة (الطبقة 3)"], a: 2,
+    e: "الوصول بالعنوان يعني أن الطبقات من 1 إلى 4 سليمة. العطل في تحويل الاسم إلى عنوان، وهي وظيفة DNS على مستوى التطبيق." },
+  { q: "ما الذي يميّز TCP عن UDP؟",
+    o: ["TCP أسرع دائمًا", "TCP يتحقق من التسليم ويعيد المفقود ويرتّب المقاطع", "UDP يستخدم عناوين MAC فقط", "لا فرق بينهما"], a: 1,
+    e: "TCP يوفّر موثوقية مقابل حمل أكبر. UDP أخف وأسرع بلا ضمان، ولذلك يناسب الصوت والبث." },
+  { q: "ping إلى الخادم ينجح، لكن صفحة الويب لا تفتح لأن جدار الحماية يمنع المنفذ 443. أي طبقة تشير إليها المشكلة؟",
+    o: ["الطبقة 1", "الطبقة 2", "الطبقة 3", "الطبقة 4"], a: 3,
+    e: "ping يؤكد سلامة الطبقات 1 إلى 3. المنع على مستوى المنفذ هو من اختصاص طبقة النقل (4)." }
+];
+</script>
+<script src="assets/js/lesson.js"></script>
+</body>
+</html>
