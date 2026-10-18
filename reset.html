@@ -42,16 +42,38 @@
   const { sb, showAlert } = ANA;
   const msg = document.getElementById("msg");
   const reqForm = document.getElementById("req-form"), newForm = document.getElementById("new-form");
-  const recovering = /type=recovery/.test(location.hash);
-  const linkExpired = /error_code=(otp_expired|access_denied)|error=access_denied/.test(location.hash);
-  if (!recovering) await ANA.renderLayout("login"); else await ANA.renderLayout("");
-  if (!sb) return showAlert(msg, "error", "الموقع غير مرتبط بقاعدة البيانات بعد. راجع ملف README.");
-
+  const hash = new URLSearchParams(location.hash.slice(1));
+  const query = new URLSearchParams(location.search);
+  const recoveryLink = hash.get("type") === "recovery" || query.get("type") === "recovery" || query.has("code") || query.has("token_hash");
+  const showNewForm = () => { reqForm.classList.add("hidden"); newForm.classList.remove("hidden"); };
+  // Process the recovery callback before rendering account navigation.
+  // Rendering first can consume the callback session and display a signed-in page.
+  if (!sb) return showAlert(msg, "error", "الموقع غير مرتبط بقاعدة البيانات.");
+  let recoveryVerified = false;
   sb.auth.onAuthStateChange((event) => {
-    if (event === "PASSWORD_RECOVERY") { reqForm.classList.add("hidden"); newForm.classList.remove("hidden"); }
+    if (event === "PASSWORD_RECOVERY" && recoveryLink) { recoveryVerified = true; showNewForm(); }
   });
-  if (recovering) { reqForm.classList.add("hidden"); newForm.classList.remove("hidden"); }
-  if (linkExpired) showAlert(msg, "error", "رابط الاستعادة منتهي الصلاحية أو مستخدم من قبل. اطلب رابطًا جديدًا.");
+  if (hash.has("error") || query.has("error")) {
+    showAlert(msg, "error", "رابط الاستعادة غير صالح أو منتهي الصلاحية. اطلب رابطًا جديدًا.");
+  } else if (recoveryLink) {
+    let error = null;
+    if (query.has("token_hash")) {
+      ({ error } = await sb.auth.verifyOtp({ token_hash: query.get("token_hash"), type: "recovery" }));
+    } else if (query.has("code")) {
+      ({ error } = await sb.auth.exchangeCodeForSession(query.get("code")));
+    } else if (hash.has("access_token") && hash.has("refresh_token")) {
+      ({ error } = await sb.auth.setSession({ access_token: hash.get("access_token"), refresh_token: hash.get("refresh_token") }));
+    } else {
+      error = new Error("Missing recovery credentials");
+    }
+    if (error) showAlert(msg, "error", "تعذّر التحقق من رابط الاستعادة. اطلب رابطًا جديدًا.");
+    else {
+      recoveryVerified = true;
+      showNewForm();
+      history.replaceState(null, "", location.pathname);
+    }
+  }
+  await ANA.renderLayout(recoveryLink ? "" : "login");
 
   reqForm.addEventListener("submit", async (e) => {
     e.preventDefault();
@@ -64,12 +86,14 @@
     rb.disabled = false;
     if (err && ANA.isNetworkError(err)) return showAlert(msg, "error", "تعذّر الاتصال بالخادم. تحقق من الإنترنت وحاول مجددًا.");
     if (err && (err.status === 429 || /rate_limit/.test(err.code || ""))) return showAlert(msg, "error", "تم إرسال عدد كبير من الطلبات. انتظر قليلًا ثم حاول مجددًا.");
+    if (err) return showAlert(msg, "error", "تعذّر إرسال رابط الاستعادة. تحقق من إعدادات Supabase وحاول مجددًا.");
     // Same message whether or not the account exists, to avoid leaking who is registered.
     showAlert(msg, "ok", "إذا كان هذا البريد مسجّلًا لدينا فقد أرسلنا إليه رابط الاستعادة.");
   });
 
   newForm.addEventListener("submit", async (e) => {
     e.preventDefault();
+    if (!recoveryVerified) return showAlert(msg, "error", "افتح رابط الاستعادة الجديد من بريدك الإلكتروني أولاً.");
     const pw = document.getElementById("pw").value, pw2 = document.getElementById("pw2").value;
     if (pw.length < 8 || !/[A-Za-z\u0600-\u06FF]/.test(pw) || !/\d/.test(pw)) return showAlert(msg, "error", "كلمة المرور يجب ألا تقل عن 8 أحرف وتحتوي على حرف ورقم.");
     if (pw !== pw2) return showAlert(msg, "error", "كلمتا المرور غير متطابقتين.");
