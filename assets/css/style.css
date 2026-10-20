@@ -239,3 +239,48 @@ pre,.table-wrap,.chart-box,figure{max-width:100%;overflow-x:auto;-webkit-overflo
 .share-box input{width:100%;direction:ltr;font-size:.9rem}
 .share-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 .share-banner{margin:0 0 16px}
+
+/* ===== الحقل التطبيقي (Practical lab) ===== */
+.lab-card{display:flex;gap:16px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin:0 0 22px;border-inline-start:5px solid var(--blue)}
+.lab-card h3{margin:0 0 6px}.lab-card p{margin:0;color:var(--muted)}
+.lab-card-act{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.lab-overlay{position:fixed;inset:0;z-index:1000;background:rgba(8,16,32,.62);display:flex;align-items:center;justify-content:center;padding:10px}
+.lab-panel{background:#fff;color:var(--text);width:min(980px,100%);max-height:94vh;overflow:auto;border-radius:16px;padding:18px 20px;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+.lab-head{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}.lab-head h2{margin:0;border:0;font-size:1.25rem}
+.lab-checks{list-style:none;display:flex;gap:10px;flex-wrap:wrap;padding:0;margin:12px 0}
+.lab-checks li{padding:6px 14px;border-radius:99px;background:var(--light);border:1px solid var(--border);font-size:.9rem;font-weight:700;color:var(--muted)}
+.lab-checks li::before{content:"☐ "}.lab-checks li.ok{background:var(--green-bg);color:var(--green);border-color:var(--green)}.lab-checks li.ok::before{content:"☑ "}
+.lab-tabs{display:flex;gap:8px;border-bottom:2px solid var(--border);margin:10px 0 14px}
+.lab-tabs button{border:0;background:none;font:inherit;font-weight:800;padding:10px 16px;cursor:pointer;color:var(--muted);border-bottom:3px solid transparent;margin-bottom:-2px}
+.lab-tabs button[aria-selected=true]{color:var(--blue);border-bottom-color:var(--blue)}
+.lab-pane h3{margin:16px 0 6px}.lab-pane li{margin:5px 0;line-height:1.8}
+.lab-task{background:var(--amber-bg);border:1px solid #f0d391;border-radius:10px;padding:10px 14px;margin:0 0 10px}
+.lab-tools{display:flex;flex-wrap:wrap;gap:8px}.lab-tools .btn.on{background:var(--green)}
+.lab-status{min-height:1.4em;margin:8px 0}
+.lab-svg{width:100%;height:auto;display:block;background:var(--light);border:1px solid var(--border);border-radius:12px;direction:ltr;touch-action:none;user-select:none}
+.lab-link{stroke:var(--muted);stroke-width:3}
+.lab-node{cursor:grab}.lab-node rect,.lab-node circle{fill:#fff;stroke:var(--blue);stroke-width:2.5}
+.lab-node.sel rect,.lab-node.sel circle{stroke:var(--green);stroke-width:4}.lab-node.pick rect,.lab-node.pick circle{stroke:var(--amber);stroke-width:4}
+.lab-svg text{fill:var(--text)}.lab-svg .lab-ip{fill:var(--muted)}
+.lab-dev{margin:12px 0;padding:12px;border:1px dashed var(--border);border-radius:12px;min-height:50px}
+.lab-dev-head{display:flex;gap:10px;align-items:center;justify-content:space-between;margin-bottom:8px}
+.lab-fields{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.lab-fields label{display:flex;flex-direction:column;gap:4px;font-weight:700;font-size:.92rem}.lab-fields label.lab-check{flex-direction:row;align-items:center;gap:8px}
+.lab-fields input[type=text],.lab-fields select,.lab-if input,.lab-test select{padding:8px 10px;border:1px solid #c3cbd8;border-radius:8px;font:inherit;background:#fff;color:var(--text)}
+.lab-if{display:flex;gap:8px;flex-wrap:wrap;align-items:center;grid-column:1/-1}.lab-if span{font-weight:700;min-width:130px}
+.lab-cables{margin:10px 0 0;font-size:.9rem}
+.lab-test{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:12px 0}
+.lab-result{border-radius:12px;padding:0;margin:8px 0}.lab-result.ok,.lab-result.bad,.lab-result.hint-box{padding:12px 16px;border:1px solid}
+.lab-result p{margin:6px 0 0}
+.lab-result.ok{background:var(--green-bg);border-color:var(--green);color:#1d6b3e}.lab-result.bad{background:var(--red-bg);border-color:#f2b8b2;color:#8a2a20}.lab-result.hint-box{background:#eaf2ff;border-color:#bcd4fb;color:#1b4a94}
+[data-theme=dark] .lab-panel{background:#121c30}
+[data-theme=dark] .lab-node rect,[data-theme=dark] .lab-node circle{fill:#16233a}
+[data-theme=dark] .lab-fields input[type=text],[data-theme=dark] .lab-fields select,[data-theme=dark] .lab-if input,[data-theme=dark] .lab-test select{background:#0f1a2e;border-color:#3a4c6b}
+[data-theme=dark] .lab-task{border-color:#7a5a1c}[data-theme=dark] .lab-result.ok{color:#b4efcb}[data-theme=dark] .lab-result.bad{color:#ffb8b0;border-color:#7a3a33}[data-theme=dark] .lab-result.hint-box{background:#14284a;border-color:#2c4a7c;color:#cfe0ff}
+@media(max-width:600px){.lab-panel{padding:14px 12px}.lab-tabs button{padding:9px 10px}}
+
+/* Learning flow and packet animation */
+#practice{margin-top:2rem;padding-top:1.5rem;border-top:2px solid var(--border)}
+#lab-slot{margin:1.2rem 0}.lesson-finish{margin:1.4rem 0}.lab-packet{fill:#f59e0b;stroke:#fff;stroke-width:2;filter:drop-shadow(0 0 4px #f59e0b);pointer-events:none}.course-congrats{margin:1.5rem 0;padding:1.5rem;border:2px solid var(--green);border-radius:16px;background:var(--light);text-align:center}.home-path{max-width:1100px}.home-path p{max-width:70ch}.hero-layout{align-items:center}.lab-card{margin-block:1rem}@media(max-width:720px){.lesson-finish .btn{width:100%}.home-path{text-align:center}}
+
+.lab-packet-failure{fill:#ef4444!important;stroke:#fff;filter:drop-shadow(0 0 6px #ef4444);font-size:22px;font-weight:900;pointer-events:none}.lab-packet-return{fill:#22c55e;filter:drop-shadow(0 0 5px #22c55e)}

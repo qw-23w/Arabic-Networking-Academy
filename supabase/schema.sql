@@ -20,7 +20,8 @@ insert into public.lessons(id,title_ar,title_en,published) values
 (5,'الشبكات المحلية الافتراضية','VLANs',true),
 (6,'VXLAN و VRF','VXLAN and VRF',true),
 (7,'بروتوكولات TCP/IP','TCP/IP',true),
-(8,'استكشاف الأخطاء والأمن الأساسي','Troubleshooting and Basic Security',true)
+(8,'استكشاف الأخطاء والأمن الأساسي','Troubleshooting and Basic Security',true),
+(9,'عنوان MAC','MAC Address',true)
 on conflict(id) do update set title_ar=excluded.title_ar,title_en=excluded.title_en,published=excluded.published;
 
 create table if not exists public.lesson_progress (
@@ -112,6 +113,29 @@ create policy views_select_own on public.lesson_views for select using(user_id=a
 drop policy if exists views_insert_own on public.lesson_views;
 create policy views_insert_own on public.lesson_views for insert with check(user_id=auth.uid() and exists(select 1 from public.lessons l where l.id=lesson_id and l.published));
 
+-- ===== Public visit counter (زيارات الموقع العامة) =====
+-- Anonymous: a random browser id + page name + time. No IP, no email, no account link.
+create table if not exists public.page_visits(
+ id bigint generated always as identity primary key,
+ page text not null check(char_length(page)<=60),
+ visitor text not null check(char_length(visitor) between 8 and 64),
+ visited_at timestamptz not null default now()
+);
+create index if not exists idx_visits_time on public.page_visits(visited_at);
+create index if not exists idx_visits_visitor on public.page_visits(visitor,visited_at);
+alter table public.page_visits enable row level security;
+revoke all on public.page_visits from public,anon,authenticated;
+create or replace function public.track_visit(p_page text,p_visitor text) returns void
+language plpgsql security definer set search_path=public as $$
+begin
+ if p_visitor is null or char_length(p_visitor) not between 8 and 64 or p_visitor !~ '^[A-Za-z0-9_-]+$' then return; end if;
+ p_page:=left(coalesce(nullif(trim(p_page),''),'index.html'),60);
+ if exists(select 1 from public.page_visits where visitor=p_visitor and visited_at>now()-interval '30 minutes') then return; end if;
+ insert into public.page_visits(page,visitor) values(p_page,p_visitor);
+end $$;
+revoke all on function public.track_visit(text,text) from public;
+grant execute on function public.track_visit(text,text) to anon,authenticated;
+
 create or replace function public.admin_stats() returns json
 language plpgsql stable security definer set search_path=public as $$
 declare published_count int; result json;
@@ -128,7 +152,11 @@ begin
  'completed_course',(select count(*) from (select lp.user_id from lesson_progress lp join lessons l on l.id=lp.lesson_id and l.published where lp.completed_at is not null group by lp.user_id having count(*)=published_count) t where published_count>0),
  'published_lessons',published_count,
  'avg_quiz_percent',(select round(avg(score::numeric*100/total),1) from quiz_results),
- 'quiz_attempts',(select count(*) from quiz_results)) into result;
+ 'quiz_attempts',(select count(*) from quiz_results),
+ 'visits_total',(select count(*) from page_visits),
+ 'visits_today',(select count(*) from page_visits where visited_at>=date_trunc('day',now())),
+ 'visits_7_days',(select count(*) from page_visits where visited_at>=now()-interval '7 days'),
+ 'visitors_unique',(select count(distinct visitor) from page_visits)) into result;
  return result;
 end $$;
 
@@ -234,7 +262,11 @@ begin
  'completed_course',(select count(*) from (select lp.user_id from lesson_progress lp join lessons l on l.id=lp.lesson_id and l.published where lp.completed_at is not null group by lp.user_id having count(*)=published_count) t where published_count>0),
  'published_lessons',published_count,
  'avg_quiz_percent',(select round(avg(score::numeric*100/total),1) from quiz_results),
- 'quiz_attempts',(select count(*) from quiz_results)) into result;
+ 'quiz_attempts',(select count(*) from quiz_results),
+ 'visits_total',(select count(*) from page_visits),
+ 'visits_today',(select count(*) from page_visits where visited_at>=date_trunc('day',now())),
+ 'visits_7_days',(select count(*) from page_visits where visited_at>=now()-interval '7 days'),
+ 'visitors_unique',(select count(distinct visitor) from page_visits)) into result;
  return result;
 end $$;
 

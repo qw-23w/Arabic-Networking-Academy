@@ -30,6 +30,7 @@
   <p id="state" class="loading">جارٍ تحميل الإحصاءات...</p>
   <div id="content" class="hidden">
     <div class="grid cols-3" id="cards"></div>
+    <p id="visits-note" class="alert warn hidden">عدّاد الزيارات غير مفعّل في قاعدة البيانات بعد. افتح Supabase ← SQL Editor، والصق محتوى الملف supabase/migrations/20261020000100_public_visits.sql ثم اضغط Run، وبعدها اضغط «تحديث البيانات».</p>
 
     <h2>التسجيلات خلال آخر 30 يومًا</h2>
     <div class="card chart-box" id="chart"></div>
@@ -55,9 +56,11 @@
       <li><b>حساب مسجّل:</b> صف واحد لكل مستخدم في قاعدة البيانات. تسجيل الدخول المتكرر أو تحديث الصفحة لا يزيد العدد.</li>
       <li><b>بدأ درسًا:</b> فتح درسًا متاحًا مرة واحدة على الأقل وهو مسجّل الدخول.</li>
       <li><b>أكمل الدورة:</b> أكمل كل الدروس المنشورة حاليًا.</li>
-      <li><b>مرات الفتح:</b> أحداث فتح مسجّلة للحسابات فقط (مرة لكل جلسة متصفح)، وهي ليست زيارات الصفحات العامة.</li>
+      <li><b>مرات الفتح:</b> أحداث فتح مسجّلة للحسابات فقط (مرة لكل جلسة متصفح) داخل صفحات الدروس.</li>
+      <li><b>الزيارات العامة:</b> كل زائر يفتح أي صفحة من الموقع (حتى بدون حساب) يُحسب مرة واحدة لكل جلسة متصفح، ولا تُحسب زيارته الثانية خلال 30 دقيقة. لا يُسجَّل بريد ولا عنوان IP، فقط معرّف عشوائي للمتصفح.</li>
+      <li><b>زوار فريدون:</b> عدد المتصفحات المختلفة التي زارت الموقع (قد يكون الشخص الواحد أكثر من متصفح).</li>
     </ul>
-    <p class="hint">لا تعرض هذه اللوحة أي بريد إلكتروني. للزيارات العامة استخدم خدمة تحليلات منفصلة مثل Cloudflare Web Analytics.</p>
+    <p class="hint">لا تعرض هذه اللوحة أي بريد إلكتروني.</p>
   </div>
 </main>
 <div id="site-footer"></div>
@@ -150,6 +153,7 @@
       if (s.error) return fail(shareMode ? "رابط المشاركة غير صالح أو انتهت صلاحيته. اطلب رابطًا جديدًا من المسؤول." : errText(s.error));
       const d = s.data;
       const rate = d.total_registered > 0 ? Math.round(1000 * d.completed_course / d.total_registered) / 10 : null;
+      const vis = (x) => x === undefined || x === null ? "—" : n(x);
       const card = (v, l) => `<div class="card stat"><b>${v}</b><span>${l}</span></div>`;
       document.getElementById("cards").innerHTML = [
         card(n(d.total_registered), "إجمالي الحسابات المسجّلة"),
@@ -160,8 +164,13 @@
         card(n(d.completed_one), "طلاب أكملوا درسًا"),
         card(n(d.completed_course), `أكملوا الدورة (${n(d.published_lessons)} دروس منشورة)`),
         card(rate === null ? "—" : rate.toLocaleString("ar-EG") + "٪", "نسبة إكمال الدورة من المسجّلين"),
-        card(pct(d.avg_quiz_percent), `متوسط الاختبارات (${n(d.quiz_attempts)} محاولة)`)
+        card(pct(d.avg_quiz_percent), `متوسط الاختبارات (${n(d.quiz_attempts)} محاولة)`),
+        card(vis(d.visits_total), "إجمالي الزيارات العامة"),
+        card(vis(d.visits_today), "زيارات اليوم"),
+        card(vis(d.visits_7_days), "زيارات آخر 7 أيام"),
+        card(vis(d.visitors_unique), "زوار فريدون (متصفحات)")
       ].join("");
+      document.getElementById("visits-note").classList.toggle("hidden", d.visits_total !== undefined && d.visits_total !== null);
       drawChart(days);
       const ls = lessons.data || [];
       document.getElementById("lessons").innerHTML = lessons.error ? '<tr><td colspan="5">تعذّر تحميل إحصاءات الدروس.</td></tr>'

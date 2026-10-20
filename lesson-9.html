@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>الدرس 3: عنوان MAC — أكاديمية الشبكات العربية</title>
+<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="assets/img/academy-icon.png">
+<script>try{var t=localStorage.getItem("ana_theme")||(matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light");document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+<a class="skip" href="#main">تخطَّ إلى المحتوى</a>
+<div id="site-header"></div>
+<main id="main" class="container">
+<div class="lesson-layout">
+<nav class="toc" aria-label="قائمة الدروس والأقسام"><div class="course-sidebar-title">المنهج الدراسي</div><div id="lesson-navigation"></div><div class="original-toc" hidden><strong>محتويات الدرس</strong><ol><li><a href="#intro">مقدمة</a></li><li><a href="#objectives">الأهداف</a></li><li><a href="#format">بنية العنوان</a></li><li><a href="#switch">تعلم السويتش</a></li><li><a href="#arp">MAC وIP وARP</a></li><li><a href="#trouble">استكشاف الأخطاء</a></li><li><a href="#security">الأمن</a></li><li><a href="#summary">الملخص</a></li><li><a href="#glossary">المسرد</a></li><li><a href="#quiz">الاختبار</a></li><li><a href="#resources">المراجع</a></li><li><a href="#practice">الحقل التطبيقي</a></li></ol></div></nav>
+<article class="lesson"><div id="welcome" class="alert ok hidden"></div>
+<section id="intro"><h1>الدرس 3: عنوان MAC <span class="en">(Media Access Control Address)</span></h1><p>بعد التعرف إلى الطبقات والشبكات، ندرس هوية واجهة الشبكة في الطبقة الثانية: كيف يتعرف السويتش على الوجهة وكيف يصل إطار Ethernet إلى الجهاز الصحيح داخل الشبكة المحلية.</p></section>
+<section id="objectives"><h2>أهداف التعلم</h2><ul><li>تمييز MAC عن IP وفهم دور كل منهما.</li><li>قراءة عنوان MAC أحادي الإرسال والبث العام.</li><li>تفسير تعلم السويتش لعناوين المصدر.</li><li>تتبع ARP داخل شبكة IPv4 محلية.</li><li>تشخيص تكرار MAC وفهم مخاطره.</li></ul></section>
+<section id="format"><h2>1. شكل عنوان MAC</h2><p>عنوان Ethernet التقليدي طوله 48 بت (6 بايت)، ويكتب غالبًا بالشكل <code>02:00:00:00:00:01</code>. الأرقام بالنظام السداسي العشري (0–9 وA–F). العنوان <code>FF:FF:FF:FF:FF:FF</code> مخصص للبث العام، وتحدد بتات في البايت الأول ما إذا كان العنوان فرديًا أو جماعيًا وما إذا كان مدارًا محليًا.</p><p>العنوان قد يكون معيّنًا من المصنع أو مضبوطًا برمجيًا، ولا يصح اعتباره هوية أمنية موثوقة وحده.</p></section>
+<section id="switch"><h2>2. كيف يتعلم السويتش العناوين؟</h2><p>حين يستقبل السويتش إطارًا، يسجل عنوان MAC المصدر مع منفذ الدخول في جدول التعلم. إذا عرف منفذ الوجهة أرسل الإطار إليه؛ وإذا لم يعرفها، يوزع الإطار على المنافذ الأخرى ضمن VLAN نفسها. تتقادم إدخالات الجدول بمرور الوقت.</p><svg viewBox="0 0 620 180" role="img" aria-label="جهازان متصلان بسويتش ينقل إطار Ethernet"><rect x="15" y="55" width="140" height="65" rx="12" fill="#dbeafe" stroke="#2563eb"/><text x="85" y="94" text-anchor="middle" fill="#123" font-size="16">PC1 · MAC 01</text><rect x="240" y="55" width="140" height="65" rx="12" fill="#dcfce7" stroke="#15803d"/><text x="310" y="94" text-anchor="middle" fill="#123" font-size="16">Switch</text><rect x="465" y="55" width="140" height="65" rx="12" fill="#dbeafe" stroke="#2563eb"/><text x="535" y="94" text-anchor="middle" fill="#123" font-size="16">PC2 · MAC 02</text><path d="M155 87H240M380 87H465" stroke="#2563eb" stroke-width="4" stroke-dasharray="8 5"/><circle r="7" fill="#f59e0b"><animateMotion dur="3s" repeatCount="indefinite" path="M85 87 H535"/></circle><text x="310" y="150" text-anchor="middle" fill="currentColor" font-size="14">انتقال إطار عبر الوصلة المحلية</text></svg></section>
+<section id="arp"><h2>3. الفرق بين MAC وIP ودور ARP</h2><p>عنوان IP يحدد الوجهة المنطقية ويساعد على التوجيه بين الشبكات، أما MAC فيحدد واجهة الوجهة على الوصلة المحلية. في IPv4، يستخدم الجهاز ARP لمعرفة MAC الموافق لعنوان IP المحلي، أو MAC البوابة الافتراضية عند إرسال بيانات إلى شبكة أخرى. يتغير عنوان MAC في ترويسة الإطار عبر كل قفزة توجيه، بينما يبقى عنوان IP للوجهة النهائية عادةً كما هو ما لم توجد ترجمة عناوين.</p></section>
+<section id="trouble"><h2>4. استكشاف الأخطاء</h2><ol><li>افحص الاتصال الفيزيائي والمنفذ وVLAN.</li><li>تحقق من اختلاف عناوين MAC وعدم تكرارها على المقطع نفسه.</li><li>افحص جدول MAC في السويتش وجدول ARP في الجهاز.</li><li>أرسل Ping ثم راقب إن كان الجهاز يستطيع اكتشاف عنوان الوجهة محليًا.</li></ol><p>أوامر مفيدة: <code>ip neigh</code> على Linux، و<code>arp -a</code> على Windows، وأمر عرض جدول MAC بحسب نوع السويتش.</p></section>
+<section id="security"><h2>5. اعتبارات الأمن</h2><p>يمكن انتحال MAC؛ لذلك لا يكفي ترشيح العناوين وحده للحماية. تفيد ضوابط مثل Port Security و802.1X وتقسيم VLAN مع ضبطها بعناية. تجنب تغيير عناوين الأجهزة في شبكة لا تملك صلاحية إدارتها.</p></section>
+<section id="summary"><h2>6. الملخص</h2><p>MAC عنوان طبقة الربط، والسويتش يتعلم عناوين المصادر لتسليم الإطارات. يربط ARP عنوان IPv4 بعنوان MAC محلي، ويختلف MAC عن عنوان IP ودوره.</p></section>
+<section id="glossary"><h2>7. مسرد المصطلحات</h2><dl><dt>MAC</dt><dd>عنوان واجهة الشبكة في طبقة الربط.</dd><dt>Frame</dt><dd>إطار البيانات في الطبقة الثانية.</dd><dt>ARP</dt><dd>بروتوكول اكتشاف عنوان MAC المقابل لعنوان IPv4 على الوصلة.</dd><dt>Flooding</dt><dd>توزيع الإطار عند عدم معرفة منفذ الوجهة.</dd></dl></section>
+<section id="quiz"><h2>8. اختبر فهمك</h2><p>اختر إجابة لكل سؤال وشاهد تفسيرها.</p><div id="quiz-box"></div><div id="quiz-result" class="alert info hidden"></div><button id="retry" class="btn secondary hidden" type="button">إعادة المحاولة</button></section>
+<section id="resources"><h2>9. مراجع للتعمق</h2><ul><li><a href="https://standards.ieee.org/ieee/802.3/" rel="noopener">IEEE 802.3 — Ethernet</a></li><li><a href="https://www.rfc-editor.org/rfc/rfc826" rel="noopener">RFC 826 — ARP</a></li></ul><p><a href="curriculum.html">العودة إلى المنهج</a></p></section>
+<section id="practice"><h2>الحقل التطبيقي وإنهاء الدرس</h2><p>طبّق المفهوم في المحاكاة، ثم ضع علامة مكتمل بعد نجاح المهمة.</p><div id="lab-slot"></div><div class="lesson-finish"><button id="complete" class="btn success" type="button">وضع علامة «مكتمل»</button> <span id="complete-msg" class="hint" role="status"></span></div></section></article>
+</div>
+</main>
+<div id="site-footer"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="assets/js/config.js"></script>
+<script src="assets/js/app.js"></script>
+<script>
+const LESSON_ID = 9;
+const QUESTIONS = [
+{q:"كم يبلغ طول عنوان MAC التقليدي في Ethernet؟",o:["32 بت","48 بت","128 بت","16 بت"],a:1,e:"عنوان MAC التقليدي يتكون من 6 بايت، أي 48 بت."},
+{q:"ماذا يتعلم السويتش من الإطار الوارد؟",o:["عنوان MAC المصدر ومنفذ الدخول","كلمة مرور الجهاز","عنوان الموقع","قناع الشبكة"],a:0,e:"يبني السويتش جدول التعلم من عنوان MAC المصدر ومنفذ الاستقبال."},
+{q:"ما عنوان البث العام في Ethernet؟",o:["00:00:00:00:00:00","FF:FF:FF:FF:FF:FF","127.0.0.1","255.255.255.0"],a:1,e:"جميع بتات عنوان البث العام تساوي واحدًا."},
+{q:"ما وظيفة ARP في IPv4؟",o:["تشفير الحزم","اكتشاف MAC المقابل لعنوان IPv4 محلي","تحديد منفذ TCP","تغيير VLAN"],a:1,e:"يسأل ARP عن MAC الذي يقابل عنوان IPv4 على الوصلة المحلية."},
+{q:"هل عنوان MAC وحده وسيلة مصادقة آمنة؟",o:["نعم دائمًا","لا، يمكن انتحاله","فقط في الإنترنت","يحل محل IP"],a:1,e:"يمكن تعديل أو انتحال MAC فلا يُعتمد عليه وحده كهوية موثوقة."}
+];
+</script>
+<script src="assets/js/lab.js"></script>
+<script src="assets/js/lesson.js"></script>
+</body>
+</html>

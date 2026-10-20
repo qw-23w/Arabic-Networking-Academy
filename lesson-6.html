@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>الدرس 6: VXLAN وVRF — أكاديمية الشبكات العربية</title>
+<title>الدرس 8: VXLAN وVRF — أكاديمية الشبكات العربية</title>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
 <link rel="icon" type="image/png" href="assets/img/academy-icon.png">
 <script>try{var t=localStorage.getItem("ana_theme")||(matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light");document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
@@ -31,7 +31,7 @@
     <li><a href="#summary">الملخص</a></li>
     <li><a href="#glossary">المسرد</a></li>
     <li><a href="#quiz">الاختبار</a></li>
-    <li><a href="#resources">مراجع والدرس التالي</a></li>
+    <li><a href="#resources">مراجع والدرس التالي</a></li><li><a href="#practice">الحقل التطبيقي</a></li>
   </ol></div>
 </nav>
 
@@ -39,7 +39,7 @@
 <div id="welcome" class="alert ok hidden"></div>
 
 <section id="intro">
-<h1>الدرس 6: VXLAN وVRF <span class="en">(VXLAN and VRF)</span></h1>
+<h1>الدرس 8: VXLAN وVRF <span class="en">(VXLAN and VRF)</span></h1>
 <p>في الدرس السابق قسّمنا شبكة محلية واحدة إلى عدة شبكات منطقية بواسطة VLAN. هذا يكفي لمكتب أو مبنى، لكنه يصطدم بحدود حين تكبر الشبكة إلى مركز بيانات أو إلى مزوّد خدمة يستضيف مئات العملاء: عدد VLAN لا يتجاوز 4094، وعزل VLAN يقف عند الطبقة 2، بينما الموجّه الذي يربط الشبكات ما زال يملك <b>جدول توجيه واحدًا</b> يشترك فيه الجميع. في هذا الدرس نتعلم تقنيتين تتكاملان لحل هذه المشكلات. الأولى <b>VRF</b> وتقسّم جدول التوجيه على الجهاز الواحد إلى عدة جداول مستقلة (الطبقة 3). والثانية <b>VXLAN</b> وتمدّ الشبكة المحلية (الطبقة 2) فوق شبكة IP عادية، بحدود أوسع بكثير من حدود VLAN. سنفهم الفكرة وبنية الحزمة، ثم نضبط كل منهما عمليًا، ثم نرى كيف تعملان معًا في مراكز البيانات الحديثة.</p>
 </section>
 
@@ -442,10 +442,7 @@ interface nve1
 <div id="quiz-box"></div>
 <div id="quiz-result" class="alert info hidden"></div>
 <button id="retry" class="btn secondary hidden" type="button">إعادة المحاولة</button>
-<div style="margin-top:26px">
-  <button id="complete" class="btn success" type="button">وضع علامة «مكتمل»</button>
-  <span id="complete-msg" class="hint" role="status"></span>
-</div>
+
 </section>
 
 <section id="resources">
@@ -462,7 +459,7 @@ interface nve1
 <p><b>المتطلبات السابقة:</b> <a href="lesson-2.html">الدرس 2: نموذج OSI</a> و<a href="lesson-3.html">الدرس 3: عنونة IP</a> و<a href="lesson-4.html">الدرس 4: التوجيه</a> و<a href="lesson-5.html">الدرس 5: VLAN</a>.<br>
 <b>الدرس التالي:</b> <a href="lesson-7.html">الدرس 7: بروتوكولات TCP/IP</a> — <a href="curriculum.html">عرض المنهج الكامل</a></p>
 </section>
-</article>
+<section id="practice"><h2>الحقل التطبيقي وإنهاء الدرس</h2><p>طبّق المفهوم في المحاكاة، ثم ضع علامة مكتمل بعد نجاح المهمة.</p><div id="lab-slot"></div><div class="lesson-finish"><button id="complete" class="btn success" type="button">وضع علامة «مكتمل»</button> <span id="complete-msg" class="hint" role="status"></span></div></section></article>
 </div>
 </main>
 <div id="site-footer"></div>
@@ -502,6 +499,7 @@ const QUESTIONS = [
     e: "يقبل الـ VTEP أي حزمة صحيحة الشكل بـ VNI معروف، والـ VNI رقم وليس سرًّا. لذلك نعزل الشبكة التحتية ونصفّي المنفذ ونشفّر الأنفاق العابرة لشبكات غير موثوقة. والـ VRF تعزل التوجيه فقط، وعند التسريب تلزم قواعد تصفية." }
 ];
 </script>
+<script src="assets/js/lab.js"></script>
 <script src="assets/js/lesson.js"></script>
 </body>
 </html>

@@ -20,8 +20,10 @@
       <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" id="bar"><span></span></div>
       <p id="summary"></p>
     </div>
-    <h2>دروسك</h2>
+    <h2>الدروس التي بدأتَها</h2>
+    <p class="hint">تظهر هنا الدروس التي فتحتها وبدأت التعلّم فيها فقط.</p>
     <div id="list" class="learning-grid"></div>
+    <p id="empty-learning" class="card hint hidden">لم تبدأ أي درس بعد. افتح <a href="curriculum.html">المنهج</a> واختر درسًا للبدء، وسيظهر هنا تلقائيًا.</p>
     <details class="quiz-history"><summary>عرض نتائج الاختبارات الأخيرة</summary><h2>نتائج الاختبارات الأخيرة</h2>
     <div class="table-wrap"><table><thead><tr><th>الدرس</th><th>النتيجة</th><th>التاريخ</th></tr></thead><tbody id="quizzes"></tbody></table></div></details>
   </div>
@@ -51,10 +53,13 @@
     document.querySelector("#bar span").style.width = pct + "%";
     document.getElementById("bar").setAttribute("aria-valuenow", pct);
     document.getElementById("summary").textContent = `أكملت ${doneCount} من ${published.length} دروس متاحة حاليًا (${pct}%).`;
-    document.getElementById("list").innerHTML = ANA.LESSONS.map(l => {
-      const b = done.has(l.id) ? '<span class="badge done">مكتمل</span>' : started.has(l.id) ? '<span class="badge">قيد الدراسة</span>' : l.published ? '<span class="badge">لم يبدأ</span>' : '<span class="badge soon">قريبًا</span>';
-      return `<article class="card learning-card"><img src="assets/img/course-${l.id}.svg" alt="" loading="lazy"><div class="learning-card-body">${b}<h3>${l.ar}</h3>${l.published ? `<a class="btn" href="${l.href}">${done.has(l.id) ? "مراجعة الدرس" : started.has(l.id) ? "متابعة التعلم" : "ابدأ الدرس"}</a>` : ""}</div></article>`;
+    if (doneCount === published.length && published.length) document.getElementById("summary").insertAdjacentHTML("afterend",'<div class="course-congrats" role="status"><h2>🎉 تهانينا بإكمال المنهج!</h2><p>لقد أكملت جميع الدروس والحقول التطبيقية. إنجاز رائع!</p></div>');
+    const startedLessons = ANA.LESSONS.filter(l => l.published && started.has(l.id));
+    document.getElementById("list").innerHTML = startedLessons.map(l => {
+      const b = done.has(l.id) ? '<span class="badge done">مكتمل</span>' : '<span class="badge">قيد الدراسة</span>';
+      return `<article class="card learning-card"><img src="assets/img/course-${l.id}.svg" alt="" loading="lazy"><div class="learning-card-body">${b}<h3>${l.ar}</h3><a class="btn" href="${l.href}">${done.has(l.id) ? "مراجعة الدرس" : "متابعة التعلم"}</a></div></article>`;
     }).join("");
+    document.getElementById("empty-learning").classList.toggle("hidden", startedLessons.length > 0);
     const rows = (quiz.data || []);
     document.getElementById("quizzes").innerHTML = rows.length
       ? rows.map(r => `<tr><td>الدرس ${r.lesson_id}</td><td>${r.score} / ${r.total}</td><td>${esc(new Date(r.created_at).toLocaleDateString("ar"))}</td></tr>`).join("")

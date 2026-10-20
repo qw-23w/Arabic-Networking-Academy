@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>الدرس 4: التوجيه — أكاديمية الشبكات العربية</title>
+<title>الدرس 6: التوجيه — أكاديمية الشبكات العربية</title>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
 <link rel="icon" type="image/png" href="assets/img/academy-icon.png">
 <script>try{var t=localStorage.getItem("ana_theme")||(matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light");document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
@@ -30,7 +30,7 @@
     <li><a href="#summary">الملخص</a></li>
     <li><a href="#glossary">المسرد</a></li>
     <li><a href="#quiz">الاختبار</a></li>
-    <li><a href="#resources">مراجع والدرس التالي</a></li>
+    <li><a href="#resources">مراجع والدرس التالي</a></li><li><a href="#practice">الحقل التطبيقي</a></li>
   </ol></div>
 </nav>
 
@@ -38,7 +38,7 @@
 <div id="welcome" class="alert ok hidden"></div>
 
 <section id="intro">
-<h1>الدرس 4: التوجيه <span class="en">(Routing)</span></h1>
+<h1>الدرس 6: التوجيه <span class="en">(Routing)</span></h1>
 <p>في الدرس السابق عرفنا أن الجهاز يقارن عنوان الوجهة بشبكته، فإن كانت الوجهة خارجها أرسل الحزمة إلى <b>البوابة</b>. لكن ماذا تفعل البوابة بعد ذلك؟ هي موجّه، ولديه سؤال واحد يكرره مع كل حزمة: «إلى أي جار أسلّم هذه الحزمة كي تقترب من وجهتها؟». في هذا الدرس نتعلم كيف يجيب الموجّه عن هذا السؤال: ما الذي يحتويه جدول التوجيه، وكيف يختار الموجّه سطرًا واحدًا من بين عشرات الأسطر، وكيف نكتب المسارات يدويًا أو ندع البروتوكولات تتعلمها.</p>
 </section>
 
@@ -424,10 +424,7 @@ show ip route 192.168.20.50    # Cisco: السطر المطابق لوجهة م�
 <div id="quiz-box"></div>
 <div id="quiz-result" class="alert info hidden"></div>
 <button id="retry" class="btn secondary hidden" type="button">إعادة المحاولة</button>
-<div style="margin-top:26px">
-  <button id="complete" class="btn success" type="button">وضع علامة «مكتمل»</button>
-  <span id="complete-msg" class="hint" role="status"></span>
-</div>
+
 </section>
 
 <section id="resources">
@@ -446,7 +443,7 @@ show ip route 192.168.20.50    # Cisco: السطر المطابق لوجهة م�
 <p><b>المتطلبات السابقة:</b> <a href="lesson-2.html">الدرس 2: نموذج OSI</a> و<a href="lesson-3.html">الدرس 3: عنونة IP</a>.<br>
 <b>الدرس التالي:</b> <a href="lesson-5.html">الدرس 5: الشبكات المحلية الافتراضية (VLAN)</a> — <a href="curriculum.html">عرض المنهج الكامل</a></p>
 </section>
-</article>
+<section id="practice"><h2>الحقل التطبيقي وإنهاء الدرس</h2><p>طبّق المفهوم في المحاكاة، ثم ضع علامة مكتمل بعد نجاح المهمة.</p><div id="lab-slot"></div><div class="lesson-finish"><button id="complete" class="btn success" type="button">وضع علامة «مكتمل»</button> <span id="complete-msg" class="hint" role="status"></span></div></section></article>
 </div>
 </main>
 <div id="site-footer"></div>
@@ -483,6 +480,7 @@ const QUESTIONS = [
     e: "الثمانية الثالثة تتدرج من 0 إلى 3، أي أربع كتل، فنحتاج بتين متغيرين: 24 − 2 = /22. وجعلها /23 يغطي شبكتين فقط." }
 ];
 </script>
+<script src="assets/js/lab.js"></script>
 <script src="assets/js/lesson.js"></script>
 </body>
 </html>

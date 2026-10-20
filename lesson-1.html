@@ -34,7 +34,7 @@
     <li><a href="#summary">الملخص</a></li>
     <li><a href="#glossary">المسرد</a></li>
     <li><a href="#quiz">الاختبار</a></li>
-    <li><a href="#resources">مراجع والدرس التالي</a></li>
+    <li><a href="#resources">مراجع والدرس التالي</a></li><li><a href="#practice">الحقل التطبيقي</a></li>
   </ol></div>
 </nav>
 
@@ -378,10 +378,7 @@ ping example.com        # الإنترنت بالاسم؟</code></pre>
 <div id="quiz-box"></div>
 <div id="quiz-result" class="alert info hidden"></div>
 <button id="retry" class="btn secondary hidden" type="button">إعادة المحاولة</button>
-<div style="margin-top:26px">
-  <button id="complete" class="btn success" type="button">وضع علامة «مكتمل»</button>
-  <span id="complete-msg" class="hint" role="status"></span>
-</div>
+
 </section>
 
 <section id="resources">
@@ -396,7 +393,7 @@ ping example.com        # الإنترنت بالاسم؟</code></pre>
 <p><b>المتطلبات السابقة:</b> لا يوجد (هذا أول درس).<br>
 <b>الدرس التالي:</b> الدرس 2: نموذج OSI <a href="lesson-2.html">ابدأ الدرس 2</a> — <a href="curriculum.html">عرض المنهج الكامل</a></p>
 </section>
-</article>
+<section id="practice"><h2>الحقل التطبيقي وإنهاء الدرس</h2><p>طبّق المفهوم في المحاكاة، ثم ضع علامة مكتمل بعد نجاح المهمة.</p><div id="lab-slot"></div><div class="lesson-finish"><button id="complete" class="btn success" type="button">وضع علامة «مكتمل»</button> <span id="complete-msg" class="hint" role="status"></span></div></section></article>
 </div>
 </main>
 <div id="site-footer"></div>
@@ -475,6 +472,7 @@ const QUESTIONS = [
  }
 ];
 </script>
+<script src="assets/js/lab.js"></script>
 <script src="assets/js/lesson.js"></script>
 </body>
 </html>

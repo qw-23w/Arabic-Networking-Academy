@@ -66,3 +66,8 @@ Platform complete. All 8 lessons are written in full (lesson 3 = IP addressing, 
 - Home page: the animated network drawing is now a faint watermark behind the hero text.
 - Admin dashboard: "مشاركة رابط لوحة الإدارة" button (admins only). **Run once in Supabase → SQL Editor:** `supabase/migrations/20261017000100_admin_share_links.sql`.
   Links are read-only, aggregate-only (no student names/emails), expire after 40 days, and can be revoked from the dashboard.
+
+## Update 2026-10-20 — الحقل التطبيقي + عدّاد الزيارات العامة
+- **الحقل التطبيقي** في كل درس (`assets/js/lab.js`): زر في أعلى الدرس يفتح نافذة بخانتين: «الشرح» المبسّط و«المحاكاة» (أجهزة وسويتش وراوتر وكابلات وعناوين وPing). **إجباري**: زر «مكتمل» يبقى مقفلًا حتى يضغط الطالب «فهمت الشرح» وينجز مهمة المحاكاة. حالة الإنجاز تُحفظ في متصفح الطالب (localStorage)، والدرس المكتمل مسبقًا لا يُقفل.
+- **الزيارات العامة**: بطاقات جديدة في لوحة الإدارة (الإجمالي، اليوم، 7 أيام، زوار فريدون). **نفّذ مرة واحدة في Supabase → SQL Editor:** `supabase/migrations/20261020000100_public_visits.sql` (نفّذه بعد بقية الملفات لأنه يحدّث `admin_stats` و`share_stats`). نفس الكود مضمَّن في `schema.sql`.
+- رفع الملفات: ارفع كل المحتويات (خصوصًا `assets/js/lab.js` و`assets/js/lesson.js` و`assets/js/app.js` و`assets/css/style.css` و`admin.html` و`index.html` وصفحات الدروس).

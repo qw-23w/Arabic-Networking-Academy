@@ -1,0 +1,1 @@
+insert into public.lessons(id,title_ar,title_en,published) values (9,'عنوان MAC','MAC Address',true) on conflict(id) do update set title_ar=excluded.title_ar,title_en=excluded.title_en,published=excluded.published;

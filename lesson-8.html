@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>الدرس 8: استكشاف الأخطاء والأمن الأساسي — أكاديمية الشبكات العربية</title>
+<title>الدرس 9: استكشاف الأخطاء والأمن الأساسي — أكاديمية الشبكات العربية</title>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
 <link rel="icon" type="image/png" href="assets/img/academy-icon.png">
 <script>try{var t=localStorage.getItem("ana_theme")||(matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light");document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
@@ -38,7 +38,7 @@
 <div id="welcome" class="alert ok hidden"></div>
 
 <section id="intro">
-<h1>الدرس 8: استكشاف الأخطاء والأمن الأساسي <span class="en">(Troubleshooting and Basic Security)</span></h1>
+<h1>الدرس 9: استكشاف الأخطاء والأمن الأساسي <span class="en">(Troubleshooting and Basic Security)</span></h1>
 <p>تعلمنا في الدروس السابقة كيف تعمل الشبكة: الطبقات والعناوين والتوجيه وVLAN والأنفاق وTCP/IP. في هذا الدرس الأخير نستخدم كل ذلك في مهارتين يحتاجهما كل مهندس شبكات يوميًا: <b>تشخيص العطل</b> بطريقة منظمة بدل التجريب العشوائي، و<b>حماية الشبكة</b> بإجراءات أساسية تمنع معظم المشاكل الشائعة قبل وقوعها.</p>
 <p>الفكرة التي تجمع الموضوعين: الشبكة المفهومة جيدًا يسهل إصلاحها ويسهل تأمينها، لأنك تعرف ما الذي يجب أن يحدث، فتلاحظ ما لا يجب أن يحدث.</p>
 </section>
@@ -368,10 +368,7 @@ interface range gi0/10 - 24          ! المنافذ الفارغة
 <div id="quiz-box"></div>
 <div id="quiz-result" class="alert info hidden"></div>
 <button id="retry" class="btn secondary hidden" type="button">إعادة المحاولة</button>
-<div style="margin-top:26px">
-  <button id="complete" class="btn success" type="button">وضع علامة «مكتمل»</button>
-  <span id="complete-msg" class="hint" role="status"></span>
-</div>
+
 </section>
 
 <section id="resources">
@@ -389,7 +386,7 @@ interface range gi0/10 - 24          ! المنافذ الفارغة
 <p><b>المتطلبات السابقة:</b> <a href="lesson-3.html">الدرس 3</a> و<a href="lesson-5.html">الدرس 5</a> و<a href="lesson-7.html">الدرس 7</a>.<br>
 <b>هذا آخر دروس المنهج.</b> <a href="lesson-7.html">الدرس السابق</a> — <a href="curriculum.html">عرض المنهج الكامل</a></p>
 </section>
-</article>
+<section id="practice"><h2>الحقل التطبيقي وإنهاء الدرس</h2><p>طبّق المفهوم في المحاكاة، ثم ضع علامة مكتمل بعد نجاح المهمة.</p><div id="lab-slot"></div><div class="lesson-finish"><button id="complete" class="btn success" type="button">وضع علامة «مكتمل»</button> <span id="complete-msg" class="hint" role="status"></span></div></section></article>
 </div>
 </main>
 <div id="site-footer"></div>
@@ -426,6 +423,7 @@ const QUESTIONS = [
     e: "DHCP Snooping يسمح بردود DHCP من المنافذ الموثوقة فقط، فيُحجب الخادم المزيّف." }
 ];
 </script>
+<script src="assets/js/lab.js"></script>
 <script src="assets/js/lesson.js"></script>
 </body>
 </html>

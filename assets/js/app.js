@@ -14,12 +14,13 @@
   const LESSONS = [
     { id: 1, ar: "الشبكات المحلية والواسعة", en: "LANs and WANs", href: "lesson-1.html", published: true },
     { id: 2, ar: "نموذج OSI", en: "The OSI Model", href: "lesson-2.html", published: true },
-    { id: 3, ar: "عنونة IP", en: "IP Addressing", href: "lesson-3.html", published: true },
-    { id: 4, ar: "التوجيه", en: "Routing", href: "lesson-4.html", published: true },
-    { id: 5, ar: "الشبكات المحلية الافتراضية", en: "VLANs", href: "lesson-5.html", published: true },
-    { id: 6, ar: "VXLAN و VRF", en: "VXLAN and VRF", href: "lesson-6.html", published: true },
-    { id: 7, ar: "بروتوكولات TCP/IP", en: "TCP/IP", href: "lesson-7.html", published: true },
-    { id: 8, ar: "استكشاف الأخطاء والأمن الأساسي", en: "Troubleshooting and Basic Security", href: "lesson-8.html", published: true }
+    { id: 3, ar: "عنوان MAC", en: "MAC Address", href: "lesson-9.html", published: true },
+    { id: 4, ar: "عنونة IP", en: "IP Addressing", href: "lesson-3.html", published: true },
+    { id: 5, ar: "بروتوكولات TCP/IP", en: "TCP/IP", href: "lesson-7.html", published: true },
+    { id: 6, ar: "التوجيه", en: "Routing", href: "lesson-4.html", published: true },
+    { id: 7, ar: "الشبكات المحلية الافتراضية", en: "VLANs", href: "lesson-5.html", published: true },
+    { id: 8, ar: "VXLAN و VRF", en: "VXLAN and VRF", href: "lesson-6.html", published: true },
+    { id: 9, ar: "استكشاف الأخطاء والأمن الأساسي", en: "Troubleshooting and Basic Security", href: "lesson-8.html", published: true }
   ];
 
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
@@ -65,7 +66,25 @@
       '<div class="alert warn" style="margin:0;border-radius:0;text-align:center">لم يتم ربط الموقع بقاعدة البيانات بعد. أضف مفاتيح Supabase في الملف <code>assets/js/config.js</code> (راجع README).</div>';
   }
 
+  // Public visit counter: one anonymous record per browser session (the database also ignores repeats within 30 minutes).
+  function trackVisit() {
+    try {
+      if (!sb || sessionStorage.getItem("ana_visit")) return;
+      const page = location.pathname.split("/").pop() || "index.html";
+      if (page === "admin.html") return;
+      let v = localStorage.getItem("ana_vid");
+      if (!v || !/^[A-Za-z0-9_-]{8,64}$/.test(v)) {
+        v = (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : (Date.now().toString(36) + Math.random().toString(36).slice(2, 12));
+        localStorage.setItem("ana_vid", v);
+      }
+      Promise.resolve(sb.rpc("track_visit", { p_page: page, p_visitor: v }))
+        .then((r) => { if (!r.error) sessionStorage.setItem("ana_visit", "1"); else console.error("track_visit", r.error); })
+        .catch(() => {});
+    } catch (e) {}
+  }
+
   async function renderLayout(active) {
+    trackVisit();
     const session = await getSession();
     const profile = session ? await getProfile(session.user.id) : null;
     const isAdmin = profile && profile.role === "admin";

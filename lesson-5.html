@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>الدرس 5: الشبكات المحلية الافتراضية VLAN — أكاديمية الشبكات العربية</title>
+<title>الدرس 7: الشبكات المحلية الافتراضية VLAN — أكاديمية الشبكات العربية</title>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
 <link rel="icon" type="image/png" href="assets/img/academy-icon.png">
 <script>try{var t=localStorage.getItem("ana_theme")||(matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light");document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
@@ -30,7 +30,7 @@
     <li><a href="#summary">الملخص</a></li>
     <li><a href="#glossary">المسرد</a></li>
     <li><a href="#quiz">الاختبار</a></li>
-    <li><a href="#resources">مراجع والدرس التالي</a></li>
+    <li><a href="#resources">مراجع والدرس التالي</a></li><li><a href="#practice">الحقل التطبيقي</a></li>
   </ol></div>
 </nav>
 
@@ -38,7 +38,7 @@
 <div id="welcome" class="alert ok hidden"></div>
 
 <section id="intro">
-<h1>الدرس 5: الشبكات المحلية الافتراضية <span class="en">(VLANs)</span></h1>
+<h1>الدرس 7: الشبكات المحلية الافتراضية <span class="en">(VLANs)</span></h1>
 <p>في الدرس السابق رأينا أن الموجّه هو الذي يربط الشبكات ببعضها، وأن كل واجهة فيه تقع على شبكة منفصلة. لكن كيف نصنع شبكتين منفصلتين إذا كان عندنا محوّل واحد فقط؟ الحل التقليدي أن نشتري محوّلًا لكل شبكة، وهذا مكلف ومتعب. الحل الحديث أن نجعل المحوّل الواحد <b>يتصرف كأنه عدة محوّلات منفصلة</b>. هذا ما تفعله <b>الشبكات المحلية الافتراضية</b> (VLAN). في هذا الدرس نفهم لماذا نقسّم الشبكة المحلية، وكيف يفرّق المحوّل بين الشبكات داخل سلك واحد، وكيف نضبط ذلك عمليًا، وكيف تتواصل الشبكات المقسّمة عند الحاجة، وما المخاطر الأمنية التي ينبغي الانتباه لها.</p>
 </section>
 
@@ -412,10 +412,7 @@ SW1(config-if)# no shutdown</code></pre>
 <div id="quiz-box"></div>
 <div id="quiz-result" class="alert info hidden"></div>
 <button id="retry" class="btn secondary hidden" type="button">إعادة المحاولة</button>
-<div style="margin-top:26px">
-  <button id="complete" class="btn success" type="button">وضع علامة «مكتمل»</button>
-  <span id="complete-msg" class="hint" role="status"></span>
-</div>
+
 </section>
 
 <section id="resources">
@@ -431,7 +428,7 @@ SW1(config-if)# no shutdown</code></pre>
 <p><b>المتطلبات السابقة:</b> <a href="lesson-2.html">الدرس 2: نموذج OSI</a> و<a href="lesson-3.html">الدرس 3: عنونة IP</a> و<a href="lesson-4.html">الدرس 4: التوجيه</a>.<br>
 <b>الدرس التالي:</b> <a href="lesson-6.html">الدرس 6: VXLAN وVRF</a> — <a href="curriculum.html">عرض المنهج الكامل</a></p>
 </section>
-</article>
+<section id="practice"><h2>الحقل التطبيقي وإنهاء الدرس</h2><p>طبّق المفهوم في المحاكاة، ثم ضع علامة مكتمل بعد نجاح المهمة.</p><div id="lab-slot"></div><div class="lesson-finish"><button id="complete" class="btn success" type="button">وضع علامة «مكتمل»</button> <span id="complete-msg" class="hint" role="status"></span></div></section></article>
 </div>
 </main>
 <div id="site-footer"></div>
@@ -468,6 +465,7 @@ const QUESTIONS = [
     e: "VLAN التي ليست في قائمة allowed لا تعبر الرابط. يجب السماح بها على الطرفين وإنشاؤها على كل محوّل تمتد عليه." }
 ];
 </script>
+<script src="assets/js/lab.js"></script>
 <script src="assets/js/lesson.js"></script>
 </body>
 </html>

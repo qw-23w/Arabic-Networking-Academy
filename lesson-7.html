@@ -2,7 +2,7 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>الدرس 7: بروتوكولات TCP/IP — أكاديمية الشبكات العربية</title>
+<title>الدرس 5: بروتوكولات TCP/IP — أكاديمية الشبكات العربية</title>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
 <link rel="icon" type="image/png" href="assets/img/academy-icon.png">
 <script>try{var t=localStorage.getItem("ana_theme")||(matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light");document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
@@ -28,7 +28,7 @@
     <li><a href="#summary">الملخص</a></li>
     <li><a href="#glossary">المسرد</a></li>
     <li><a href="#quiz">الاختبار</a></li>
-    <li><a href="#resources">مراجع والدرس التالي</a></li>
+    <li><a href="#resources">مراجع والدرس التالي</a></li><li><a href="#practice">الحقل التطبيقي</a></li>
   </ol></div>
 </nav>
 
@@ -36,7 +36,7 @@
 <div id="welcome" class="alert ok hidden"></div>
 
 <section id="intro">
-<h1>الدرس 7: بروتوكولات TCP/IP <span class="en">(TCP/IP)</span></h1>
+<h1>الدرس 5: بروتوكولات TCP/IP <span class="en">(TCP/IP)</span></h1>
 <p>عرفنا في الدرس 2 أن TCP يضمن التسليم وأن UDP أسرع بلا ضمان، وفي الدروس 3 إلى 6 تتبّعنا الحزمة عبر العناوين والتوجيه وVLAN والأنفاق. في هذا الدرس ندخل إلى <b>الطبقة 4</b> بعمق: كيف تُبنى المحادثة بين تطبيقين، وكيف يبدأ TCP الاتصال ويضمن وصول البيانات سليمة ومرتبة، وكيف تفرّق الأعراض بين «رُفض الاتصال» و«انتهت المهلة». هذا الدرس هو الأساس لاستكشاف الأخطاء في الدرس 8.</p>
 </section>
 
@@ -186,10 +186,7 @@ sudo tcpdump -nn 'tcp port 443'   # التقاط الحزم</code></pre>
 <div id="quiz-box"></div>
 <div id="quiz-result" class="alert info hidden"></div>
 <button id="retry" class="btn secondary hidden" type="button">إعادة المحاولة</button>
-<div style="margin-top:26px">
-  <button id="complete" class="btn success" type="button">وضع علامة «مكتمل»</button>
-  <span id="complete-msg" class="hint" role="status"></span>
-</div>
+
 </section>
 
 <section id="resources">
@@ -205,7 +202,7 @@ sudo tcpdump -nn 'tcp port 443'   # التقاط الحزم</code></pre>
 <p><b>المتطلبات السابقة:</b> <a href="lesson-2.html">الدرس 2</a> و<a href="lesson-3.html">الدرس 3</a> و<a href="lesson-4.html">الدرس 4</a> و<a href="lesson-6.html">الدرس 6</a>.<br>
 <b>الدرس التالي:</b> <a href="lesson-8.html">الدرس 8: استكشاف الأخطاء والأمن الأساسي</a> — <a href="curriculum.html">عرض المنهج الكامل</a></p>
 </section>
-</article>
+<section id="practice"><h2>الحقل التطبيقي وإنهاء الدرس</h2><p>طبّق المفهوم في المحاكاة، ثم ضع علامة مكتمل بعد نجاح المهمة.</p><div id="lab-slot"></div><div class="lesson-finish"><button id="complete" class="btn success" type="button">وضع علامة «مكتمل»</button> <span id="complete-msg" class="hint" role="status"></span></div></section></article>
 </div>
 </main>
 <div id="site-footer"></div>
@@ -239,6 +236,7 @@ const QUESTIONS = [
     e: "SYN cookies تتفادى حجز موارد للاتصالات نصف المفتوحة، وتحديد المعدل يخفف الضغط." }
 ];
 </script>
+<script src="assets/js/lab.js"></script>
 <script src="assets/js/lesson.js"></script>
 </body>
 </html>

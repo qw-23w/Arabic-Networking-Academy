@@ -104,6 +104,17 @@
   if (pr.error) { console.error("progress read", pr.error); btn.disabled = true; cm.textContent = " تعذّر تحميل حالة تقدمك. أعد تحميل الصفحة."; }
   setDone(!!(pr.data && pr.data.completed_at));
 
+  // ---------- الحقل التطبيقي: إجباري قبل وضع علامة «مكتمل» ----------
+  const lab = window.ANA_LAB ? ANA_LAB.mount({ lessonId: LESSON_ID, uid, onChange: () => gate() }) : null;
+  const labOk = () => !lab || lab.isDone() || !!btn.dataset.done;
+  const GATE_MSG = " أنهِ «الحقل التطبيقي» أولًا (في نهاية الدرس) ثم يمكنك وضع علامة «مكتمل».";
+  function gate() {
+    if (pr.error) return;
+    if (!labOk()) { btn.disabled = true; cm.textContent = GATE_MSG; }
+    else { btn.disabled = false; if (cm.textContent === GATE_MSG) cm.textContent = ""; }
+  }
+  gate();
+
   // An UPDATE that matches no row returns no error, so we ask for the changed rows back and verify one was written.
   async function saveCompletion(mark) {
     const completed_at = mark ? new Date().toISOString() : null;
@@ -122,6 +133,8 @@
     btn.disabled = false;
     if (error) { console.error("complete", error); cm.textContent = ANA.isNetworkError(error) ? " تعذّر الاتصال بالخادم. تحقق من الإنترنت وحاول مجددًا." : " تعذّر الحفظ، حاول مجددًا."; return; }
     setDone(mark); cm.textContent = mark ? " أحسنت! تم حفظ تقدمك." : " أُلغي الإكمال.";
+    if (mark) { try { const progress = await ANA.myProgress(uid); const published = ANA.LESSONS.filter(l => l.published); if (published.length && published.every(l => l.id === LESSON_ID || progress.some(r => r.lesson_id === l.id && r.completed_at))) { const congrats = document.createElement("div"); congrats.className = "course-congrats"; congrats.setAttribute("role","status"); congrats.innerHTML = '<h2>🎉 تهانينا! أكملت جميع دروس الأكاديمية</h2><p>أنجزت المنهج كاملًا مع حقوله التطبيقية. يمكنك الآن مراجعة الدروس أو متابعة تطوير مهاراتك.</p><a class="btn" href="my-learning.html">عرض إنجازي</a>'; document.querySelector("#practice").append(congrats); congrats.scrollIntoView({behavior:"smooth",block:"center"}); } } catch(e) { console.warn("congratulations check",e); } }
+    if (!labOk()) btn.disabled = true; // بعد إلغاء العلامة: يلزم إنهاء الحقل التطبيقي لإعادة وضعها
   });
 
   // ---------- Quiz ----------
