@@ -54,11 +54,11 @@ Local UI tests (no network needed, mock backend): `python3 tests/ui_tests.py <pa
 
 ## Files
 
-`help.html`, `assets/js/lesson.js` (shared lesson logic), `assets/img/` (logo), `index.html`, `register.html`, `login.html`, `reset.html`, `curriculum.html`, `my-learning.html`, `about.html`, `admin.html`, `lesson-1.html`, `lesson-2.html`, `lesson-3.html`, `lesson-4.html`, `lesson-5.html`, `lesson-6.html`, `lesson-7.html`, `lesson-8.html`, `assets/`, `supabase/schema.sql`.
+`help.html`, `assets/js/lesson.js` (shared lesson logic), `assets/img/` (logo), `index.html`, `register.html`, `login.html`, `reset.html`, `curriculum.html`, `my-learning.html`, `about.html`, `admin.html`, `lesson-1.html` through `lesson-9.html`, `assets/`, `supabase/schema.sql`, `SECURITY-REVIEW.md`, and `tools/Audit-AnaAcademy.ps1`.
 
 ## Status
 
-Platform complete. All 8 lessons are written in full (lesson 3 = IP addressing, lesson 4 = routing, lesson 5 = VLANs, lesson 6 = VXLAN and VRF, lesson 7 = TCP/IP protocols, lesson 8 = troubleshooting and basic security). **After deploying, re-run `supabase/schema.sql` once** so lesson 8 is marked published in the database; until then progress and quiz writes for lesson 8 are blocked by policy.
+Platform includes 9 lessons. The final lesson covers MAC addressing; the lesson files and `supabase/schema.sql` include all nine lessons.
 
 
 ## Update 2026-10-17
@@ -71,3 +71,10 @@ Platform complete. All 8 lessons are written in full (lesson 3 = IP addressing, 
 - **الحقل التطبيقي** في كل درس (`assets/js/lab.js`): زر في أعلى الدرس يفتح نافذة بخانتين: «الشرح» المبسّط و«المحاكاة» (أجهزة وسويتش وراوتر وكابلات وعناوين وPing). **إجباري**: زر «مكتمل» يبقى مقفلًا حتى يضغط الطالب «فهمت الشرح» وينجز مهمة المحاكاة. حالة الإنجاز تُحفظ في متصفح الطالب (localStorage)، والدرس المكتمل مسبقًا لا يُقفل.
 - **الزيارات العامة**: بطاقات جديدة في لوحة الإدارة (الإجمالي، اليوم، 7 أيام، زوار فريدون). **نفّذ مرة واحدة في Supabase → SQL Editor:** `supabase/migrations/20261020000100_public_visits.sql` (نفّذه بعد بقية الملفات لأنه يحدّث `admin_stats` و`share_stats`). نفس الكود مضمَّن في `schema.sql`.
 - رفع الملفات: ارفع كل المحتويات (خصوصًا `assets/js/lab.js` و`assets/js/lesson.js` و`assets/js/app.js` و`assets/css/style.css` و`admin.html` و`index.html` وصفحات الدروس).
+
+## Update 2026-11-01 — comprehension checks and review
+- The practical field in each lesson now requires a successful, lesson-specific simulator mission **and** a correct answer to its comprehension question before completion is unlocked. Existing local lab completion flags use a new version key, so learners complete the revised activity once.
+- Lesson 6 states that its grouping simulator illustrates isolation but does not create a real VRF or VXLAN tunnel.
+- Simulator devices can be selected, connected, and moved using the keyboard; packet motion shortens for users who request reduced motion.
+- `tools/Audit-AnaAcademy.ps1` checks lesson and question coverage, completion wiring, keyboard/dialog accessibility, reduced motion, sanitizer safeguards, RLS source artifacts, private-key markers, and deployment headers. It is a **static** review and does not attack the site or connect to Supabase. See `SECURITY-REVIEW.md` for scope and findings.
+- **Run from the project folder:** `powershell -ExecutionPolicy Bypass -File .\tools\Audit-AnaAcademy.ps1`

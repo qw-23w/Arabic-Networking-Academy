@@ -1,4 +1,4 @@
-/* الحقل التطبيقي — شرح مبسّط + محاكاة شبكة للمبتدئين.
+﻿/* الحقل التطبيقي — شرح مبسّط + محاكاة شبكة للمبتدئين.
    يُحمَّل قبل lesson.js. يوفّر ANA_LAB.mount({lessonId, uid, onChange}). */
 (function (root) {
   "use strict";
@@ -163,7 +163,7 @@
     },
     6: {
       idea: "الـ VRF يجعل الراوتر الواحد يعمل كأنه عدة راوترات منفصلة، لكل عميل أو قسم «غرفة توجيه» خاصة به. أما VXLAN فيمدّ شبكة طبقة 2 عبر شبكة IP كأنه نفق.",
-      how: ["كل VRF له جدول توجيه خاص ومعزول عن غيره.", "عنوانان متطابقان في VRF مختلفين لا يتعارضان ولا يتواصلان.", "VXLAN يحمل إطارات الشبكة داخل حزم IP ليصل بين مواقع بعيدة (نفق)."],
+      how: ["كل VRF له جدول توجيه خاص ومعزول عن غيره.", "عنوانان متطابقان في VRF مختلفين لا يتعارضان ولا يتواصلان.", "VXLAN يحمل إطارات الشبكة داخل حزم IP ليصل بين مواقع بعيدة (نفق).", "هذه المحاكاة تبسّط العزل بمجموعات، ولا تنشئ VRF أو نفق VXLAN حقيقيًا."],
       steps: ["جرّب Ping من PC1 إلى PC2؛ سيفشل لأنهما في مجموعتين مختلفتين.", "اضغط PC2 واختر VRF أحمر، ثم أعد Ping."],
       task: "غيّر مجموعة PC2 إلى VRF أحمر، ثم جرّب Ping.",
       hint: "اضغط PC2 واختر «VRF أحمر».",
@@ -199,6 +199,19 @@
     }
   };
 
+  /* سؤال فهم قصير لكل مفهوم؛ لا يكفي نجاح المحاكاة وحده لإكمال المهمة. */
+  const ASSESSMENTS = {
+    1: { q: "إذا كان جهازان في الشبكة المحلية نفسها وموصولين بالسويتش، كيف يساعدهما السويتش على التواصل؟", o: ["يوجّه الإطارات بين المنافذ اعتمادًا على عناوين MAC.", "يمنح كل جهاز عنوان IP جديدًا عند كل Ping.", "يشفر البيانات ويصل بالشبكة الواسعة."], a: 0, why: "السويتش يمرر إطارات الطبقة الثانية داخل الشبكة المحلية، ولا يحتاج الاتصال المحلي إلى راوتر." },
+    2: { q: "لماذا يُعد اختلاف شبكة IP بين جهازين متصلين بالكابلات عطلًا في الطبقة الثالثة من نموذج OSI؟", o: ["لأن الطبقة الثالثة تتعامل مع عناوين IP والتوجيه.", "لأن الطبقة الأولى تتعامل مع أسماء المواقع.", "لأن الطبقة السابعة تضبط منافذ السويتش."], a: 0, why: "الطبقة الثالثة مسؤولة عن العنونة المنطقية واختيار مسار الحزم." },
+    3: { q: "ماذا قد يحدث إذا استخدم جهازان عنوان IPv4 نفسه داخل الشبكة نفسها؟", o: ["قد تتجه الردود إلى الجهاز الخطأ ويصبح الاتصال غير مستقر.", "يتحول العنوان تلقائيًا إلى عنوان MAC.", "تُعزل الشبكة كلها داخل VLAN جديدة."], a: 0, why: "العنوان المكرر يجعل تحديد الجهاز المقصود ملتبسًا؛ يجب أن يكون لكل جهاز عنوان فريد ضمن الشبكة." },
+    4: { q: "يريد جهاز إرسال حزمة إلى عنوان خارج شبكته المحلية. إلى أين يرسلها أولًا؟", o: ["إلى البوابة الافتراضية، أي واجهة الراوتر في شبكته.", "إلى أي سويتش قريب حتى يغيّر عنوان IP.", "إلى عنوان MAC الخاص بجهاز الوجهة مباشرة عبر الإنترنت."], a: 0, why: "البوابة الافتراضية هي المسار إلى الشبكات الأخرى عندما تكون الوجهة خارج الشبكة المحلية." },
+    5: { q: "ما الذي يلزم عادةً كي تتواصل أجهزة في شبكتين VLAN مختلفتين؟", o: ["توجيه بين الـ VLANs عبر راوتر أو محول طبقة ثالثة.", "توصيلها بالسويتش نفسه فقط.", "استخدام عنوان MAC متطابق."], a: 0, why: "الـ VLANs تفصل نطاقات الطبقة الثانية؛ التواصل بينها يحتاج توجيهًا مضبوطًا." },
+    6: { q: "ما الذي يفعله VXLAN عند ربط شبكات طبقة ثانية عبر بنية IP؟", o: ["يغلّف إطارات Ethernet داخل حزم IP؛ ولا يوفّر التشفير بذاته.", "يستبدل عناوين MAC بعناوين DNS ويشفّرها تلقائيًا.", "ينشئ VLAN مادية جديدة على كل راوتر."], a: 0, why: "VXLAN تقنية تغليف ونقل. التشفير يحتاج آلية منفصلة، والمحاكاة هنا لا تنشئ نفقًا حقيقيًا." },
+    7: { q: "نجح Ping إلى جهاز، لكن الاتصال بالمنفذ 80 رُفض. ما التفسير الأقرب؟", o: ["الجهاز يرد، لكن خدمة الويب قد لا تعمل أو لا تستمع على المنفذ 80.", "نجاح Ping يثبت أن كل المنافذ مفتوحة.", "عنوان IP للجهاز غير موجود بالضرورة."], a: 0, why: "Ping يختبر الوصول عبر ICMP، أما المنفذ 80 فيختبر خدمة TCP محددة." },
+    8: { q: "جهاز يعمل عليه موقع الويب، لكنه لا يرد على Ping بسبب قاعدة جدار حماية. ماذا نستنتج؟", o: ["غياب رد ICMP لا يثبت أن الجهاز متوقف.", "كل خدمات الجهاز متوقفة.", "يجب فتح كل المنافذ حتى يعمل Ping."], a: 0, why: "قد يمنع الجدار ICMP بينما يسمح بخدمة الويب؛ اختبر الخدمة المطلوبة وافتح أقل قدر لازم." },
+    9: { q: "كيف يتعلم السويتش إلى أي منفذ يرسل إطارًا لعنوان MAC؟", o: ["يسجل عنوان MAC المصدر والمنفذ الذي وصل منه الإطار.", "يقرأ عنوان IP الوجهة ويحوّله إلى اسم جهاز.", "يختار منفذًا عشوائيًا في كل مرة."], a: 0, why: "يبني السويتش جدول MAC من عناوين المصدر الواردة؛ تكرار MAC قد يسبب انتقالًا مضطربًا بين المنافذ." }
+  };
+
   /* ============ المحاكاة (الواجهة) ============ */
   function createSim(host, cfg, hooks) {
     let S = cfg.preset();
@@ -213,8 +226,8 @@
          <button type="button" class="btn secondary small" data-hint>💡 تلميح</button>
          <button type="button" class="btn secondary small" data-reset>↺ إعادة الضبط</button>
        </div>
-       <p class="hint lab-status" role="status">اسحب الأجهزة لتحريكها، واضغط على جهاز لتعديل إعداداته.</p>
-       <svg class="lab-svg" viewBox="0 0 600 300" role="img" aria-label="لوحة المحاكاة"></svg>
+       <p class="hint lab-status" role="status">استخدم Tab للوصول إلى جهاز، Enter لاختياره أو توصيله، والأسهم لتحريكه.</p>
+       <svg class="lab-svg" viewBox="0 0 600 300" role="group" aria-label="لوحة أجهزة الشبكة التفاعلية"></svg>
        <div class="lab-dev"></div>
        <div class="lab-test"><b>جرّب الاتصال:</b>
          من <select data-src aria-label="الجهاز المرسل"></select>
@@ -222,9 +235,17 @@
          <button type="button" class="btn small" data-ping>Ping</button>
          ${S.opts.web ? '<button type="button" class="btn small" data-port>اتصال بالمنفذ 80</button>' : ""}
        </div>
-       <div class="lab-result" role="status" aria-live="polite"></div>`;
+       <div class="lab-result" role="status" aria-live="polite"></div>
+       <section class="lab-assessment hidden" data-assessment aria-labelledby="lab-assessment-title">
+         <h3 id="lab-assessment-title">سؤال الفهم</h3>
+         <p data-question></p>
+         <div class="lab-answers" data-answers role="group" aria-label="إجابات سؤال الفهم"></div>
+         <p class="lab-assessment-feedback" data-feedback role="status" aria-live="polite"></p>
+       </section>`;
     const $ = (q) => host.querySelector(q);
     const svg = $(".lab-svg"), dev = $(".lab-dev"), status = $(".lab-status"), result = $(".lab-result");
+    const assessment = $("[data-assessment]"), question = $("[data-question]"), answers = $("[data-answers]"), feedback = $("[data-feedback]");
+    let assessmentAnswered = false;
     let packetTimer;
     const srcSel = $("[data-src]"), dstSel = $("[data-dst]"), linkBtn = $("[data-link]");
     const say = (t) => { status.textContent = t; };
@@ -249,7 +270,7 @@
           : `<circle r="26"/><text y="8" text-anchor="middle" font-size="22">📡</text>`;
         const sub = d.type === "pc" && d.ip ? `<text class="lab-ip" y="46" text-anchor="middle" font-size="11">${esc(d.ip)}</text>` : "";
         const grp = d.type === "pc" && S.opts.groups && d.group ? `<text class="lab-ip" y="58" text-anchor="middle" font-size="11">${esc(d.group)}</text>` : "";
-        return `<g class="${cls}" data-id="${esc(d.id)}" transform="translate(${d.x} ${d.y})">${shape}<text class="lab-name" y="${d.type === "rt" ? 40 : 34}" text-anchor="middle" font-size="13" font-weight="700">${esc(d.name)}</text>${sub}${grp}</g>`;
+        return `<g class="${cls}" data-id="${esc(d.id)}" tabindex="0" role="button" aria-label="اختيار ${esc(d.name)}${d.type === "pc" && d.ip ? `، عنوان IP ${esc(d.ip)}` : ""}" transform="translate(${d.x} ${d.y})">${shape}<text class="lab-name" y="${d.type === "rt" ? 40 : 34}" text-anchor="middle" font-size="13" font-weight="700">${esc(d.name)}</text>${sub}${grp}</g>`;
       }).join("");
       svg.innerHTML = lines + nodes;
     }
@@ -279,7 +300,28 @@
     }
     const refresh = () => { draw(); renderDev(); fillSelects(); };
 
-    function select(id) { sel = id; draw(); renderDev(); }
+    function select(id) { sel = id; draw(); renderDev(); say(`تم اختيار ${D(id).name}. عدّل الإعدادات المعروضة.`); }
+    function focusNode(id) { const node = svg.querySelector(`[data-id="${id}"]`); if (node) node.focus({ preventScroll: true }); }
+    svg.addEventListener("keydown", (e) => {
+      const node = e.target.closest(".lab-node"), d = node && D(node.dataset.id);
+      if (!d) return;
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        if (linking) {
+          if (!pick) { pick = d.id; say("تم اختيار الطرف الأول. اختر الجهاز الثاني بـ Enter."); draw(); }
+          else { const first = pick; pick = null; connect(first, d.id); refresh(); }
+        } else select(d.id);
+        focusNode(d.id);
+      } else if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"].includes(e.key)) {
+        e.preventDefault();
+        const step = e.shiftKey ? 20 : 10;
+        if (e.key === "ArrowUp") d.y = Math.max(34, d.y - step);
+        if (e.key === "ArrowDown") d.y = Math.min(250, d.y + step);
+        if (e.key === "ArrowLeft") d.x = Math.max(34, d.x - step);
+        if (e.key === "ArrowRight") d.x = Math.min(566, d.x + step);
+        draw(); focusNode(d.id);
+      }
+    });
     function connect(a, b) {
       const A = D(a), B = D(b);
       if (a === b) return say("اختر جهازًا آخر غير الأول.");
@@ -338,7 +380,24 @@
         S.devices.push(d); sel = d.id; say(`أُضيف ${d.name}. وصّله بكابل عبر «وصّل كابل».`); refresh();
       } else if (t.hasAttribute("data-link")) setLinking(!linking);
       else if (t.hasAttribute("data-hint")) { result.className = "lab-result hint-box"; result.innerHTML = "💡 " + esc(cfg.hint); }
-      else if (t.hasAttribute("data-reset")) { S = cfg.preset(); sel = null; pick = null; if (linking) setLinking(false); result.className = "lab-result"; result.innerHTML = ""; say("أُعيدت اللوحة إلى وضعها الأول."); refresh(); }
+      else if (t.hasAttribute("data-answer")) {
+        if (assessmentAnswered) return;
+        const check = hooks.assessment;
+        const correct = Number(t.dataset.answer) === check.a;
+        if (correct) {
+          assessmentAnswered = true;
+          answers.querySelectorAll("button").forEach((button) => { button.disabled = true; if (Number(button.dataset.answer) === check.a) button.classList.add("is-correct"); });
+          feedback.className = "lab-assessment-feedback is-correct";
+          feedback.textContent = "إجابة صحيحة. " + check.why;
+          hooks.onGoal();
+        } else {
+          t.classList.add("is-wrong");
+          t.disabled = true;
+          feedback.className = "lab-assessment-feedback is-wrong";
+          feedback.textContent = "ليست هذه الإجابة. راجع الفكرة ثم جرّب خيارًا آخر.";
+        }
+      }
+      else if (t.hasAttribute("data-reset")) { S = cfg.preset(); sel = null; pick = null; if (linking) setLinking(false); result.className = "lab-result"; result.innerHTML = ""; assessment.classList.add("hidden"); question.textContent = ""; answers.replaceChildren(); feedback.textContent = ""; feedback.className = "lab-assessment-feedback"; assessmentAnswered = false; say("أُعيدت اللوحة إلى وضعها الأول."); refresh(); }
       else if (t.hasAttribute("data-del")) { const id = sel; S.links.filter((l) => l.includes(id)).forEach((l) => cut(l[0], l[1])); S.devices = S.devices.filter((d) => d.id !== id); sel = null; refresh(); }
       else if (t.dataset.cut) { cut(sel, t.dataset.cut); refresh(); }
       else if (t.hasAttribute("data-ping") || t.hasAttribute("data-port")) run(t.hasAttribute("data-port") ? "port" : "ping");
@@ -356,6 +415,7 @@
       const A = D(srcSel.value), B = D(dstSel.value);
       const what = mode === "port" ? "الاتصال بالمنفذ 80" : "Ping";
       const goalHit = r.ok && mode === cfg.goal.mode && ((srcSel.value === cfg.goal.a && dstSel.value === cfg.goal.b) || (srcSel.value === cfg.goal.b && dstSel.value === cfg.goal.a));
+      if (goalHit && !assessmentAnswered && !assessment.classList.contains("hidden")) return;
       // Animate the request along real cables, stopping at the diagnosed failure.
       clearTimeout(packetTimer);
       svg.querySelectorAll(".lab-packet, .lab-packet-failure").forEach(x => x.remove());
@@ -388,7 +448,8 @@
         dot.setAttribute("cx", A.x); dot.setAttribute("cy", A.y);
         svg.append(dot);
         const points = route.map(id => D(id)).filter(Boolean);
-        const duration = 650;
+        const reducedMotion = root.matchMedia && root.matchMedia("(prefers-reduced-motion: reduce)").matches;
+        const duration = reducedMotion ? 1 : 650;
         function travel(i) {
           if (!dot.isConnected) return;
           if (i >= points.length - 1) {
@@ -420,9 +481,20 @@
         }
         travel(0);
       }
-      if (r.ok) result.className = "lab-result ok", result.innerHTML = `<b>✔ نجح ${what}${A && B ? ` من ${esc(A.name)} إلى ${esc(B.name)}` : ""}</b><p>${esc(r.msg)}</p>${goalHit ? "<p><b>🎉 أنجزت مهمة هذا الدرس!</b></p>" : ""}`;
+      if (r.ok) result.className = "lab-result ok", result.innerHTML = `<b>✔ نجح ${what}${A && B ? ` من ${esc(A.name)} إلى ${esc(B.name)}` : ""}</b><p>${esc(r.msg)}</p>${goalHit ? "<p><b>أحسنت — أجب سؤال الفهم أدناه لإكمال الحقل.</b></p>" : ""}`;
       else result.className = "lab-result bad", result.innerHTML = `<b>✘ فشل ${what}</b>${r.label ? ` <span class="badge soon">${esc(r.label)}</span>` : ""}<p>${esc(r.msg)}</p>${r.fix ? `<p>🛠 ${esc(r.fix)}</p>` : ""}`;
-      if (goalHit) hooks.onGoal();
+      if (goalHit && !assessmentAnswered && hooks.assessment) {
+        question.textContent = hooks.assessment.q;
+        answers.replaceChildren(...hooks.assessment.o.map((option, index) => {
+          const button = document.createElement("button");
+          button.type = "button"; button.className = "btn secondary small"; button.dataset.answer = String(index); button.textContent = option;
+          return button;
+        }));
+        feedback.textContent = ""; feedback.className = "lab-assessment-feedback";
+        assessment.classList.remove("hidden");
+        assessment.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        answers.querySelector("button")?.focus({ preventScroll: true });
+      } else if (goalHit && !hooks.assessment) hooks.onGoal();
     }
     refresh();
     return { reset: () => host.querySelector("[data-reset]").click() };
@@ -432,7 +504,7 @@
   function mount(o) {
     const cfg = LABS[o.lessonId];
     if (!cfg) return null;
-    const key = `ana_lab_${o.uid}_${o.lessonId}`;
+    const key = `ana_lab_v2_${o.uid}_${o.lessonId}`;
     const prog = { u: false, g: false };
     try { const r = JSON.parse(localStorage.getItem(key) || "{}"); prog.u = !!r.u; prog.g = !!r.g; } catch (e) {}
     const isDone = () => prog.u && prog.g;
@@ -440,7 +512,7 @@
 
     const card = document.createElement("div");
     card.className = "card lab-card";
-    card.innerHTML = `<div><h3>🧪 الحقل التطبيقي</h3><p>شرح مبسّط لكيفية عمل هذا الدرس + محاكاة تبني فيها شبكتك وتجرّبها بنفسك. <b>إجباري</b> قبل وضع علامة «مكتمل».</p></div>
+    card.innerHTML = `<div><h3>🧪 الحقل التطبيقي</h3><p>تدرّب على مفهوم الدرس في محاكاة قصيرة، ثم أجب سؤال فهم خاصًا به. <b>إجباري</b> قبل وضع علامة «مكتمل».</p></div>
       <div class="lab-card-act"><span class="badge soon" data-badge></span><button type="button" class="btn" data-open>افتح الحقل التطبيقي</button></div>`;
     const lesson = document.querySelector(".lesson");
     const slot = document.getElementById("lab-slot"); if (slot) slot.append(card); else if (lesson) lesson.append(card); else return null;
@@ -450,7 +522,7 @@
     ov.setAttribute("role", "dialog"); ov.setAttribute("aria-modal", "true"); ov.setAttribute("aria-labelledby", "lab-title");
     ov.innerHTML = `<div class="lab-panel">
       <div class="lab-head"><h2 id="lab-title">🧪 الحقل التطبيقي — الدرس ${{1:1,2:2,9:3,3:4,7:5,4:6,5:7,6:8,8:9}[o.lessonId] || o.lessonId}</h2><button type="button" class="btn secondary small" data-close>إغلاق ✕</button></div>
-      <ul class="lab-checks"><li data-c="u">قرأت الشرح وفهمته</li><li data-c="g">أنجزت مهمة المحاكاة</li></ul>
+      <ul class="lab-checks"><li data-c="u">قرأت الشرح</li><li data-c="g">حللت المهمة وأجبت سؤال الفهم</li></ul>
       <div class="alert ok hidden" data-win>🎉 أنهيت الحقل التطبيقي. يمكنك الآن إغلاقه ووضع علامة «مكتمل» في آخر الدرس.</div>
       <div class="lab-tabs" role="tablist">
         <button type="button" role="tab" data-tab="explain" aria-selected="true">① الشرح</button>
@@ -479,7 +551,7 @@
       ov.querySelectorAll("[data-pane]").forEach((p) => p.classList.toggle("hidden", p.dataset.pane !== name));
     }
     const changed = () => { save(); paint(); if (o.onChange) o.onChange(); };
-    const sim = createSim($("[data-pane=sim]"), cfg, { onGoal: () => { if (!prog.g) { prog.g = true; changed(); } } });
+    const sim = createSim($("[data-pane=sim]"), cfg, { assessment: ASSESSMENTS[o.lessonId], onGoal: () => { if (!prog.g) { prog.g = true; changed(); } } });
 
     let opener = null;
     const close = () => { ov.classList.add("hidden"); document.body.style.overflow = ""; if (opener) opener.focus(); };
@@ -487,6 +559,15 @@
     $("[data-close]").addEventListener("click", close);
     ov.addEventListener("click", (e) => { if (e.target === ov) close(); });
     document.addEventListener("keydown", (e) => { if (e.key === "Escape" && !ov.classList.contains("hidden")) close(); });
+    ov.addEventListener("keydown", (e) => {
+      if (e.key !== "Tab") return;
+      const focusable = [...ov.querySelectorAll('button:not([disabled]),a[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])')]
+        .filter((el) => !el.closest(".hidden"));
+      if (!focusable.length) return;
+      const first = focusable[0], last = focusable[focusable.length - 1];
+      if (!ov.contains(document.activeElement) || (e.shiftKey && document.activeElement === first)) { e.preventDefault(); (e.shiftKey ? last : first).focus(); }
+      else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+    });
     ov.querySelectorAll("[data-tab]").forEach((b) => b.addEventListener("click", () => tab(b.dataset.tab)));
     $("[data-understood]").addEventListener("click", () => { if (!prog.u) { prog.u = true; changed(); } tab("sim"); });
     paint();

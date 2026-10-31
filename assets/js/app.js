@@ -121,7 +121,16 @@
         t.setAttribute("aria-expanded", open);
       });
       const tt = document.getElementById("theme-toggle");
-      const paint = () => { const d = document.documentElement.getAttribute("data-theme") === "dark"; tt.textContent = d ? "☀️ الوضع الفاتح" : "🌙 الوضع المظلم"; tt.setAttribute("aria-pressed", d); };
+      const paint = () => {
+        const dark = document.documentElement.getAttribute("data-theme") === "dark";
+        const label = dark ? "الوضع الفاتح" : "الوضع المظلم";
+        const icon = dark
+          ? '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"></path></svg>'
+          : '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M20.7 14.2A8.8 8.8 0 0 1 9.8 3.3a8.9 8.9 0 1 0 10.9 10.9Z"></path></svg>';
+        tt.innerHTML = icon + "<span>" + label + "</span>";
+        tt.setAttribute("aria-label", dark ? "التبديل إلى الوضع الفاتح" : "التبديل إلى الوضع المظلم");
+        tt.setAttribute("aria-pressed", dark);
+      };
       paint();
       tt.addEventListener("click", () => {
         const next = document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark";

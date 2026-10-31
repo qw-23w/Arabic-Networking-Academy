@@ -1,34 +1,31 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 520" fill="none">
-<defs>
-<linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#14b8a6"/><stop offset="1" stop-color="#3b82f6"/></linearGradient>
-</defs>
-<!-- faint dotted grid -->
-<g fill="#3b82f6" opacity=".35"><circle cx="60" cy="60" r="2"/><circle cx="140" cy="260" r="2"/><circle cx="260" cy="40" r="2"/><circle cx="540" cy="30" r="2"/><circle cx="740" cy="250" r="2"/><circle cx="700" cy="480" r="2"/><circle cx="400" cy="490" r="2"/><circle cx="60" cy="490" r="2"/></g>
-<!-- links (animated dashes) -->
-<g stroke="url(#g)" stroke-width="3" stroke-linecap="round" stroke-dasharray="8 12">
-<path d="M400 260 170 125M400 260 630 125M400 260 165 400M400 260 635 395M170 125 60 60M630 125 740 250M165 400 60 490M635 395 700 480"/>
-<animate attributeName="stroke-dashoffset" from="0" to="-80" dur="4s" repeatCount="indefinite"/>
-</g>
-<!-- devices (outline only, no white fill) -->
-<g stroke="url(#g)" stroke-width="4" fill="#14b8a6" fill-opacity=".08">
-<rect x="95" y="70" width="150" height="110" rx="20"/>
-<rect x="555" y="70" width="150" height="110" rx="20"/>
-<rect x="90" y="345" width="150" height="110" rx="20"/>
-<rect x="560" y="340" width="150" height="110" rx="20"/>
-</g>
-<g stroke="url(#g)" stroke-width="6" stroke-linecap="round">
-<path d="M125 105h70M125 125h45M585 105h70M585 125h45M120 380h70M120 400h45M590 375h70M590 395h45"/>
-</g>
-<!-- core router / globe -->
-<circle cx="400" cy="260" r="92" stroke="url(#g)" stroke-width="4" fill="#3b82f6" fill-opacity=".08"/>
-<circle cx="400" cy="260" r="68" stroke="url(#g)" stroke-width="3"/>
-<g stroke="url(#g)" stroke-width="3">
-<ellipse cx="400" cy="260" rx="27" ry="68"/>
-<path d="M332 260h136M345 225h110M345 295h110"/>
-</g>
-<!-- packets -->
-<circle r="8" fill="#14b8a6"><animateMotion dur="3s" repeatCount="indefinite" path="M400 260 170 125 400 260"/></circle>
-<circle r="8" fill="#3b82f6"><animateMotion dur="3.6s" repeatCount="indefinite" path="M400 260 630 125 400 260"/></circle>
-<circle r="8" fill="#14b8a6"><animateMotion dur="4s" repeatCount="indefinite" path="M400 260 165 400 400 260"/></circle>
-<circle r="8" fill="#3b82f6"><animateMotion dur="3.3s" repeatCount="indefinite" path="M400 260 635 395 400 260"/></circle>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 520" fill="none" role="img" aria-labelledby="title desc">
+  <title id="title">أجهزة متصلة عبر شبكة</title>
+  <desc id="desc">راوتر مركزي يربط أجهزة المستخدمين بخادم وشبكة واسعة.</desc>
+  <defs>
+    <linearGradient id="link" x1="120" y1="90" x2="680" y2="430" gradientUnits="userSpaceOnUse"><stop stop-color="#178d84"/><stop offset="1" stop-color="#4b91a0"/></linearGradient>
+    <linearGradient id="hub" x1="330" y1="180" x2="460" y2="335" gradientUnits="userSpaceOnUse"><stop stop-color="#1d9b8e"/><stop offset="1" stop-color="#176a73"/></linearGradient>
+    <filter id="shadow" x="-20%" y="-30%" width="140%" height="170%"><feDropShadow dx="0" dy="12" stdDeviation="12" flood-color="#21484b" flood-opacity=".14"/></filter>
+  </defs>
+  <g fill="#7ca9a2" opacity=".4"><circle cx="94" cy="74" r="3"/><circle cx="218" cy="40" r="2"/><circle cx="693" cy="83" r="3"/><circle cx="733" cy="373" r="2"/><circle cx="111" cy="438" r="3"/><circle cx="584" cy="469" r="2"/><circle cx="283" cy="454" r="2"/></g>
+  <g stroke="url(#link)" stroke-width="4" stroke-linecap="round" opacity=".8">
+    <path d="M399 255 184 133M401 255 615 133M399 267 184 386M401 267 615 386"/>
+    <path d="M184 133 106 84M615 133 694 84M184 386 106 436M615 386 694 436" stroke-width="2.5" opacity=".55"/>
+  </g>
+  <g filter="url(#shadow)">
+    <rect x="82" y="83" width="166" height="112" rx="22" fill="#fff" stroke="#a6c8c0" stroke-width="2"/>
+    <rect x="552" y="83" width="166" height="112" rx="22" fill="#fff" stroke="#a6c8c0" stroke-width="2"/>
+    <rect x="82" y="330" width="166" height="112" rx="22" fill="#fff" stroke="#a6c8c0" stroke-width="2"/>
+    <rect x="552" y="330" width="166" height="112" rx="22" fill="#fff" stroke="#a6c8c0" stroke-width="2"/>
+    <circle cx="400" cy="261" r="91" fill="url(#hub)"/>
+  </g>
+  <g stroke="#3b827e" stroke-width="7" stroke-linecap="round">
+    <path d="M115 122h94M115 145h57M585 122h94M585 145h57M115 369h94M115 392h57M585 369h94M585 392h57"/>
+  </g>
+  <g fill="#178d84"><circle cx="115" cy="168" r="6"/><circle cx="585" cy="168" r="6"/><circle cx="115" cy="415" r="6"/><circle cx="585" cy="415" r="6"/></g>
+  <circle cx="400" cy="261" r="57" stroke="#e1f5ef" stroke-width="3" opacity=".9"/>
+  <g stroke="#e1f5ef" stroke-width="3" opacity=".95"><ellipse cx="400" cy="261" rx="22" ry="57"/><path d="M344 261h112M355 232h90M355 290h90"/></g>
+  <g fill="#d9a956" stroke="#fff" stroke-width="3">
+    <circle r="9"><animateMotion dur="3.6s" repeatCount="indefinite" path="M400 261 184 133 400 261"/></circle>
+    <circle r="9"><animateMotion dur="4.1s" repeatCount="indefinite" path="M400 261 615 386 400 261"/></circle>
+  </g>
 </svg>

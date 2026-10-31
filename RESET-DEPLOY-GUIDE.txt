@@ -1,0 +1,13 @@
+إصلاح استعادة كلمة المرور — تعليمات النشر
+
+1) ارفع محتويات مجلد site إلى جذر فرع GitHub Pages (لا ترفع المجلد الخارجي وحده).
+2) Supabase > Authentication > URL Configuration:
+Site URL: https://qw-23w.github.io/Arabic-Networking-Academy/
+Redirect URLs: https://qw-23w.github.io/Arabic-Networking-Academy/reset.html
+3) Supabase > Authentication > Email Templates > Reset Password:
+تأكد أن رابط الزر هو {{ .ConfirmationURL }} (وليس {{ .SiteURL }}).
+بديل متقدم إذا رغبت برابط مباشر إلى صفحة الاستعادة:
+https://qw-23w.github.io/Arabic-Networking-Academy/reset.html?token_hash={{ .TokenHash }}&type=recovery
+4) أرسل رسالة استعادة جديدة؛ الروابط القديمة قد تكون منتهية أو تشير إلى الإعدادات القديمة.
+5) تأكد أن عنوان المشروع GitHub Pages مطابق تماماً لحروف الرابط، ولا توجد مسافات في المسار.
+ملاحظة: لا يمكن اختبار إرسال البريد أو تغيير كلمة المرور فعلياً دون حساب اختبار وإعدادات المشروع المنشور.

@@ -52,8 +52,10 @@
     doc.body.querySelectorAll("*").forEach(el => {
       [...el.attributes].forEach(a => {
         const n = a.name.toLowerCase(), v = a.value.replace(/[\s\u0000-\u001f]/g, "").toLowerCase();
-        if (n.startsWith("on") || n === "srcdoc" || n === "formaction" || n === "action" ||
+        const riskyStyle = n === "style" && /url\s*\(|@import|expression\s*\(|(?:-moz-binding|behavior)\s*:/i.test(a.value);
+        if (n.startsWith("on") || n === "srcdoc" || n === "formaction" || n === "action" || n === "srcset" || n === "ping" || riskyStyle ||
             ((n === "href" || n === "src" || n === "xlink:href") && /^(javascript|vbscript|data):/.test(v))) el.removeAttribute(a.name);
+        if (n === "target" && v === "_blank") el.setAttribute("rel", "noopener noreferrer");
       });
     });
     return doc.body.innerHTML;
@@ -73,7 +75,7 @@
     b.addEventListener("click", () => {
       if (bar.querySelector(".editor")) return;
       const ed = document.createElement("div"); ed.className = "editor";
-      ed.innerHTML = '<p class="hint">تحرير HTML هذا القسم. تُحذف الوسوم والخصائص الخطرة تلقائيًا، ويراه جميع الطلاب بعد الحفظ.</p><textarea dir="ltr" spellcheck="false" aria-label="محتوى القسم"></textarea><p><button type="button" class="btn success" data-a="save">حفظ</button> <button type="button" class="btn secondary" data-a="cancel">إلغاء</button> <button type="button" class="btn secondary" data-a="reset">استعادة الأصل</button> <span class="hint" role="status"></span></p>';
+      ed.innerHTML = '<p class="hint">تحرير HTML هذا القسم. تُحذف الوسوم والخصائص الخطرة، وتُزال srcset وروابط CSS الخارجية، ويُعزل فتح الروابط في نافذة جديدة. سيراه جميع الطلاب بعد الحفظ.</p><textarea dir="ltr" spellcheck="false" aria-label="محتوى القسم"></textarea><p><button type="button" class="btn success" data-a="save">حفظ</button> <button type="button" class="btn secondary" data-a="cancel">إلغاء</button> <button type="button" class="btn secondary" data-a="reset">استعادة الأصل</button> <span class="hint" role="status"></span></p>';
       const ta = ed.querySelector("textarea"), st = ed.querySelector("span.hint");
       ta.value = s.innerHTML;
       ed.addEventListener("click", async (e) => {
