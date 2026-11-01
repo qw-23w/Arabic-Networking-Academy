@@ -37,6 +37,41 @@ foreach ($file in $lessons) {
 if ($idErrors.Count -eq 0 -and $lessons.Count -eq 9) { Add-Finding 'PASS' 'Lesson IDs and quizzes' 'Each lesson ID matches its filename and defines quiz questions.' }
 else { Add-Finding 'FAIL' 'Lesson IDs and quizzes' ('Check: ' + ($idErrors -join ', ')) }
 
+# Answer keys must stay server-side, and authenticated clients may submit choices only.
+$quizFixPath = Join-Path $rootPath 'supabase/migrations/20261101000200_server_grade_quizzes_and_rate_limit_visits.sql'
+$quizFix = if (Test-Path -LiteralPath $quizFixPath) { [IO.File]::ReadAllText($quizFixPath) } else { '' }
+$learningPath = Join-Path $rootPath 'my-learning.html'
+$learningSource = if (Test-Path -LiteralPath $learningPath) { [IO.File]::ReadAllText($learningPath) } else { '' }
+$quizSecurityErrors = [System.Collections.Generic.List[string]]::new()
+foreach ($file in $lessons) {
+  $lessonId = [int]([regex]::Match($file.Name, '^lesson-(\d)\.html$').Groups[1].Value)
+  $html = [IO.File]::ReadAllText($file.FullName)
+  $block = [regex]::Match($html, '(?s)const QUESTIONS\s*=\s*\[(.*?)\];')
+  if (-not $block.Success) { $quizSecurityErrors.Add($file.Name); continue }
+  $questionCount = [regex]::Matches($block.Groups[1].Value, '(?:\{|,)\s*(?:"q"|q)\s*:').Count
+  $clientAnswerKey = [regex]::IsMatch($block.Groups[1].Value, '(?:"a"|''a''|\ba)\s*:')
+  if ($clientAnswerKey -or $questionCount -lt 5) { $quizSecurityErrors.Add($file.Name) }
+}
+$secureQuizClient = $lessonLogic -match 'sb\.rpc\("submit_quiz_answers"' -and $lessonLogic -notmatch 'from\("quiz_results"\)\.insert'
+$secureQuizMigration = $quizFix -match '(?is)create\s+table\s+if\s+not\s+exists\s+public\.quiz_answer_keys' -and
+  $quizFix -match '(?is)select\s+k\.answers\s+into\s+answer_key.*?from\s+public\.quiz_answer_keys' -and
+  $quizFix -match '(?is)create\s+or\s+replace\s+function\s+public\.submit_quiz_answers' -and
+  $quizFix -match '(?is)auth\.uid\(\)\s+is\s+null.*?authentication required' -and
+  $quizFix -match '(?is)revoke\s+all\s+on\s+public\.quiz_results.*?drop\s+policy\s+if\s+exists\s+quiz_insert_own' -and
+  $quizFix -notmatch '(?is)when\s+[1-9]\s+then\s+array\s*\['
+$verifiedHistory = $learningSource -match 'grading_source.*server-rpc'
+if ($quizSecurityErrors.Count -eq 0 -and $secureQuizClient -and $secureQuizMigration -and $verifiedHistory) {
+  Add-Finding 'PASS' 'Server-graded quizzes' 'Correct answers are absent from the public site and migrations; a private answer-key table feeds the grader, and direct client inserts are revoked.'
+} else { Add-Finding 'FAIL' 'Server-graded quizzes' ('Review the lesson answer keys, RPC permissions, or history filter: ' + ($quizSecurityErrors -join ', ')) }
+
+# Anonymous visit tracking uses a short-lived IP digest quota in addition to the replaceable browser token.
+$visitThrottle = $quizFix -match '(?is)create\s+table\s+if\s+not\s+exists\s+public\.page_visit_rate_limits' -and
+  $quizFix -match '(?is)x-forwarded-for' -and $quizFix -match '(?is)sha256\(' -and
+  $quizFix -match '(?is)hit_count\s*>\s*1200' -and
+  $quizFix -match '(?is)revoke\s+all\s+on\s+public\.page_visit_rate_limits'
+if ($visitThrottle) { Add-Finding 'PASS' 'Visit throttling' 'A 1,200-per-hour hashed-IP limit supplements browser-token deduplication; raw addresses are not stored.' }
+else { Add-Finding 'FAIL' 'Visit throttling' 'Review the request-header rate limit and private table grants in the latest migration.' }
+
 # The lab must include one well-formed, topic-specific assessment per lesson.
 $assessmentBlock = [regex]::Match($labSource, '(?sm)const ASSESSMENTS\s*=\s*\{(.*?)^\s*\};')
 $assessmentErrors = [System.Collections.Generic.List[string]]::new()
@@ -72,12 +107,15 @@ else { Add-Finding 'WARN' 'Reduced motion' 'Review animated feedback for reduced
 # Defense-in-depth checks for database-authored lesson HTML.
 $sanitizerChecks = @(
   ($lessonLogic -match 'DOMParser'),
-  ($lessonLogic -match 'n\.startsWith\("on"\)'),
-  ($lessonLogic -match 'javascript\|vbscript\|data'),
-  ($lessonLogic -match 'n === "srcset"'),
-  ($lessonLogic -match 'riskyStyle')
+  ($lessonLogic -match 'const HTML_TAGS'),
+  ($lessonLogic -match 'const SVG_TAGS'),
+  ($lessonLogic -match 'function copyNode'),
+  ($lessonLogic -match 'safeHref'),
+  ($lessonLogic -match 'safeImage'),
+  ($lessonLogic -match 'safeSvgValue'),
+  ($lessonLogic -match 'createElementNS\(SVG_NS')
 )
-if (($sanitizerChecks | Where-Object { -not $_ }).Count -eq 0) { Add-Finding 'PASS' 'Lesson HTML sanitizer' 'DOM parsing, event/protocol filtering, srcset removal, and risky CSS URL filtering are present.' }
+if (($sanitizerChecks | Where-Object { -not $_ }).Count -eq 0) { Add-Finding 'PASS' 'Lesson HTML sanitizer' 'Sanitized content is rebuilt using explicit HTML/SVG tag and attribute allowlists; unsafe namespaces, styles, and URL schemes are not copied.' }
 else { Add-Finding 'WARN' 'Lesson HTML sanitizer' 'One or more expected sanitizer safeguards were not detected; review content override handling.' }
 
 # RLS presence only; this does not execute SQL or authenticate to Supabase.
@@ -88,9 +126,41 @@ if ($sqlText -match '(?i)enable\s+row\s+level\s+security' -and (Test-Path -Liter
   Add-Finding 'PASS' 'Supabase RLS artifacts' 'RLS statements and a rollback-based verification script exist; no live database checks were run.'
 } else { Add-Finding 'WARN' 'Supabase RLS artifacts' 'RLS statements or the verification SQL file were not found.' }
 
+# Ensure the consolidated schema, original migration, and deployment migration stay aligned.
+$shareSourcePaths = @(
+  'supabase/schema.sql',
+  'supabase/migrations/20261017000100_admin_share_links.sql',
+  'supabase/migrations/20261101000100_harden_share_analytics.sql'
+)
+$shareSourceErrors = [System.Collections.Generic.List[string]]::new()
+foreach ($relativePath in $shareSourcePaths) {
+  $path = Join-Path $rootPath $relativePath
+  $source = if (Test-Path -LiteralPath $path) { [IO.File]::ReadAllText($path) } else { '' }
+  $tokenLengthBound = $source -match 'char_length\(t\)\s*<>\s*64'
+  $tokenFormatBound = $source.Contains('t !~ ''^[0-9a-f]{64}$''')
+  $daysBound = $source -match 'least\(greatest\(coalesce\(days,\s*30\),\s*1\),\s*366\)'
+  if (-not ($tokenLengthBound -and $tokenFormatBound -and $daysBound)) { $shareSourceErrors.Add($relativePath) }
+}
+$shareFixPath = Join-Path $rootPath 'supabase/migrations/20261101000100_harden_share_analytics.sql'
+$shareFix = if (Test-Path -LiteralPath $shareFixPath) { [IO.File]::ReadAllText($shareFixPath) } else { '' }
+$shareGrantCheck = $shareFix -match '(?is)revoke\s+all\s+on\s+function\s+public\.share_registrations_by_day\(text,\s*int\).*?grant\s+execute\s+on\s+function\s+public\.share_registrations_by_day\(text,\s*int\)\s+to\s+anon,\s*authenticated'
+if ($shareSourceErrors.Count -eq 0 -and $shareGrantCheck) {
+  Add-Finding 'PASS' 'Share analytics bounds' 'Malformed tokens are rejected before hashing and date-series requests are capped at 366 days; explicit RPC grants are present.'
+} else { Add-Finding 'FAIL' 'Share analytics bounds' ('Review token validation, date bounds, or grants in: ' + ($shareSourceErrors -join ', ')) }
+
+# Pin the browser SDK to a complete version instead of following a moving major-version alias.
+$htmlFiles = @(Get-ChildItem -LiteralPath $rootPath -File -Filter '*.html')
+$htmlText = ($htmlFiles | ForEach-Object { [IO.File]::ReadAllText($_.FullName) }) -join "`n"
+$sdkRefs = [regex]::Matches($htmlText, 'https://cdn\.jsdelivr\.net/npm/@supabase/supabase-js@').Count
+$pinnedSdkRefs = [regex]::Matches($htmlText, 'https://cdn\.jsdelivr\.net/npm/@supabase/supabase-js@\d+\.\d+\.\d+').Count
+$movingSdkRefs = [regex]::Matches($htmlText, 'https://cdn\.jsdelivr\.net/npm/@supabase/supabase-js@(?:latest|next|\d+)(?:["/])').Count
+if ($sdkRefs -gt 0 -and $pinnedSdkRefs -eq $sdkRefs -and $movingSdkRefs -eq 0) {
+  Add-Finding 'PASS' 'Pinned Supabase SDK' "All $sdkRefs Supabase SDK script references use an exact semantic version."
+} else { Add-Finding 'FAIL' 'Pinned Supabase SDK' 'Review Supabase SDK script references; every CDN reference must use an exact semantic version.' }
+
 # Check only known private-key markers. Never include matched values in output.
 $sourceFiles = @(Get-ChildItem -LiteralPath $rootPath -Recurse -File | Where-Object {
-  $_.FullName -notmatch '[\\/](\.git|node_modules|\.codex|outputs)[\\/]' -and $_.Extension -in '.js','.html','.json','.sql','.env','.txt'
+  $_.FullName -notmatch '[\\/](\.git|node_modules|\.codex|outputs)[\\/]' -and $_.Extension -in '.js','.html','.json','.sql','.env','.txt','.md','.yml','.yaml','.toml'
 })
 $privateMarker = '(?i)-----BEGIN\s+(RSA|OPENSSH|EC|PRIVATE)\s+KEY-----|sb_secret_|SUPABASE_SERVICE_ROLE_KEY\s*[:=]|service_role_key\s*[:=]'
 $privateFiles = [System.Collections.Generic.List[string]]::new()

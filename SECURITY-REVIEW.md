@@ -1,19 +1,32 @@
 # Security and lesson review
 
+## Latest review: 2026-11-01
+
+- The latest local static audit completed with **16 checks, 0 failures, and 2 warnings**. It found all 18 HTML pages on the exact Supabase SDK version `2.118.0`, with no quiz answer keys in lesson HTML.
+- The updated schema and both current migrations executed successfully on a temporary local PostgreSQL 16 instance with a small Supabase Auth stub. The rollback-based RLS checks passed; additional local SQL checks passed for answer grading, trusted admin/share aggregates, and the 1,200-per-hour visit cap. This does not verify the live Supabase project's schema or settings.
+- A browser route check was performed on the deployed baseline before this package was prepared: 18 known routes opened, protected pages redirected unauthenticated visitors to sign-in, and no console errors were observed. The new local package has not yet been deployed or browser-checked.
+- Safe public-origin checks from the prior review found no reflected marker in the tested query, and `/.env` and `/.git/config` returned the host's not-found page. These checks do not establish that every route or backend endpoint is safe.
+- The static tool's `innerHTML` warning is heuristic. The lesson override sanitizer now reconstructs content from explicit HTML/SVG tag and attribute allowlists, scopes IDs, and accepts only safe link/image URLs. It remains custom security-sensitive code; a maintained sanitizer is preferable if untrusted editors or broader content sources are introduced.
+- **No full active vulnerability scan was completed.** No login credentials or test account were available, and no write or destructive requests were sent. The deployed Supabase database was not queried directly. The browser checks were route and response-behavior checks, not a penetration test.
+- The share, quiz-grading, and visit-throttling migrations are included in the package but are **not confirmed applied to production**. The live behavior remains unchanged until an administrator runs migrations `20261101000100` then `20261101000200` in the Supabase SQL Editor. Afterward, load the private answer arrays into `quiz_answer_keys` from the separate SQL provided to the site owner; those values are intentionally absent from the public repository.
+
 ## Local review tool
 
-Run `powershell -ExecutionPolicy Bypass -File .\tools\Audit-AnaAcademy.ps1` from the project folder. The script checks the nine lesson IDs and quizzes, the nine lab comprehension questions, the completion gate, keyboard and dialog focus access, reduced motion, basic lesson-HTML sanitization, RLS source artifacts, private-key markers, risky HTML sinks, and deployment-header configuration. It never prints matched secret values.
+Run `powershell -ExecutionPolicy Bypass -File .\tools\Audit-AnaAcademy.ps1` from the project folder. The script checks lesson IDs, server-graded quiz wiring, answer-key removal, visit throttling, lab checks, completion behavior, keyboard and dialog access, reduced motion, the HTML/SVG allowlist, RLS artifacts, share-analytics bounds, pinned SDK URLs, private-key markers, risky HTML sinks, and deployment-header configuration. It never prints matched secret values.
 
 The script is a static source review. It does not connect to Supabase, probe a running server, or run attacks. A `WARN` requires a human decision; a passing pattern check is not proof that a system is secure.
 
 ## Findings and limits
 
-- Supabase RLS policies, an admin-role guard, restricted client grants, and a rollback-based RLS verification SQL file are present in the source. The SQL verification needs a separate test database and was not run here.
-- Database-authored lesson HTML removes executable tags and event handlers, blocks unsafe URL schemes, removes `srcset` and tracking `ping`, and rejects CSS URL/import/expression patterns. New-tab links receive `noopener noreferrer`. This filter is defense in depth, not a substitute for a maintained HTML sanitizer.
+- Supabase RLS policies, an admin-role guard, restricted client grants, and a rollback-based RLS verification SQL file are present. The verification passed on the temporary local database; repeat it against the live project after migrations are deployed.
+- Database-authored lesson HTML is rebuilt from an explicit allowlist. Scripts, styles, unknown namespaces, event attributes, external images, and unsafe URL schemes are not copied; IDs are prefixed to avoid collisions. This is still a custom sanitizer and has not received a live fuzz test.
 - Lesson completion is a learning-progress feature, not an authorization boundary. Browser-side state can be edited by the learner.
-- Anonymous page-visit limiting is based on a visitor token; it is not an IP-based abuse control.
+- Public page visits now have a coarse limit of 1,200 new visit attempts per IP per hour, using the Supabase/PostgREST forwarded-address header. Only a SHA-256 digest is stored in the private limiter table, and old rows are cleaned after 24 hours. If the header is missing, the function falls back to the browser token; distributed clients can still bypass this control. It is not a WAF or a guarantee against denial of service.
+- The share analytics endpoint previously accepted an unbounded `days` argument, allowing a valid read-only link holder to request a very large date series. The latest migration caps this at 366 days and rejects malformed share tokens before hashing. Apply `supabase/migrations/20261101000100_harden_share_analytics.sql` to the live Supabase project; editing a migration file does not update an already deployed database.
+- All pages previously followed the moving `@2` Supabase CDN alias. They now pin `@2.118.0`, the version currently resolved by jsDelivr, and the static audit checks that SDK URLs remain fully versioned. This reduces surprise updates; the browser still trusts the CDN, so pinning is not a replacement for Subresource Integrity or local vendoring.
+- New quiz submissions send selected option indexes to `submit_quiz_answers`; correct-answer arrays are kept in the private `quiz_answer_keys` table, which the public client cannot read. Direct client inserts into `quiz_results` are revoked. Existing rows are tagged `legacy-client`, retained for history, and excluded from trusted averages; new server-scored rows use `server-rpc`. The grader returns “quiz unavailable” until the site owner privately seeds all nine keys in Supabase. A learner can still retry and reason out answers; this is not a proctored exam.
 - Deployment-specific security headers must be set at the actual hosting provider. This project has no provider specified, so no potentially incompatible global CSP was added.
-- No active security scan was completed: the official ZAP/Java downloads did not complete in this environment. ZAP's [Baseline Scan](https://www.zaproxy.org/docs/docker/baseline-scan/) is passive; its [Full Scan](https://www.zaproxy.org/docs/docker/full-scan/) performs active attacks. Run an active scan only against the local test deployment with test accounts and data, and keep its scope on the local origin.
+- No active security scan was completed: the ZAP/Java downloads did not complete in this environment. ZAP's [Baseline Scan](https://www.zaproxy.org/docs/docker/baseline-scan/) is passive; its [Full Scan](https://www.zaproxy.org/docs/docker/full-scan/) performs active attacks. Run an active scan only against a staging deployment with test accounts and data.
 
 ## Lesson review scope
 

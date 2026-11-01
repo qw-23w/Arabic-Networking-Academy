@@ -32,7 +32,7 @@
   </div>
 </main>
 <div id="site-footer"></div>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0"></script>
 <script src="assets/js/config.js"></script>
 <script src="assets/js/app.js"></script>
 <script>
@@ -45,7 +45,7 @@
   try {
     const [prog, quiz] = await Promise.all([
       ANA.myProgress(session.user.id),
-      sb.from("quiz_results").select("lesson_id,score,total,created_at").eq("user_id", session.user.id).order("created_at", { ascending: false }).limit(10)
+    sb.from("quiz_results").select("lesson_id,score,total,created_at").eq("user_id", session.user.id).eq("grading_source", "server-rpc").order("created_at", { ascending: false }).limit(10)
     ]);
     if (quiz.error) throw quiz.error;
     const done = new Set(prog.filter(p => p.completed_at).map(p => p.lesson_id));

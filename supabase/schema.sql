@@ -35,8 +35,22 @@ create table if not exists public.quiz_results (
  user_id uuid not null references public.profiles(id) on delete cascade,
  lesson_id int not null references public.lessons(id),
  score int not null check(score >= 0), total int not null check(total > 0),
- created_at timestamptz not null default now(), check(score <= total)
+ created_at timestamptz not null default now(), check(score <= total),
+ grading_source text not null default 'server-rpc',
+ constraint quiz_results_grading_source_valid check(grading_source in ('legacy-client','server-rpc'))
 );
+alter table public.quiz_results add column if not exists grading_source text not null default 'legacy-client';
+do $$ begin
+ if not exists(select 1 from pg_constraint where conrelid='public.quiz_results'::regclass and conname='quiz_results_grading_source_valid') then
+  alter table public.quiz_results add constraint quiz_results_grading_source_valid check(grading_source in ('legacy-client','server-rpc'));
+ end if;
+end $$;
+create table if not exists public.quiz_answer_keys(
+ lesson_id int primary key references public.lessons(id) on delete cascade,
+ answers int[] not null check(cardinality(answers) between 1 and 10)
+);
+alter table public.quiz_answer_keys enable row level security;
+revoke all on public.quiz_answer_keys from public,anon,authenticated;
 create table if not exists public.lesson_views (
  id bigint generated always as identity primary key,
  user_id uuid not null references public.profiles(id) on delete cascade,
@@ -107,14 +121,58 @@ create policy progress_update_own on public.lesson_progress for update using(use
 drop policy if exists quiz_select_own on public.quiz_results;
 create policy quiz_select_own on public.quiz_results for select using(user_id=auth.uid());
 drop policy if exists quiz_insert_own on public.quiz_results;
-create policy quiz_insert_own on public.quiz_results for insert with check(user_id=auth.uid() and exists(select 1 from public.lessons l where l.id=lesson_id and l.published));
+-- The answer key stays in this server-side function; browser clients submit choices, not scores.
+create or replace function public.submit_quiz_answers(p_lesson_id integer,p_answers integer[])
+returns table(score integer,total integer)
+language plpgsql security definer set search_path=pg_catalog,public as $$
+declare
+ answer_key integer[];
+ answer_total integer;
+ answer_score integer:=0;
+ i integer;
+begin
+ if auth.uid() is null then raise exception 'authentication required' using errcode='42501'; end if;
+ if not exists(select 1 from public.lessons where id=p_lesson_id and published) then
+  raise exception 'lesson unavailable' using errcode='22023';
+ end if;
+ select k.answers into answer_key from public.quiz_answer_keys k where k.lesson_id=p_lesson_id;
+ if answer_key is null then raise exception 'quiz unavailable' using errcode='22023'; end if;
+ answer_total:=cardinality(answer_key);
+ if p_answers is null or cardinality(p_answers)<>answer_total then
+  raise exception 'invalid answer count' using errcode='22023';
+ end if;
+ if exists(select 1 from unnest(p_answers) submitted(answer_index)
+  where submitted.answer_index is null or submitted.answer_index<0 or submitted.answer_index>3) then
+  raise exception 'invalid answer choice' using errcode='22023';
+ end if;
+ for i in 1..answer_total loop
+  if p_answers[i]=answer_key[i] then answer_score:=answer_score+1; end if;
+ end loop;
+ insert into public.quiz_results(user_id,lesson_id,score,total,grading_source)
+ values(auth.uid(),p_lesson_id,answer_score,answer_total,'server-rpc');
+ return query select answer_score,answer_total;
+end $$;
+revoke all on function public.submit_quiz_answers(integer,integer[]) from public,anon,authenticated;
+grant execute on function public.submit_quiz_answers(integer,integer[]) to authenticated;
+revoke all on public.quiz_results from public,anon,authenticated;
+grant select on public.quiz_results to authenticated;
 drop policy if exists views_select_own on public.lesson_views;
 create policy views_select_own on public.lesson_views for select using(user_id=auth.uid());
 drop policy if exists views_insert_own on public.lesson_views;
 create policy views_insert_own on public.lesson_views for insert with check(user_id=auth.uid() and exists(select 1 from public.lessons l where l.id=lesson_id and l.published));
 
+-- Explicit least-privilege grants (do not depend on Supabase project defaults).
+revoke all on public.profiles,public.lessons,public.lesson_progress,public.quiz_results,public.lesson_views from public,anon,authenticated;
+grant select on public.lessons to anon,authenticated;
+grant select on public.profiles to authenticated;
+grant update(display_name) on public.profiles to authenticated;
+grant select,insert on public.lesson_progress to authenticated;
+grant update(completed_at) on public.lesson_progress to authenticated;
+grant select on public.quiz_results to authenticated;
+grant select,insert on public.lesson_views to authenticated;
+
 -- ===== Public visit counter (زيارات الموقع العامة) =====
--- Anonymous: a random browser id + page name + time. No IP, no email, no account link.
+-- Anonymous: a browser id + page name + time; raw IPs are never stored.
 create table if not exists public.page_visits(
  id bigint generated always as identity primary key,
  page text not null check(char_length(page)<=60),
@@ -125,12 +183,43 @@ create index if not exists idx_visits_time on public.page_visits(visited_at);
 create index if not exists idx_visits_visitor on public.page_visits(visitor,visited_at);
 alter table public.page_visits enable row level security;
 revoke all on public.page_visits from public,anon,authenticated;
+create table if not exists public.page_visit_rate_limits (
+ ip_hash text primary key check (ip_hash ~ '^[0-9a-f]{64}$'),
+ window_started_at timestamptz not null,
+ request_count integer not null check (request_count between 1 and 1201)
+);
+create index if not exists idx_page_visit_rate_limits_window
+ on public.page_visit_rate_limits(window_started_at);
+alter table public.page_visit_rate_limits enable row level security;
+revoke all on public.page_visit_rate_limits from public,anon,authenticated;
+
 create or replace function public.track_visit(p_page text,p_visitor text) returns void
-language plpgsql security definer set search_path=public as $$
+language plpgsql security definer set search_path=pg_catalog,public as $$
+declare
+ headers jsonb;
+ client_ip text;
+ rate_key text;
+ hour_start timestamptz:=date_trunc('hour',now());
+ hit_count integer;
 begin
  if p_visitor is null or char_length(p_visitor) not between 8 and 64 or p_visitor !~ '^[A-Za-z0-9_-]+$' then return; end if;
  p_page:=left(coalesce(nullif(trim(p_page),''),'index.html'),60);
  if exists(select 1 from public.page_visits where visitor=p_visitor and visited_at>now()-interval '30 minutes') then return; end if;
+ headers:=coalesce(nullif(current_setting('request.headers',true),'')::jsonb,'{}'::jsonb);
+ client_ip:=nullif(trim(split_part(coalesce(headers->>'x-forwarded-for',''),',',1)),'');
+ if client_ip is not null then
+  rate_key:=encode(sha256(convert_to('ip:'||lower(client_ip),'UTF8')),'hex');
+ else
+  rate_key:=encode(sha256(convert_to('visitor:'||p_visitor,'UTF8')),'hex');
+ end if;
+ insert into public.page_visit_rate_limits as limits(ip_hash,window_started_at,request_count)
+ values(rate_key,hour_start,1)
+ on conflict(ip_hash) do update set
+  window_started_at=excluded.window_started_at,
+  request_count=case when limits.window_started_at=excluded.window_started_at then least(limits.request_count+1,1201) else 1 end
+ returning request_count into hit_count;
+ if hit_count>1200 then return; end if;
+ delete from public.page_visit_rate_limits where window_started_at<now()-interval '24 hours';
  insert into public.page_visits(page,visitor) values(p_page,p_visitor);
 end $$;
 revoke all on function public.track_visit(text,text) from public;
@@ -151,8 +240,8 @@ begin
  'completed_one',(select count(distinct user_id) from lesson_progress where completed_at is not null),
  'completed_course',(select count(*) from (select lp.user_id from lesson_progress lp join lessons l on l.id=lp.lesson_id and l.published where lp.completed_at is not null group by lp.user_id having count(*)=published_count) t where published_count>0),
  'published_lessons',published_count,
- 'avg_quiz_percent',(select round(avg(score::numeric*100/total),1) from quiz_results),
- 'quiz_attempts',(select count(*) from quiz_results),
+ 'avg_quiz_percent',(select round(avg(score::numeric*100/total),1) from quiz_results where grading_source='server-rpc'),
+ 'quiz_attempts',(select count(*) from quiz_results where grading_source='server-rpc'),
  'visits_total',(select count(*) from page_visits),
  'visits_today',(select count(*) from page_visits where visited_at>=date_trunc('day',now())),
  'visits_7_days',(select count(*) from page_visits where visited_at>=now()-interval '7 days'),
@@ -178,7 +267,7 @@ begin
  (select count(*) from lesson_views v where v.lesson_id=l.id),
  (select count(distinct v.user_id) from lesson_views v where v.lesson_id=l.id),
  (select count(*) from lesson_progress lp where lp.lesson_id=l.id and lp.completed_at is not null),
- (select round(avg(q.score::numeric*100/q.total),1) from quiz_results q where q.lesson_id=l.id)
+ (select round(avg(q.score::numeric*100/q.total),1) from quiz_results q where q.lesson_id=l.id and q.grading_source='server-rpc')
  from lessons l where l.published order by l.id;
 end $$;
 
@@ -195,8 +284,7 @@ begin
  (select max(lp.completed_at) from lesson_progress lp where lp.user_id=p.id),
  (select max(q.created_at) from quiz_results q where q.user_id=p.id),
  (select max(v.viewed_at) from lesson_views v where v.user_id=p.id)),
- (select round(avg(q.score::numeric*100/q.total),1) from quiz_results q where q.user_id=p.id),
- count(*) over() from profiles p order by p.created_at desc,p.id limit ps offset po;
+ (select round(avg(q.score::numeric*100/q.total),1) from quiz_results q where q.user_id=p.id and q.grading_source='server-rpc'), count(*) over() from profiles p order by p.created_at desc,p.id limit ps offset po;
 end $$;
 
 create table if not exists public.lesson_section_overrides(
@@ -211,6 +299,9 @@ drop policy if exists overrides_select_all on public.lesson_section_overrides;
 create policy overrides_select_all on public.lesson_section_overrides for select using(true);
 drop policy if exists overrides_admin_write on public.lesson_section_overrides;
 create policy overrides_admin_write on public.lesson_section_overrides for all using(public.is_admin()) with check(public.is_admin());
+revoke all on public.lesson_section_overrides from public,anon,authenticated;
+grant select on public.lesson_section_overrides to anon,authenticated;
+grant insert,update,delete on public.lesson_section_overrides to authenticated;
 
 create table if not exists public.admin_share_links(
  id uuid primary key default gen_random_uuid(), token_hash text not null unique,
@@ -224,8 +315,13 @@ language sql immutable set search_path=public as $$
  select encode(sha256(convert_to(coalesce(t,''),'utf8')),'hex');
 $$;
 create or replace function public._share_ok(t text) returns boolean
-language sql stable security definer set search_path=public as $$
- select exists(select 1 from public.admin_share_links where token_hash=public._share_hash(t) and revoked_at is null and expires_at>now());
+language plpgsql stable security definer set search_path=public as $$
+begin
+ if t is null then return false; end if;
+ if char_length(t) <> 64 then return false; end if;
+ if t !~ '^[0-9a-f]{64}$' then return false; end if;
+ return exists(select 1 from public.admin_share_links where token_hash=public._share_hash(t) and revoked_at is null and expires_at>now());
+end;
 $$;
 revoke all on function public._share_hash(text) from public,anon,authenticated;
 revoke all on function public._share_ok(text) from public,anon,authenticated;
@@ -261,13 +357,37 @@ begin
  'completed_one',(select count(distinct user_id) from lesson_progress where completed_at is not null),
  'completed_course',(select count(*) from (select lp.user_id from lesson_progress lp join lessons l on l.id=lp.lesson_id and l.published where lp.completed_at is not null group by lp.user_id having count(*)=published_count) t where published_count>0),
  'published_lessons',published_count,
- 'avg_quiz_percent',(select round(avg(score::numeric*100/total),1) from quiz_results),
- 'quiz_attempts',(select count(*) from quiz_results),
+ 'avg_quiz_percent',(select round(avg(score::numeric*100/total),1) from quiz_results where grading_source='server-rpc'),
+ 'quiz_attempts',(select count(*) from quiz_results where grading_source='server-rpc'),
  'visits_total',(select count(*) from page_visits),
  'visits_today',(select count(*) from page_visits where visited_at>=date_trunc('day',now())),
  'visits_7_days',(select count(*) from page_visits where visited_at>=now()-interval '7 days'),
  'visitors_unique',(select count(distinct visitor) from page_visits)) into result;
  return result;
+end $$;
+
+create or replace function public.share_registrations_by_day(link_token text, days int default 30)
+returns table(day date,registrations bigint)
+language plpgsql stable security definer set search_path=public as $$
+declare bounded_days int:=least(greatest(coalesce(days,30),1),366);
+begin
+ if not public._share_ok(link_token) then raise exception 'not authorized' using errcode='42501'; end if;
+ return query select d::date,count(p.id)
+ from generate_series((current_date-(bounded_days-1))::timestamp,current_date::timestamp,interval '1 day') d
+ left join profiles p on p.created_at::date=d::date group by d order by d;
+end $$;
+
+create or replace function public.share_lesson_stats(link_token text)
+returns table(lesson_id int,title_ar text,views bigint,unique_viewers bigint,completions bigint,avg_quiz_percent numeric)
+language plpgsql stable security definer set search_path=pg_catalog,public as $$
+begin
+ if not public._share_ok(link_token) then raise exception 'not authorized' using errcode='42501'; end if;
+ return query select l.id,l.title_ar,
+  (select count(*) from public.lesson_views v where v.lesson_id=l.id),
+  (select count(distinct v.user_id) from public.lesson_views v where v.lesson_id=l.id),
+  (select count(*) from public.lesson_progress lp where lp.lesson_id=l.id and lp.completed_at is not null),
+  (select round(avg(q.score::numeric*100/q.total),1) from public.quiz_results q where q.lesson_id=l.id and q.grading_source='server-rpc')
+ from public.lessons l where l.published order by l.id;
 end $$;
 
 -- Only the aggregate share endpoint is available to token holders.
@@ -278,6 +398,8 @@ revoke all on function public.admin_list_students(int,int) from public,anon;
 revoke all on function public.admin_create_share_link(int) from public,anon;
 revoke all on function public.admin_revoke_share_links() from public,anon;
 revoke all on function public.share_stats(text) from public,anon,authenticated;
+revoke all on function public.share_registrations_by_day(text,int) from public,anon,authenticated;
+revoke all on function public.share_lesson_stats(text) from public,anon,authenticated;
 grant execute on function public.admin_stats() to authenticated;
 grant execute on function public.admin_registrations_by_day(int) to authenticated;
 grant execute on function public.admin_lesson_stats() to authenticated;
@@ -285,6 +407,8 @@ grant execute on function public.admin_list_students(int,int) to authenticated;
 grant execute on function public.admin_create_share_link(int) to authenticated;
 grant execute on function public.admin_revoke_share_links() to authenticated;
 grant execute on function public.share_stats(text) to anon,authenticated;
+grant execute on function public.share_registrations_by_day(text,int) to anon,authenticated;
+grant execute on function public.share_lesson_stats(text) to anon,authenticated;
 
 -- Repair placeholder names only when valid metadata exists.
 update public.profiles p set display_name=left(trim(u.raw_user_meta_data->>'display_name'),60)

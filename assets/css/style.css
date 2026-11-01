@@ -111,6 +111,7 @@ dl.glossary dd{margin:0 0 0 0;margin-inline-start:0;color:var(--text)}
 .q{border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin:14px 0;background:#fff}
 .q .opt{display:block;width:100%;text-align:right;background:#fff;border:1px solid #c3cbd8;border-radius:10px;padding:10px 14px;margin:8px 0;font:inherit;cursor:pointer;color:var(--text)}
 .q .opt:hover:not(:disabled){background:var(--light)}
+.q .opt.selected{border:2px solid var(--blue);background:var(--light)}
 .q .opt.correct{background:var(--green-bg);border-color:var(--green)}
 .q .opt.wrong{background:var(--red-bg);border-color:var(--red)}
 .q .explain{margin-top:8px;font-size:.97rem}
@@ -139,6 +140,7 @@ dl.glossary dd{margin:0 0 0 0;margin-inline-start:0;color:var(--text)}
 [data-theme=dark] .btn.secondary{color:#eaf1ff}
 [data-theme=dark] .btn.secondary:hover{background:#1a2740;color:#fff}
 [data-theme=dark] .q .opt{border-color:#3a4c6b}
+[data-theme=dark] .q .opt.selected{border-color:#8bb8ff;background:#203149}
 [data-theme=dark] .q .opt:hover:not(:disabled){background:#1a2740}
 [data-theme=dark] .q .opt.correct{background:var(--green-bg)}
 [data-theme=dark] .q .opt.wrong{background:var(--red-bg)}
