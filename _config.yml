@@ -1,0 +1,20 @@
+# Keep deployment and database administration files out of the public Pages site.
+exclude:
+  - .sass-cache/
+  - .jekyll-cache/
+  - gemfiles/
+  - Gemfile
+  - Gemfile.lock
+  - node_modules/
+  - vendor/bundle/
+  - vendor/cache/
+  - vendor/gems/
+  - vendor/ruby/
+  - supabase/
+  - tools/
+  - SECURITY-REVIEW.md
+  - SECURITY-DEPLOYMENT.md
+  - README.md
+  - MOBILE-README.txt
+  - .agents/
+  - .codex/

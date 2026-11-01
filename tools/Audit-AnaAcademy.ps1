@@ -18,8 +18,10 @@ if (-not (Test-Path -LiteralPath $Root -PathType Container)) {
 $rootPath = (Resolve-Path -LiteralPath $Root).Path
 $labPath = Join-Path $rootPath 'assets/js/lab.js'
 $lessonLogicPath = Join-Path $rootPath 'assets/js/lesson.js'
+$appPath = Join-Path $rootPath 'assets/js/app.js'
 $labSource = if (Test-Path -LiteralPath $labPath) { [IO.File]::ReadAllText($labPath) } else { '' }
 $lessonLogic = if (Test-Path -LiteralPath $lessonLogicPath) { [IO.File]::ReadAllText($lessonLogicPath) } else { '' }
+$appSource = if (Test-Path -LiteralPath $appPath) { [IO.File]::ReadAllText($appPath) } else { '' }
 
 # Lesson coverage and ID mapping.
 $lessons = @(Get-ChildItem -LiteralPath $rootPath -File -Filter 'lesson-*.html' | Where-Object { $_.Name -match '^lesson-[1-9]\.html$' })
@@ -170,6 +172,20 @@ foreach ($file in $sourceFiles) {
 }
 if ($privateFiles.Count -eq 0) { Add-Finding 'PASS' 'Private-key markers' 'No recognized private-key markers were found in scanned source files.' }
 else { Add-Finding 'FAIL' 'Private-key markers' ('Review these filenames; matching values were withheld: ' + (($privateFiles | Select-Object -Unique) -join ', ')) }
+
+# The post-login return destination must remain on this site and match a protected page filename.
+$safeReturnPath = $appSource.Contains('new URL(n, appRoot)') -and
+  $appSource.Contains('target.origin !== appRoot.origin') -and
+  $appSource.Contains('admin|my-learning|lesson-[1-9]')
+if ($safeReturnPath) { Add-Finding 'PASS' 'Post-login redirect guard' 'Stored return paths are restricted to same-origin protected lesson/account pages.' }
+else { Add-Finding 'FAIL' 'Post-login redirect guard' 'Review the stored post-login destination validation in assets/js/app.js.' }
+
+# Keep source, database, and review artifacts out of the Jekyll-built public Pages artifact.
+$pagesConfigPath = Join-Path $rootPath '_config.yml'
+$pagesConfig = if (Test-Path -LiteralPath $pagesConfigPath) { [IO.File]::ReadAllText($pagesConfigPath) } else { '' }
+$pagesExcludes = $pagesConfig -match '(?m)^\s*-\s*supabase/' -and $pagesConfig -match '(?m)^\s*-\s*tools/'
+if ($pagesExcludes) { Add-Finding 'PASS' 'Pages artifact exclusions' 'Jekyll excludes the Supabase and tools directories from the public Pages build.' }
+else { Add-Finding 'FAIL' 'Pages artifact exclusions' 'Add Jekyll exclude rules for the private-operational source directories.' }
 
 # Heuristic only: innerHTML is not automatically unsafe, but its inputs must stay escaped or sanitized.
 $sinkCount = [regex]::Matches($labSource + $lessonLogic, '\.innerHTML\s*=').Count

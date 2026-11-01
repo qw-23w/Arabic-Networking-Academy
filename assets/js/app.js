@@ -170,7 +170,18 @@
   function nextUrl(fallback) {
     let n = null;
     try { n = sessionStorage.getItem("ana_next"); sessionStorage.removeItem("ana_next"); } catch (e) {}
-    return n || fallback;
+    if (typeof n !== "string" || !n || n.length > 200) return fallback;
+    try {
+      const appRoot = new URL("./", location.href);
+      const target = new URL(n, appRoot);
+      if (target.origin !== appRoot.origin || !target.pathname.startsWith(appRoot.pathname)) return fallback;
+      const page = target.pathname.slice(appRoot.pathname.length);
+      if (!/^(?:admin|my-learning|lesson-[1-9])\.html$/.test(page)) return fallback;
+      // Restore only a known local protected page. Ignore query/hash data from storage.
+      return page;
+    } catch (e) {
+      return fallback;
+    }
   }
 
   // Throws on failure so callers can show an error instead of a misleading "0 lessons completed".
