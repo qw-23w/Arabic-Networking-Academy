@@ -2,41 +2,34 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>المنهج — أكاديمية الشبكات العربية</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<title>اكتشف الدروس والمسار — أكاديمية الشبكات العربية</title>
+<meta name="description" content="استكشف الدروس التسعة الفعلية في أكاديمية الشبكات العربية، وابحث حسب الموضوع والمستوى وتابع تقدمك المحفوظ.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
 <link rel="icon" type="image/png" href="assets/img/academy-icon.png">
-<script>try{var t=localStorage.getItem("ana_theme")||(matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light");document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
-<link rel="stylesheet" href="assets/css/style.css">
-<link rel="stylesheet" href="assets/css/experience.css">
+<script>try{var t=localStorage.getItem("ana_theme")||"dark";document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="stylesheet" href="assets/css/style.css"><link rel="stylesheet" href="assets/css/experience.css">
 </head>
 <body>
-<a class="skip" href="#main">تخطَّ إلى المحتوى</a>
-<div id="site-header"></div>
-<main id="main" class="container section">
-  <header class="page-intro">
-    <h1>المنهج الدراسي</h1>
-    <p>تسعة دروس مرتبة لتبني معرفتك خطوة بخطوة؛ من أساسيات الشبكات والعنونة إلى التوجيه واستكشاف الأخطاء.</p>
-  </header>
-  <div id="list" class="course-grid"></div>
+<a class="skip" href="#main">تخطَّ إلى المحتوى</a><header id="site-header"></header>
+<main id="main" class="container section curriculum-page">
+  <header class="page-intro"><p class="eyebrow">اكتشف · تعلّم · طبّق</p><h1>من أول اتصال إلى شبكة تفهمها</h1><p>مسار واحد متدرّج، مبني على الدروس والمختبرات الموجودة فعلًا في الأكاديمية. لا تحتاج إلى معرفة سابقة.</p></header>
+  <section class="learning-path card" aria-labelledby="path-heading">
+    <div class="path-copy"><p class="eyebrow">مسار الأكاديمية المتاح</p><h2 id="path-heading">أساسيات الشبكات</h2><p>ابدأ بفهم الشبكة وطبقاتها، ثم تعلّم العنونة والتوجيه والتقسيم، واختتم بتشخيص الاتصال ومبادئ الحماية.</p><div class="path-facts"><span><b>المتطلبات</b> لا شيء — مناسب للمبتدئ</span><span><b>المهارات</b> قراءة المخططات، فهم العناوين، تتبّع الاتصال وتشخيصه</span><span><b>الخطوة التالية</b> راجع الدرس الذي تحتاجه وطبّق المفهوم في مختبره</span></div><p id="path-progress" class="path-progress" aria-live="polite">المسار متاح للبدء</p></div>
+    <ol class="path-sequence" aria-label="ترتيب الدروس التسعة"><li><span>01</span>الأساسيات</li><li><span>02</span>الطبقات والعناوين</li><li><span>03</span>البروتوكولات</li><li><span>04</span>التوجيه والتقسيم</li><li><span>05</span>التشخيص والأمن</li></ol>
+  </section>
+  <section class="catalog" aria-labelledby="catalog-heading">
+    <header class="catalog-heading"><div><p class="eyebrow">مكتبة التعلم</p><h2 id="catalog-heading">اختر مفهومك التالي</h2><p id="catalog-count" class="hint" aria-live="polite"></p></div><a class="btn secondary" href="my-learning.html">متابعة تعلّمي</a></header>
+    <form id="catalog-filters" class="catalog-filters" role="search" onsubmit="return false">
+      <label class="catalog-search">ابحث في الدروس<input id="course-search" type="search" name="q" placeholder="مثال: عنوان IP، توجيه، OSI" autocomplete="off"></label>
+      <label>الموضوع<select id="course-category"><option value="all">كل الموضوعات</option><option value="foundations">أساسيات الشبكة</option><option value="addressing">العناوين والبروتوكولات</option><option value="operations">إدارة الشبكة</option><option value="practice">التشخيص والأمن</option></select></label>
+      <label>المستوى<select id="course-level"><option value="all">كل المستويات</option><option value="beginner">مبتدئ</option><option value="intermediate">متوسط</option><option value="advanced">متقدم</option></select></label>
+    </form>
+    <div id="list" class="course-grid" aria-live="polite"></div>
+    <p id="catalog-empty" class="catalog-empty card hidden">لم نجد درسًا يطابق البحث. جرّب كلمة أقصر أو غيّر المرشّحات.</p>
+  </section>
 </main>
-<div id="site-footer"></div>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0"></script>
-<script src="assets/js/config.js"></script>
-<script src="assets/js/app.js"></script>
-<script>
-(async () => {
-  const { session } = await ANA.renderLayout("curriculum");
-  const prog = session ? await ANA.myProgress(session.user.id) : [];
-  const done = new Set(prog.filter(p => p.completed_at).map(p => p.lesson_id));
-  document.getElementById("list").innerHTML = ANA.LESSONS.map(l => {
-    const target = session ? l.href : "register.html";
-    const action = l.published ? `<a class="btn" href="${target}">${session ? (done.has(l.id) ? "مراجعة الدرس" : "ابدأ الدرس") : "سجّل لتبدأ"}</a>` : "";
-    const badge = done.has(l.id) ? '<span class="badge done">مكتمل</span>' : l.published ? '<span class="badge">متاح</span>' : '<span class="badge soon">قريبًا</span>';
-    return `<article class="card course-card"><a href="${target}" aria-label="الدرس ${l.id}: ${ANA.esc(l.ar)}"><img loading="lazy" src="assets/img/course-${l.id}.svg" alt="رسم توضيحي للدرس ${l.id}" width="640" height="360"></a><div class="course-body"><div>${badge} <span class="course-number">الدرس ${l.id}</span></div><h2>${ANA.esc(l.ar)}</h2><p class="en">${ANA.esc(l.en)}</p>${action}</div></article>`;
-  }).join("");
-})();
-</script>
+<footer id="site-footer"></footer>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0"></script><script src="assets/js/config.js"></script><script src="assets/js/app.js"></script><script src="assets/js/curriculum.js" defer></script>
 </body>
 </html>

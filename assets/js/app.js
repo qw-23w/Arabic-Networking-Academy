@@ -12,18 +12,27 @@
   let protectedPage = false;
 
   const LESSONS = [
-    { id: 1, ar: "الشبكات المحلية والواسعة", en: "LANs and WANs", href: "lesson-1.html", published: true },
-    { id: 2, ar: "نموذج OSI", en: "The OSI Model", href: "lesson-2.html", published: true },
-    { id: 3, ar: "عنوان MAC", en: "MAC Address", href: "lesson-9.html", published: true },
-    { id: 4, ar: "عنونة IP", en: "IP Addressing", href: "lesson-3.html", published: true },
-    { id: 5, ar: "بروتوكولات TCP/IP", en: "TCP/IP", href: "lesson-7.html", published: true },
-    { id: 6, ar: "التوجيه", en: "Routing", href: "lesson-4.html", published: true },
-    { id: 7, ar: "الشبكات المحلية الافتراضية", en: "VLANs", href: "lesson-5.html", published: true },
-    { id: 8, ar: "VXLAN و VRF", en: "VXLAN and VRF", href: "lesson-6.html", published: true },
-    { id: 9, ar: "استكشاف الأخطاء والأمن الأساسي", en: "Troubleshooting and Basic Security", href: "lesson-8.html", published: true }
+    // `id` is the existing Supabase lesson_id and file number. `sequence` is the teaching order.
+    { id: 1, sequence: 1, ar: "الشبكات المحلية والواسعة", en: "LANs and WANs", href: "lesson-1.html", image: "assets/img/course-1.svg", published: true },
+    { id: 2, sequence: 2, ar: "نموذج OSI", en: "The OSI Model", href: "lesson-2.html", image: "assets/img/course-2.svg", published: true },
+    { id: 9, sequence: 3, ar: "عنوان MAC", en: "MAC Address", href: "lesson-9.html", image: "assets/img/course-9.svg", published: true },
+    { id: 3, sequence: 4, ar: "عنونة IP", en: "IP Addressing", href: "lesson-3.html", image: "assets/img/course-3.svg", published: true },
+    { id: 7, sequence: 5, ar: "بروتوكولات TCP/IP", en: "TCP/IP", href: "lesson-7.html", image: "assets/img/course-7.svg", published: true },
+    { id: 4, sequence: 6, ar: "التوجيه", en: "Routing", href: "lesson-4.html", image: "assets/img/course-4.svg", published: true },
+    { id: 5, sequence: 7, ar: "الشبكات المحلية الافتراضية", en: "VLANs", href: "lesson-5.html", image: "assets/img/course-5.svg", published: true },
+    { id: 6, sequence: 8, ar: "VXLAN و VRF", en: "VXLAN and VRF", href: "lesson-6.html", image: "assets/img/course-6.svg", published: true },
+    { id: 8, sequence: 9, ar: "استكشاف الأخطاء والأمن الأساسي", en: "Troubleshooting and Basic Security", href: "lesson-8.html", image: "assets/img/course-8.svg", published: true }
   ];
 
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+  function hydrateCourseImages() {
+    const lessons = new Map(LESSONS.map((lesson) => [lesson.id, lesson]));
+    document.querySelectorAll("img[data-course-id]").forEach((image) => {
+      const lesson = lessons.get(Number(image.dataset.courseId));
+      if (lesson) image.src = lesson.image;
+    });
+  }
 
   const withTimeout = (promise, ms = 3500) => Promise.race([promise, new Promise(resolve => setTimeout(() => resolve({ data: null, error: new Error("Connection timeout") }), ms))]);
   async function getSession() {
@@ -84,12 +93,20 @@
   }
 
   async function renderLayout(active) {
+    hydrateCourseImages();
     trackVisit();
     const session = await getSession();
     const profile = session ? await getProfile(session.user.id) : null;
     const isAdmin = profile && profile.role === "admin";
+    const navIcons = {
+      home: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-6v-6h-4v6H4a1 1 0 0 1-1-1z"/></svg>',
+      curriculum: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5zM4 5.5v16M8 7h8M8 11h7"/></svg>',
+      learning: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0M18 4.5a4 4 0 0 1 0 7"/></svg>',
+      about: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 11v5m0-8h.01"/></svg>',
+      help: '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M9.6 9a2.5 2.5 0 1 1 4.4 1.6c-1.2 1.1-2 1.5-2 3.4m0 3h.01"/></svg>'
+    };
     const link = (href, text, key) =>
-      `<li><a href="${href}"${active === key ? ' aria-current="page"' : ""}>${text}</a></li>`;
+      `<li><a class="nav-link" href="${href}"${active === key ? ' aria-current="page"' : ""}><span class="nav-icon" aria-hidden="true">${navIcons[key] || ""}</span><span>${text}</span></a></li>`;
 
     const account = session
       ? `<li class="nav-user">مرحبًا، ${esc(profile ? profile.display_name : "")}</li>` +
@@ -105,19 +122,23 @@
       <div class="container nav">
         <a class="brand" href="index.html"><span class="brand-mark"><img src="assets/img/academy-symbol.webp" alt="" width="38" height="38"></span>أكاديمية الشبكات العربية</a>
         <button class="nav-toggle" id="nav-toggle" aria-expanded="false" aria-controls="nav-links">القائمة</button>
+        <nav class="site-navigation" aria-label="التنقل الرئيسي">
         <ul class="nav-links" id="nav-links">
           ${link("index.html", "الرئيسية", "home")}
           ${link("curriculum.html", "المنهج", "curriculum")}
-          ${link("my-learning.html", "تعلمي", "learning")}
+          ${link("my-learning.html", "لوحة التعلّم", "learning")}
           ${link("about.html", "عن الأكاديمية", "about")}
           ${link("help.html", "المساعدة", "help")}
           <li><button class="linklike" id="theme-toggle" type="button" aria-pressed="false"></button></li>
           ${account}
         </ul>
+        </nav>
       </div>`;
       const t = document.getElementById("nav-toggle");
       t.addEventListener("click", () => {
-        const open = document.getElementById("nav-links").classList.toggle("open");
+        const links = document.getElementById("nav-links");
+        const open = links.classList.toggle("open");
+        links.closest(".site-navigation").classList.toggle("open", open);
         t.setAttribute("aria-expanded", open);
       });
       const tt = document.getElementById("theme-toggle");
@@ -150,7 +171,26 @@
     const mail = cfg.SUPPORT_EMAIL || "arabicnetworkingacademy@gmail.com";
     if (footer) {
       footer.className = "site-footer";
-      footer.innerHTML = `<div class="container">أكاديمية الشبكات العربية — منصة تعليمية مجانية ومفتوحة المصدر. جميع التمارين العملية يجب أن تتم فقط على شبكات تملكها أو لديك إذن صريح باختبارها.<br>للتواصل والاستفسار: <a href="mailto:${esc(mail)}">${esc(mail)}</a> · <a href="help.html">المساعدة</a></div>`;
+      footer.innerHTML = `<div class="container footer-layout">
+        <section class="footer-about" aria-labelledby="footer-brand-title">
+          <a class="footer-brand" href="index.html"><img src="assets/img/academy-symbol.webp" alt="" width="34" height="34"><span id="footer-brand-title">أكاديمية الشبكات العربية</span></a>
+          <p>تعلّم أساسيات الشبكات بالعربية، من الفكرة الأولى إلى التطبيق العملي.</p>
+        </section>
+        <nav class="footer-navigation" aria-label="روابط الأكاديمية">
+          <strong class="footer-heading">استكشف الأكاديمية</strong>
+          <ul class="footer-links">
+            <li><a href="curriculum.html">المنهج</a></li><li><a href="my-learning.html">لوحة التعلّم</a></li>
+            <li><a href="about.html">عن الأكاديمية</a></li><li><a href="help.html">المساعدة</a></li>
+          </ul>
+        </nav>
+        <section class="footer-contact" aria-labelledby="footer-contact-title">
+          <strong class="footer-heading" id="footer-contact-title">ابقَ على تواصل</strong>
+          <p>للاستفسارات والدعم التعليمي</p>
+          <a href="mailto:${esc(mail)}">${esc(mail)}</a>
+          <p class="safety-note">نفّذ التمارين على شبكات تملكها أو لديك إذن صريح باختبارها.</p>
+        </section>
+      </div>
+      <div class="container footer-bottom"><span>أكاديمية تعليمية مجانية ومفتوحة المصدر</span><a href="help.html">مركز المساعدة</a></div>`;
     }
     return { session, profile, isAdmin };
   }

@@ -2,77 +2,85 @@
 <html lang="ar" dir="rtl">
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>تعلّمي — أكاديمية الشبكات العربية</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
-<link rel="icon" type="image/png" href="assets/img/academy-icon.png">
-<script>try{var t=localStorage.getItem("ana_theme")||(matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light");document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
-<link rel="stylesheet" href="assets/css/style.css">
-<link rel="stylesheet" href="assets/css/experience.css">
+<title>تعلّمي — أكاديمية الشبكات العربية</title><meta name="description" content="تابع مسار تعلم الشبكات بالعربية، واستأنف الدرس الأخير وراجع تقدمك ونتائج اختباراتك المحفوظة.">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="icon" type="image/png" href="assets/img/academy-icon.png"><script>try{var t=localStorage.getItem("ana_theme")||"dark";document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<link rel="stylesheet" href="assets/css/style.css"><link rel="stylesheet" href="assets/css/experience.css">
 </head>
-<body>
-<a class="skip" href="#main">تخطَّ إلى المحتوى</a>
-<div id="site-header"></div>
-<main id="main" class="container section">
-  <header class="learning-intro"><h1>تعلّمي</h1><p>كل ما تحتاجه لمتابعة رحلتك في مكان واحد.</p></header>
-  <p id="state" class="loading">جارٍ التحميل...</p>
+<body><a class="skip" href="#main">تخطَّ إلى المحتوى</a><header id="site-header"></header>
+<main id="main" class="container section learning-page">
+  <header class="learning-intro"><p class="eyebrow">مساحة المتعلم</p><h1>تعلّمي</h1><p id="learning-greeting">دروسك وتقدمك ونتائجك المحفوظة في مكان واحد.</p></header>
+  <p id="state" class="loading" role="status">جارٍ تحميل بيانات حسابك...</p>
   <div id="content" class="hidden">
-    <div class="card">
-      <h2 style="margin-top:0;border:0">تقدّمك في الدورة</h2>
+    <section id="resume" class="resume-card" aria-labelledby="resume-heading">
+      <div><p class="eyebrow">أقرب خطوة لك</p><h2 id="resume-heading">تابع رحلتك</h2><p id="resume-copy"></p></div><a id="resume-link" class="btn" href="curriculum.html">استعرض الدروس</a>
+    </section>
+    <div class="learning-overview" aria-label="ملخص تقدمك">
+      <div class="learning-stat"><strong id="stat-started">—</strong><span>دروس بدأتَها</span></div>
+      <div class="learning-stat"><strong id="stat-completed">—</strong><span>دروس أكملتها</span></div>
+      <div class="learning-stat"><strong id="stat-quiz">—</strong><span>متوسط آخر 10 محاولات محفوظة</span></div>
+    </div>
+    <section class="card learning-progress-card" aria-labelledby="progress-heading">
+      <h2 id="progress-heading">تقدمك في مسار أساسيات الشبكات</h2>
       <div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" id="bar"><span></span></div>
       <p id="summary"></p>
-    </div>
-    <h2>الدروس التي بدأتَها</h2>
-    <p class="hint">تظهر هنا الدروس التي فتحتها وبدأت التعلّم فيها فقط.</p>
-    <div id="list" class="learning-grid"></div>
-    <p id="empty-learning" class="card hint hidden">لم تبدأ أي درس بعد. افتح <a href="curriculum.html">المنهج</a> واختر درسًا للبدء، وسيظهر هنا تلقائيًا.</p>
-    <details class="quiz-history"><summary>عرض نتائج الاختبارات الأخيرة</summary><h2>نتائج الاختبارات الأخيرة</h2>
-    <div class="table-wrap"><table><thead><tr><th>الدرس</th><th>النتيجة</th><th>التاريخ</th></tr></thead><tbody id="quizzes"></tbody></table></div></details>
+    </section>
+    <section class="learning-section" aria-labelledby="started-heading"><h2 id="started-heading">الدروس التي بدأتَها</h2><p class="hint">تظهر هنا الدروس التي فُتحت بحسابك فقط.</p><div id="list" class="learning-grid"></div>
+      <p id="empty-learning" class="card hint hidden">لم تبدأ درسًا بعد. <a href="curriculum.html">استكشف الدروس المنشورة</a> واختر ما يناسبك.</p></section>
+    <details class="quiz-history"><summary>عرض نتائج الاختبارات الأخيرة</summary><h2>نتائج الاختبارات الأخيرة</h2><div class="table-wrap"><table><thead><tr><th>الدرس</th><th>النتيجة</th><th>التاريخ</th></tr></thead><tbody id="quizzes"></tbody></table></div></details>
   </div>
-</main>
-<div id="site-footer"></div>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0"></script>
-<script src="assets/js/config.js"></script>
-<script src="assets/js/app.js"></script>
+</main><footer id="site-footer"></footer>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0"></script><script src="assets/js/config.js"></script><script src="assets/js/app.js"></script>
 <script>
 (async () => {
   const { sb, esc } = ANA;
-  await ANA.renderLayout("learning");
-  const session = await ANA.requireAuth();
-  if (!session) return;
-  const state = document.getElementById("state");
+  const { profile } = await ANA.renderLayout("learning");
+  const session = await ANA.requireAuth(); if (!session) return;
+  const greeting = document.getElementById("learning-greeting");
+  if (profile && profile.display_name) greeting.textContent = `مرحبًا ${profile.display_name}، تابع مسارك من حيث توقفت.`;
+  const state = document.getElementById("state"), content = document.getElementById("content");
   try {
-    const [prog, quiz] = await Promise.all([
+    const [progress, quiz] = await Promise.all([
       ANA.myProgress(session.user.id),
-    sb.from("quiz_results").select("lesson_id,score,total,created_at").eq("user_id", session.user.id).eq("grading_source", "server-rpc").order("created_at", { ascending: false }).limit(10)
+      sb.from("quiz_results").select("lesson_id,score,total,created_at").eq("user_id", session.user.id).eq("grading_source", "server-rpc").order("created_at", { ascending: false }).limit(10)
     ]);
     if (quiz.error) throw quiz.error;
-    const done = new Set(prog.filter(p => p.completed_at).map(p => p.lesson_id));
-    const started = new Set(prog.map(p => p.lesson_id));
-    const published = ANA.LESSONS.filter(l => l.published);
-    const doneCount = published.filter(l => done.has(l.id)).length;
-    const pct = Math.round(100 * doneCount / published.length);
-    document.querySelector("#bar span").style.width = pct + "%";
-    document.getElementById("bar").setAttribute("aria-valuenow", pct);
-    document.getElementById("summary").textContent = `أكملت ${doneCount} من ${published.length} دروس متاحة حاليًا (${pct}%).`;
-    if (doneCount === published.length && published.length) document.getElementById("summary").insertAdjacentHTML("afterend",'<div class="course-congrats" role="status"><h2>🎉 تهانينا بإكمال المنهج!</h2><p>لقد أكملت جميع الدروس والحقول التطبيقية. إنجاز رائع!</p></div>');
-    const startedLessons = ANA.LESSONS.filter(l => l.published && started.has(l.id));
-    document.getElementById("list").innerHTML = startedLessons.map(l => {
-      const b = done.has(l.id) ? '<span class="badge done">مكتمل</span>' : '<span class="badge">قيد الدراسة</span>';
-      return `<article class="card learning-card"><img src="assets/img/course-${l.id}.svg" alt="" loading="lazy" width="640" height="360"><div class="learning-card-body">${b}<h3>${l.ar}</h3><a class="btn" href="${l.href}">${done.has(l.id) ? "مراجعة الدرس" : "متابعة التعلم"}</a></div></article>`;
+    const lessons = ANA.LESSONS.filter((lesson) => lesson.published);
+    const completed = new Set(progress.filter((row) => row.completed_at).map((row) => row.lesson_id));
+    const started = new Set(progress.map((row) => row.lesson_id));
+    const finishedCount = lessons.filter((lesson) => completed.has(lesson.id)).length;
+    const startedLessons = lessons.filter((lesson) => started.has(lesson.id));
+    const percent = lessons.length ? Math.round(100 * finishedCount / lessons.length) : 0;
+    const quizRows = quiz.data || [];
+    const average = quizRows.length ? Math.round(quizRows.reduce((sum, row) => sum + (Number(row.score) / Math.max(1, Number(row.total))) * 100, 0) / quizRows.length) : null;
+    document.getElementById("stat-started").textContent = `${startedLessons.length} / ${lessons.length}`;
+    document.getElementById("stat-completed").textContent = `${finishedCount} / ${lessons.length}`;
+    document.getElementById("stat-quiz").textContent = average === null ? "—" : `${average}٪`;
+    document.querySelector("#bar span").style.width = percent + "%";
+    document.getElementById("bar").setAttribute("aria-valuenow", String(percent));
+    document.getElementById("summary").textContent = `أكملت ${finishedCount} من ${lessons.length} دروس منشورة (${percent}٪).`;
+    const mostRecent = [...progress].sort((a, b) => new Date(b.started_at || 0) - new Date(a.started_at || 0)).find((row) => !row.completed_at);
+    const resumeLesson = mostRecent ? lessons.find((lesson) => lesson.id === mostRecent.lesson_id) : lessons.find((lesson) => !completed.has(lesson.id));
+    if (resumeLesson) {
+      document.getElementById("resume-heading").textContent = mostRecent ? "أكمل من حيث توقفت" : "ابدأ أول درس في المسار";
+      document.getElementById("resume-copy").textContent = `${resumeLesson.ar} — ${resumeLesson.en}`;
+      document.getElementById("resume-link").href = resumeLesson.href;
+      document.getElementById("resume-link").textContent = mostRecent ? "متابعة الدرس" : "ابدأ الدرس الأول";
+    } else if (lessons.length) {
+      document.getElementById("resume-heading").textContent = "أكملت دروس المسار المنشورة";
+      document.getElementById("resume-copy").textContent = "يمكنك مراجعة أي درس أو العودة إلى قائمة الدروس.";
+      document.getElementById("resume-link").href = "curriculum.html";
+      document.getElementById("resume-link").textContent = "راجع المنهج";
+    }
+    document.getElementById("list").innerHTML = startedLessons.map((lesson) => {
+      const done = completed.has(lesson.id);
+      return `<article class="card learning-card"><img src="${esc(lesson.image)}" alt="" loading="lazy" width="640" height="360"><div class="learning-card-body"><span class="badge${done ? " done" : ""}">${done ? "مكتمل" : "قيد الدراسة"}</span><h3>${esc(lesson.ar)}</h3><p class="en" dir="ltr">${esc(lesson.en)}</p><a class="btn${done ? " secondary" : ""}" href="${lesson.href}">${done ? "مراجعة الدرس" : "متابعة التعلم"}</a></div></article>`;
     }).join("");
     document.getElementById("empty-learning").classList.toggle("hidden", startedLessons.length > 0);
-    const rows = (quiz.data || []);
-    document.getElementById("quizzes").innerHTML = rows.length
-      ? rows.map(r => `<tr><td>الدرس ${r.lesson_id}</td><td>${r.score} / ${r.total}</td><td>${esc(new Date(r.created_at).toLocaleDateString("ar"))}</td></tr>`).join("")
-      : '<tr><td colspan="3">لا توجد محاولات بعد.</td></tr>';
-    state.classList.add("hidden");
-    document.getElementById("content").classList.remove("hidden");
-  } catch (e) {
-    state.className = "alert error"; state.textContent = "تعذّر تحميل بياناتك. حاول لاحقًا.";
-  }
+    document.getElementById("quizzes").innerHTML = quizRows.length
+      ? quizRows.map((row) => `<tr><td>الدرس ${Number(row.lesson_id)}</td><td>${Number(row.score)} / ${Number(row.total)}</td><td>${esc(new Date(row.created_at).toLocaleDateString("ar"))}</td></tr>`).join("")
+      : '<tr><td colspan="3">لا توجد محاولات اختبار محفوظة بعد.</td></tr>';
+    state.classList.add("hidden"); content.classList.remove("hidden");
+  } catch (error) { console.error("learning dashboard", error); state.className = "alert error"; state.textContent = "تعذّر تحميل بياناتك الآن. أعد المحاولة لاحقًا."; }
 })();
-</script>
-</body>
-</html>
+</script></body></html>

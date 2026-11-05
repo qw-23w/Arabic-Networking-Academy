@@ -3,18 +3,19 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>الدرس 1: الشبكات المحلية والواسعة — أكاديمية الشبكات العربية</title>
+<meta name="description" content="تعلّم أساسيات الشبكات المحلية والواسعة LAN وWAN باللغة العربية مع أمثلة ومختبر تفاعلي.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
 <link rel="icon" type="image/png" href="assets/img/academy-icon.png">
-<script>try{var t=localStorage.getItem("ana_theme")||(matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light");document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<script>try{var t=localStorage.getItem("ana_theme")||"dark";document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 <link rel="stylesheet" href="assets/css/style.css">
 <link rel="stylesheet" href="assets/css/experience.css">
 </head>
 <body>
 <a class="skip" href="#main">تخطَّ إلى المحتوى</a>
-<div id="site-header"></div>
-<main id="main" class="container">
+<header id="site-header"></header>
+<main id="main" class="container lesson-page">
 <div class="lesson-layout">
 <nav class="toc" aria-label="قائمة الدروس والأقسام"><div class="course-sidebar-title">المنهج الدراسي</div><div id="lesson-navigation"></div><div class="original-toc" hidden>
   <strong>محتويات الدرس</strong>
@@ -46,21 +47,12 @@
 
 <section id="intro">
 <h1>الدرس 1: الشبكات المحلية والواسعة <span class="en">(LANs and WANs)</span></h1>
-<p>كل ما تفعله على الإنترنت، من فتح موقع إلى إرسال رسالة أو مشاهدة فيديو، يعتمد على أجهزة تتواصل مع بعضها عبر <b>شبكة</b>. في هذا الدرس نبني الصورة الكبرى: ما هي الشبكة، وما أنواعها، وما الأجهزة والوسائط التي تكوّنها، وكيف نقيس جودتها، وكيف نبدأ في إصلاح أعطالها. هذه هي القاعدة التي تقوم عليها الدروس السبعة التالية.</p>
+<p>تساعد الشبكة الأجهزة على تبادل البيانات ومشاركة الموارد. سنتعرف أنواع الشبكات وأجهزتها، ثم نتعلم كيف نلاحظ مشكلة اتصال بسيطة.</p>
 </section>
 
 <section id="objectives">
 <h2>أهداف التعلم</h2>
-<p>بعد إنهاء الدرس ستكون قادرًا على:</p>
-<ul>
-<li>تعريف الشبكة وتعداد مكوناتها الأساسية.</li>
-<li>التمييز بين <span class="en">PAN</span> و<span class="en">LAN</span> و<span class="en">MAN</span> و<span class="en">WAN</span> مع أمثلة لكل نوع.</li>
-<li>وصف التوبولوجيات الخمس (نجمة، ناقل، حلقة، شبكية، هجينة) وتحديد مزايا كل منها.</li>
-<li>شرح دور المحوّل والموجّه ونقطة الوصول والمودم وجدار الحماية وبطاقة الشبكة.</li>
-<li>التفريق بين عرض النطاق والإنتاجية والتأخير والتذبذب وفقد الحزم.</li>
-<li>قراءة مخططات الشبكات المنزلية والمدرسية وشبكات الفروع.</li>
-<li>تطبيق خطوات أولية لاستكشاف مشكلة اتصال.</li>
-</ul>
+<p>بعد هذا الدرس، تستطيع:</p><ul><li>شرح معنى شبكة الحاسوب وذكر أمثلة على أجهزتها.</li><li>التمييز بين أنواع الشبكات، مثل LAN وWAN.</li><li>معرفة دور السويتش والراوتر ونقطة الوصول.</li><li>التعرّف إلى أشكال توصيل الشبكات ومتى نستخدمها.</li><li>فهم السرعة الفعلية والتأخير وفقدان البيانات.</li><li>قراءة مخطط شبكة بسيط والبدء بفحص العطل.</li></ul>
 <h3>المعرفة المسبقة المطلوبة</h3>
 <p>لا شيء سوى استخدام الحاسوب أو الهاتف والإنترنت. نشرح كل مصطلح عند أول ظهور له.</p>
 </section>
@@ -95,7 +87,7 @@
 <li><b>الشبكة الشخصية <span class="en">PAN (Personal Area Network)</span>:</b> نطاق بضعة أمتار حول الشخص، مثل اتصال هاتف بسماعة أو ساعة عبر البلوتوث.</li>
 <li><b>الشبكة المحلية <span class="en">LAN (Local Area Network)</span>:</b> تربط أجهزة في موقع واحد: منزل، مدرسة، مكتب، مبنى. يملكها ويديرها عادةً صاحب الموقع.</li>
 <li><b>شبكة المدينة <span class="en">MAN (Metropolitan Area Network)</span>:</b> تغطي مدينة أو منطقة كبيرة، كشبكة بلدية أو جامعة موزعة على المدينة.</li>
-<li><b>الشبكة الواسعة <span class="en">WAN (Wide Area Network)</span>:</b> تربط مواقع متباعدة جغرافيًا، من مدينتين إلى قارات. أشهر مثال هو الإنترنت. تعتمد عادةً على خطوط تؤجّرها الشركات من مزوّدي الخدمة.</li>
+<li><b>الشبكة الواسعة <span class="en">WAN (Wide Area Network)</span>:</b> تربط مواقع متباعدة جغرافيًا، من مدينتين إلى قارات. والإنترنت مثال عالمي على ترابط شبكات كثيرة، لا شبكة WAN واحدة تملكها جهة واحدة. وتعتمد المؤسسات عادةً على وصلات يقدّمها مزوّدو الخدمة.</li>
 </ul>
 <h3>الفرق بين LAN وWAN</h3>
 <div class="table-wrap"><table>
@@ -163,7 +155,7 @@
 <h2>5. أجهزة الشبكة</h2>
 <ul>
 <li><b>بطاقة واجهة الشبكة <span class="en">(NIC)</span>:</b> العتاد داخل الجهاز الذي يوصله بالشبكة سلكيًا أو لاسلكيًا، ولها عنوان MAC.</li>
-<li><b>المحوّل <span class="en">(Switch)</span>:</b> يربط أجهزة الشبكة المحلية. يتعلم عنوان MAC لكل جهاز على كل منفذ، ثم يرسل الإطار <b>إلى المنفذ المقصود فقط</b> بدل بثه للجميع.</li>
+<li><b>المحوّل <span class="en">(Switch)</span>:</b> يربط أجهزة الشبكة المحلية. يتعلم عنوان MAC المصدر والمنفذ الذي وصل منه الإطار. إذا عرف منفذ عنوان الوجهة يرسل الإطار إليه؛ أما إطار البث أو الوجهة المجهولة فيوزّعه على المنافذ الأخرى ضمن VLAN نفسها.</li>
 <li><b>الموجّه <span class="en">(Router)</span>:</b> يربط <b>شبكات مختلفة</b> ببعضها ويقرر المسار التالي للحزمة اعتمادًا على عنوان IP. هو بوابة الشبكة المحلية نحو الخارج.</li>
 <li><b>نقطة الوصول <span class="en">(Access Point - AP)</span>:</b> تحوّل الشبكة السلكية إلى Wi-Fi، فتتيح للأجهزة اللاسلكية الانضمام للشبكة.</li>
 <li><b>المودم <span class="en">(Modem)</span>:</b> يحوّل إشارات خط مزوّد الخدمة (هاتف DSL أو كابل تلفزيوني أو ليف عبر ONT) إلى إشارات يفهمها Ethernet. كثيرًا ما يكون جهازًا واحدًا مع الموجّه ونقطة الوصول، فيُسمى «راوتر المنزل».</li>
@@ -322,10 +314,10 @@ ping example.com        # الإنترنت بالاسم؟</code></pre>
 <section id="relations">
 <h2>12. كيف يرتبط هذا الدرس بما بعده؟</h2>
 <ul>
-<li><b>عنونة IP (الدرس 3):</b> كل جهاز في الشبكة المحلية يحتاج عنوان IP، وتنتمي الأجهزة التي تشترك في شبكة فرعية واحدة لـLAN واحدة.</li>
+<li><b>عنونة IP (الدرس 4):</b> كل جهاز في الشبكة المحلية يحتاج عنوان IP، وتنتمي الأجهزة التي تشترك في شبكة فرعية واحدة لـLAN واحدة.</li>
 <li><b>التبديل (Switching):</b> يحدث داخل الشبكة المحلية بالـMAC (المحوّل).</li>
-<li><b>التوجيه (الدرس 4):</b> ينقل الحزم بين الشبكات المحلية وعبر WAN (الموجّه).</li>
-<li><b>VLAN (الدرس 5):</b> يقسم شبكة محلية فيزيائية واحدة إلى عدة شبكات منطقية.</li>
+<li><b>التوجيه (الدرس 6):</b> ينقل الحزم بين الشبكات المحلية وعبر WAN (الموجّه).</li>
+<li><b>VLAN (الدرس 7):</b> يقسم شبكة محلية فيزيائية واحدة إلى عدة شبكات منطقية.</li>
 </ul>
 </section>
 
@@ -399,7 +391,7 @@ ping example.com        # الإنترنت بالاسم؟</code></pre>
 <section id="practice"><h2>الحقل التطبيقي وإنهاء الدرس</h2><p>طبّق المفهوم في المحاكاة، ثم ضع علامة مكتمل بعد نجاح المهمة.</p><div id="lab-slot"></div><div class="lesson-finish"><button id="complete" class="btn success" type="button">وضع علامة «مكتمل»</button> <span id="complete-msg" class="hint" role="status"></span></div></section></article>
 </div>
 </main>
-<div id="site-footer"></div>
+<footer id="site-footer"></footer>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0"></script>
 <script src="assets/js/config.js"></script>
@@ -471,5 +463,6 @@ const QUESTIONS = [
 </script>
 <script src="assets/js/lab.js"></script>
 <script src="assets/js/lesson.js"></script>
+<script src="assets/js/lesson-experience.js" defer></script>
 </body>
 </html>

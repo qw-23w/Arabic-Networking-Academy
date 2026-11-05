@@ -3,77 +3,113 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>أكاديمية الشبكات العربية — تعلّم الشبكات من الصفر</title>
-<meta name="description" content="منصة مجانية ومفتوحة المصدر لتعلم شبكات الحاسوب باللغة العربية من مستوى المبتدئ حتى أساسيات الأمن السيبراني.">
+<meta name="description" content="تعلّم أساسيات شبكات الحاسوب بالعربية عبر دروس عملية ومختبر محاكاة واختبارات تحفظ تقدمك.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
 <link rel="icon" type="image/png" href="assets/img/academy-icon.png">
-<script>try{var t=localStorage.getItem("ana_theme")||(matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light");document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<script>try{var t=localStorage.getItem("ana_theme")||"dark";document.documentElement.setAttribute("data-theme",t)}catch(e){document.documentElement.setAttribute("data-theme","dark")}</script>
 <link rel="stylesheet" href="assets/css/style.css">
 <link rel="stylesheet" href="assets/css/experience.css">
+<link rel="stylesheet" href="assets/css/home-cinematic.css">
 </head>
-<body>
+<body class="reference-home">
 <a class="skip" href="#main">تخطَّ إلى المحتوى</a>
-<div id="site-header"></div>
+<header id="site-header"></header>
 <main id="main">
-  <section class="hero modern-hero">
-    <div class="container">
-      <div class="hero-layout"><div class="hero-copy"><h1>تعلّم شبكات الحاسوب <span class="hero-highlight">بالعربية</span>، من الصفر</h1>
-      <p>تسعة دروس منظّمة تشرح كيف تعمل الشبكات فعلًا: من الشبكات المحلية وعنونة <span class="en">IP</span> إلى <span class="en">VLAN</span> و<span class="en">TCP/IP</span> واستكشاف الأخطاء. شروحات مبسّطة، رسومات أصلية، واختبارات تفاعلية.</p>
-      <p class="hero-actions"><a id="start" class="btn" href="register.html">ابدأ التعلم</a>
-         <a class="btn secondary" href="curriculum.html">استعرض المنهج</a></p>
-      <ul class="hero-proof" aria-label="مميزات التعلّم"><li>تسعة دروس مترابطة</li><li>مختبر شبكات عملي</li><li>اختبارات تفاعلية</li></ul>
-</div><div class="hero-art hero-motion"><picture><source media="(prefers-reduced-motion: reduce)" srcset="assets/img/network-still.svg"><img src="assets/img/network-motion.svg" alt="رسم يوضح اتصال أجهزة الشبكة براوتر مركزي" width="800" height="520" fetchpriority="high" decoding="async"></picture></div></div></div>
-  </section>
+  <section class="hero modern-hero home-hero" aria-labelledby="hero-title">
+    <div class="hero-scrim" aria-hidden="true"></div>
+    <div class="container hero-container">
+      <div class="hero-layout">
+        <div class="hero-copy">
+          <span class="hero-kicker"><span class="kicker-mark" aria-hidden="true"></span>تعلّم الشبكات من الصفر</span>
+          <h1 id="hero-title">أكاديمية شبكات<br><span class="hero-title-line">الحاسوب <span class="hero-highlight">العربية</span></span></h1>
+          <p>تعلّم كيف تتصل الأجهزة، ثم جرّب انتقال البيانات داخل مختبر الشبكات.</p>
+          <div class="hero-actions">
+            <a id="start" class="btn hero-cta" href="register.html">ابدأ التعلم الآن <span aria-hidden="true">←</span></a>
+            <a class="btn secondary" href="#learning-path">اكتشف المسار <span aria-hidden="true">⌄</span></a>
+          </div>
+        </div>
 
-  <section class="section container home-path"><h2>مسارك من الأساسيات إلى التطبيق</h2><p>ابدأ بمفاهيم LAN وOSI، ثم تعرّف إلى MAC وTCP/IP والعنونة، وانتقل إلى التوجيه وVLAN والتقنيات المتقدمة، واختتم بالتشخيص والأمن.</p><a class="btn secondary" href="curriculum.html">شاهد ترتيب الدروس التسعة</a></section>
-  <section class="section container learning-method">
-    <header class="section-heading">
-      <h2>افهم الفكرة، ثم جرّبها</h2>
-      <p>التعلّم هنا يجمع بين شرح يوضح سبب عمل الشبكات، ورسومات تساعدك على رؤية ما يحدث، واختبارات تكشف لك ما أتقنته.</p>
-    </header>
-    <div class="feature-list">
-      <article class="feature-item">
-        <img src="assets/img/feature-explain.svg" alt="" width="640" height="360" loading="lazy" decoding="async">
-        <div><h3>شرح يربط المفهوم بتطبيقه</h3><p>تعرّف إلى لماذا وكيف تعمل الشبكة، مع المصطلحات العربية والإنجليزية خطوة بخطوة.</p></div>
-      </article>
-      <article class="feature-item">
-        <img src="assets/img/feature-diagrams.svg" alt="" width="640" height="360" loading="lazy" decoding="async">
-        <div><h3>رسومات توضح حركة البيانات</h3><p>مخططات أصلية ترافق الدروس وتفصّل طريقة انتقال البيانات بين مكونات الشبكة.</p></div>
-      </article>
-      <article class="feature-item">
-        <img src="assets/img/feature-progress.svg" alt="" width="640" height="360" loading="lazy" decoding="async">
-        <div><h3>اختبارات وتقدّم محفوظ</h3><p>اختبر فهمك، وراجع تفسير الإجابات، وتابع ما أنجزته عند العودة إلى حسابك.</p></div>
-      </article>
-    </div>
-  </section>
-
-  <section class="section practice-band">
-    <div class="container practice-layout">
-      <div class="practice-copy">
-        <h2>تعلّم الشبكات بالممارسة</h2>
-        <p>في نهاية كل درس افتح الحقل التطبيقي، وابنِ شبكة مصغّرة ثم جرّب اتصالها. لا تحتاج إلى أجهزة حقيقية؛ المحاكاة تشرح لك نتيجة كل خطوة.</p>
-        <a class="btn" href="curriculum.html">اختر درسًا وابدأ</a>
+         <div class="hero-art">
+          <div class="topology-stage" data-step="1">
+            <img class="network-globe-visual" src="assets/img/network-globe-3d.svg" alt="كرة أرضية زرقاء ثلاثية الأبعاد تحيط بها مدارات ونقاط اتصال مترابطة" width="640" height="380" fetchpriority="high" decoding="async">
+          </div>
+        </div>
       </div>
-      <ol class="practice-steps">
-        <li><img src="assets/img/lab-explain.svg" alt="" width="640" height="360" loading="lazy" decoding="async"><div><strong>اقرأ المهمة</strong><span>شرح موجز يربط فكرة الدرس بالمحاكاة.</span></div></li>
-        <li><img src="assets/img/lab-simulate.svg" alt="" width="640" height="360" loading="lazy" decoding="async"><div><strong>أنشئ الشبكة</strong><span>أضف الأجهزة، وصّلها، واضبط عناوينها.</span></div></li>
-        <li><img src="assets/img/lab-required.svg" alt="" width="640" height="360" loading="lazy" decoding="async"><div><strong>اختبر اتصالها</strong><span>جرّب Ping وافهم سبب نجاح الاتصال أو تعذّره.</span></div></li>
-      </ol>
     </div>
   </section>
 
+  <section class="home-features" aria-label="مميزات التعلّم">
+    <ul class="container feature-strip">
+      <li><span class="strip-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v16H6.5A2.5 2.5 0 0 0 4 21.5zM4 5.5v16M8 7h8M8 11h7"/></svg></span><span><b>دروس مرتبة</b><small>تبدأ من الأساسيات</small></span></li>
+      <li><span class="strip-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 12h5m6 0h5M9 8l4 4-4 4M15 8l-4 4 4 4M3 5h4v4H3zM17 15h4v4h-4z"/></svg></span><span><b>تعلّم تطبيقي</b><small>محاكاة مباشرة في المتصفح</small></span></li>
+      <li><span class="strip-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3 19 6v5c0 4.5-2.7 7.8-7 10-4.3-2.2-7-5.5-7-10V6zM8.5 12l2.2 2.2 4.8-5"/></svg></span><span><b>تقدّم محفوظ</b><small>تابع من حيث توقفت</small></span></li>
+      <li><span class="strip-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8.5"/><path d="M3.8 12h16.4M12 3.5c2.1 2.3 3.2 5.1 3.2 8.5S14.1 18.2 12 20.5M12 3.5C9.9 5.8 8.8 8.6 8.8 12s1.1 6.2 3.2 8.5"/></svg></span><span><b>محتوى عربي</b><small>مصطلحات واضحة للمبتدئ</small></span></li>
+    </ul>
+  </section>
+
+  <section class="home-academy container" id="learning-path" aria-labelledby="courses-title">
+    <aside class="path-panel" aria-labelledby="path-title">
+      <div class="path-heading"><div><span class="path-overline">مسارك التعليمي</span><h2 id="path-title">من الفكرة إلى الشبكة</h2></div><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 17 9 12l3 3 8-9M14 6h6v6"/></svg></div>
+      <p class="path-intro">تسعة دروس تبني فهمك خطوة خطوة.</p>
+      <ol class="path-sequence">
+        <li><span class="path-step-number">١</span><div><b>التأسيس</b><small>شبكات، OSI، وعنوان MAC</small></div></li>
+        <li><span class="path-step-number">٢</span><div><b>العنونة والاتصال</b><small>عناوين IP وTCP/IP</small></div></li>
+        <li><span class="path-step-number">٣</span><div><b>بناء الشبكات</b><small>توجيه، VLAN، وتشخيص أولي</small></div></li>
+      </ol>
+      <a class="path-link" href="curriculum.html">عرض المسار كاملًا <span aria-hidden="true">←</span></a>
+    </aside>
+
+    <div class="home-courses">
+      <header class="courses-heading">
+        <div><span class="section-overline">تعلّم وطبّق</span><h2 id="courses-title">اكتشف دروس الشبكات</h2><p>ابدأ بموضوع قريب منك، ثم واصل عبر المنهج المتدرّج.</p></div>
+        <a class="all-courses" href="curriculum.html">كل الدروس <span aria-hidden="true">←</span></a>
+      </header>
+      <div class="home-course-grid">
+        <article class="home-course">
+          <a class="course-media" href="lesson-1.html"><img src="assets/img/course-reference-servers.jpg" data-course-id="1" alt="" width="640" height="360" loading="lazy" decoding="async"><span class="course-level">تمهيدي</span><span class="course-arrow" aria-hidden="true">↗</span></a>
+          <div class="course-card-copy"><span class="course-kicker">الدرس ١ · الأساسيات</span><h3><a href="lesson-1.html">الشبكات المحلية والواسعة</a></h3></div>
+        </article>
+        <article class="home-course">
+          <a class="course-media" href="lesson-2.html"><img src="assets/img/course-reference-shield.jpg" data-course-id="2" alt="" width="640" height="360" loading="lazy" decoding="async"><span class="course-level">تمهيدي</span><span class="course-arrow" aria-hidden="true">↗</span></a>
+          <div class="course-card-copy"><span class="course-kicker">الدرس ٢ · النماذج</span><h3><a href="lesson-2.html">نموذج OSI</a></h3></div>
+        </article>
+        <article class="home-course">
+          <a class="course-media" href="lesson-3.html"><img src="assets/img/network-globe-reference.jpg" data-course-id="3" alt="" width="640" height="360" loading="lazy" decoding="async"><span class="course-level">تمهيدي</span><span class="course-arrow" aria-hidden="true">↗</span></a>
+          <div class="course-card-copy"><span class="course-kicker">الدرس ٤ · العنونة</span><h3><a href="lesson-3.html">عنونة IP</a></h3></div>
+        </article>
+        <article class="home-course">
+          <a class="course-media" href="lesson-4.html"><img src="assets/img/course-reference-topology.jpg" data-course-id="4" alt="" width="640" height="360" loading="lazy" decoding="async"><span class="course-level">متوسط</span><span class="course-arrow" aria-hidden="true">↗</span></a>
+          <div class="course-card-copy"><span class="course-kicker">الدرس ٦ · التوجيه</span><h3><a href="lesson-4.html">التوجيه</a></h3></div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="home-proof" aria-labelledby="proof-title">
+    <div class="container proof-layout">
+      <div class="proof-lead"><span class="section-overline">خطوتك التالية</span><h2 id="proof-title">تعلّم اليوم، وابنِ فهمًا يدوم.</h2><p>اختر درسًا وابدأ تطبيق ما تتعلمه على محاكاة آمنة داخل المتصفح.</p><a class="btn proof-cta" href="register.html">أنشئ حسابك مجانًا <span aria-hidden="true">←</span></a></div>
+      <dl class="proof-stats">
+        <div><dt>دروس منشورة</dt><dd>٩</dd></div>
+        <div><dt>مختبرات تفاعلية</dt><dd>٩</dd></div>
+        <div><dt>اختبارات فهم</dt><dd>٩</dd></div>
+      </dl>
+      <a class="proof-contact" href="help.html"><span class="contact-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v11a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 17.5zM5 6l7 6 7-6"/></svg></span><span><b>تحتاج مساعدة؟</b><small>تواصل مع الأكاديمية</small></span><span aria-hidden="true">←</span></a>
+    </div>
+  </section>
 </main>
-<div id="site-footer"></div>
+<footer id="site-footer"></footer>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0"></script>
 <script src="assets/js/config.js"></script>
 <script src="assets/js/app.js"></script>
+<script src="assets/js/network-scene.js" defer></script>
 <script>
 (async () => {
   const { session } = await ANA.renderLayout("home");
   if (session) document.getElementById("start").href = "lesson-1.html";
-
 })();
 </script>
 </body>
 </html>
+

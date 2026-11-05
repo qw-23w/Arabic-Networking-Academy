@@ -3,18 +3,19 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>الدرس 4: عنونة IP — أكاديمية الشبكات العربية</title>
+<meta name="description" content="تعلّم عنونة IP والشبكات الفرعية باستخدام شرح تدريجي وأمثلة عملية.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
 <link rel="icon" type="image/png" href="assets/img/academy-icon.png">
-<script>try{var t=localStorage.getItem("ana_theme")||(matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light");document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<script>try{var t=localStorage.getItem("ana_theme")||"dark";document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 <link rel="stylesheet" href="assets/css/style.css">
 <link rel="stylesheet" href="assets/css/experience.css">
 </head>
 <body>
 <a class="skip" href="#main">تخطَّ إلى المحتوى</a>
-<div id="site-header"></div>
-<main id="main" class="container">
+<header id="site-header"></header>
+<main id="main" class="container lesson-page">
 <div class="lesson-layout">
 <nav class="toc" aria-label="قائمة الدروس والأقسام"><div class="course-sidebar-title">المنهج الدراسي</div><div id="lesson-navigation"></div><div class="original-toc" hidden>
   <strong>محتويات الدرس</strong>
@@ -44,20 +45,12 @@
 
 <section id="intro">
 <h1>الدرس 4: عنونة IP <span class="en">(IP Addressing)</span></h1>
-<p>في الدرس السابق رأينا أن الطبقة 3 مسؤولة عن «إلى أين تذهب هذه الحزمة؟»، وأن الجواب يعتمد على <b>عنوان IP</b>. في هذا الدرس نفهم هذا العنوان من الداخل: كيف يُكتب، وكيف يُقسَم إلى جزء يدل على الشبكة وجزء يدل على الجهاز، وكيف نحسب ذلك بأنفسنا. هذه المهارة هي أساس التوجيه (الدرس التالي)، وVLAN، وجدران الحماية، وكل تصميم شبكي بعد ذلك.</p>
+<p>يساعد عنوان IP الجهاز على معرفة الشبكة والجهاز المقصود. سنتعلم قراءة العنوان والقناع، وحساب الشبكات الفرعية، وفهم متى نرسل إلى البوابة.</p>
 </section>
 
 <section id="objectives">
 <h2>أهداف التعلم</h2>
-<ul>
-<li>شرح بنية عنوان IPv4 وتحويله بين الصيغة العشرية والثنائية.</li>
-<li>تحديد جزء الشبكة وجزء المضيف من العنوان والقناع، بصيغة CIDR وبالصيغة العشرية.</li>
-<li>حساب عنوان الشبكة وعنوان البث والمدى الصالح للأجهزة وعددها.</li>
-<li>تقسيم شبكة إلى شبكات فرعية متساوية.</li>
-<li>التعرف على العناوين الخاصة والمحجوزة وسبب وجودها.</li>
-<li>شرح كيف يقرر الجهاز بين الإرسال المباشر والإرسال عبر البوابة، ودور ARP وDHCP.</li>
-<li>قراءة عنوان IPv6 واختصاره، وتشخيص أخطاء العنونة الشائعة.</li>
-</ul>
+<p>بعد هذا الدرس، تستطيع:</p><ul><li>قراءة عنوان IPv4 وفهم أجزائه.</li><li>استخدام القناع أو بادئة CIDR لمعرفة جزء الشبكة وجزء الجهاز.</li><li>حساب عنوان الشبكة والبث وعدد عناوين الأجهزة في الشبكة الفرعية.</li><li>تقسيم شبكة إلى شبكات أصغر.</li><li>تمييز العناوين الخاصة وفهم دور NAT.</li><li>شرح دور البوابة وDHCP وARP في اتصال الجهاز.</li><li>قراءة عنوان IPv6 مختصر والتعرّف إلى طرق إعداده.</li></ul>
 <h3>المعرفة المسبقة</h3>
 <p>الدرسان 1 و2: الشبكة المحلية، والطبقة 3، والفرق بين MAC وIP. لا نحتاج رياضيات متقدمة، فقط الجمع والقسمة على 2.</p>
 </section>
@@ -154,7 +147,7 @@
 <tr><td><code>/29</code></td><td><code>255.255.255.248</code></td><td>8</td><td>6</td></tr>
 <tr><td><code>/30</code></td><td><code>255.255.255.252</code></td><td>4</td><td>2</td></tr>
 </tbody></table></div>
-<div class="note"><b>ملاحظة:</b> في الوصلات الثنائية بين موجّهين يمكن استخدام <code>/31</code> (عنوانان فقط بلا بث) وفق RFC 3021، لكن ابدأ بالقاعدة العامة أعلاه.</div>
+<div class="note"><b>ملاحظة:</b> في الوصلات الثنائية بين موجّهين يمكن استخدام <code>/31</code> (عنوانان فقط بلا بث) وفق RFC 3021، وتُستثنى هذه الحالات من قاعدة الاستخدام المعتادة: /31 لوصلة IPv4 ثنائية، و/32 لمسار إلى عنوان مضيف واحد.</div>
 </section>
 
 <section id="subnetting">
@@ -240,7 +233,7 @@
 </svg>
 <figcaption><b>الشكل 3:</b> قرار الإرسال لجهاز عنوانه <code>192.168.10.20/24</code>. الوجهة <code>192.168.10.50</code> في الشبكة نفسها فيُرسَل إليها مباشرة. الوجهة <code>8.8.8.8</code> خارجها فيُرسَل الإطار إلى MAC البوابة <code>192.168.10.1</code>، لكن عنوان IP للوجهة داخل الحزمة يبقى <code>8.8.8.8</code>.</figcaption>
 </figure>
-<p>هذا يفسر ما رأيناه في الدرس 2: <b>MAC يتغير في كل قفزة بينما IP الوجهة ثابت</b>. الجهاز لا يعرف الطريق إلى 8.8.8.8، لكنه يعرف أن البوابة تعرف.</p>
+<p>هذا يفسر ما رأيناه في الدرس 3: <b>MAC يتغير في كل قفزة بينما IP الوجهة ثابت</b>. الجهاز لا يعرف الطريق إلى 8.8.8.8، لكنه يعرف أن البوابة تعرف.</p>
 <p><b>نتيجة مهمة:</b> جهازان على المحوّل نفسه لكن بشبكتين فرعيتين مختلفتين (مثل <code>192.168.1.10/24</code> و<code>192.168.2.20/24</code>) <b>لا يتخاطبان</b> دون موجّه، فكل منهما يعتبر الآخر «خارج شبكتي» ويرسل إلى بوابته.</p>
 </section>
 
@@ -273,14 +266,14 @@
 
 <section id="ipv6">
 <h2>8. مدخل إلى IPv6</h2>
-<p>عنوان <b>IPv6</b> طوله <b>128 بتًا</b> (وليس 32)، يُكتب بالنظام السداسي عشر في ثمانية أقسام يفصل بينها نقطتان رأسيتان، وكل قسم 16 بتًا. يكفي لعدد هائل من الأجهزة بحيث لا نحتاج إلى NAT.</p>
+<p>عنوان <b>IPv6</b> طوله <b>128 بتًا</b> (وليس 32)، يُكتب بالنظام السداسي عشر في ثمانية أقسام يفصل بينها نقطتان رأسيتان، وكل قسم 16 بتًا. مساحة العناوين الكبيرة تعني أن NAT لا يلزم لترشيد العناوين، مع أن الترجمة قد تُستخدم لأسباب أخرى.</p>
 <pre><code>2001:0db8:0000:0000:0000:0000:0000:0001
    ↓ احذف الأصفار الأولى في كل قسم
 2001:db8:0:0:0:0:0:1
    ↓ استبدل أطول سلسلة أقسام صفرية متتالية بـ ::  (مرة واحدة فقط)
 2001:db8::1</code></pre>
 <ul>
-<li><b>البادئة:</b> تُكتب كما في IPv4 (مثل <code>/64</code>)، وهي المعيار لكل شبكة محلية، فيتبقى 64 بتًا للمضيف.</li>
+<li><b>البادئة:</b> تُكتب كما في IPv4 (مثل <code>/64</code>)، وهي شائعة في الشبكات الطرفية، فيتبقى 64 بتًا لمعرّف الواجهة؛ ويعتمد طول البادئة على نوع الوصلة وتصميمها.</li>
 <li><b>لا يوجد بث:</b> يُستبدل بالبث المتعدد، وبدل ARP يُستخدم بروتوكول <b>NDP</b> (Neighbor Discovery).</li>
 <li><b>الإعداد التلقائي:</b> يستطيع الجهاز توليد عنوانه بنفسه (SLAAC) أو يستلمه من DHCPv6.</li>
 </ul>
@@ -347,7 +340,7 @@ arp -a                      # من الجيران الذين عرفتهم محل
 <ul>
 <li>عنوان IPv4 مكوّن من 32 بتًا في أربع ثمانيات، ويعرّف واجهة شبكة.</li>
 <li>القناع يفصل جزء الشبكة (آحاد) عن جزء المضيف (أصفار)، ويُكتب بصيغة CIDR مثل <code>/26</code>.</li>
-<li>عنوان الشبكة: المضيف كله أصفار. عنوان البث: المضيف كله آحاد. عدد الأجهزة = 2<sup>h</sup> − 2.</li>
+<li>عنوان الشبكة: المضيف كله أصفار. عنوان البث: المضيف كله آحاد. في الشبكات المعتادة من /1 إلى /30 عدد الأجهزة القابلة للعنونة = 2<sup>h</sup> − 2؛ و/31 و/32 حالتان خاصتان.</li>
 <li>التقسيم يستعير بتات من المضيف: كل بت يضاعف عدد الشبكات ويُنصّف حجمها.</li>
 <li>النطاقات الخاصة: <code>10/8</code> و<code>172.16/12</code> و<code>192.168/16</code>، وتصل إلى الإنترنت عبر NAT.</li>
 <li>الجهاز يقارن شبكة الوجهة بشبكته: واحدة فيرسل مباشرة، وإلا يرسل إلى البوابة. ARP يحوّل عنوان IP للخطوة التالية إلى MAC.</li>
@@ -401,12 +394,12 @@ arp -a                      # من الجيران الذين عرفتهم محل
 </ul>
 <h3>التنقل بين الدروس</h3>
 <p><b>المتطلبات السابقة:</b> <a href="lesson-1.html">الدرس 1</a> و<a href="lesson-2.html">الدرس 2: نموذج OSI</a>.<br>
-<b>الدرس التالي:</b> الدرس 4: التوجيه <a href="lesson-4.html">ابدأ الدرس 4</a> — <a href="curriculum.html">عرض المنهج الكامل</a></p>
+<b>الدرس التالي:</b> الدرس 5: بروتوكولات TCP/IP <a href="lesson-7.html">ابدأ الدرس 5</a> — <a href="curriculum.html">عرض المنهج الكامل</a></p>
 </section>
 <section id="practice"><h2>الحقل التطبيقي وإنهاء الدرس</h2><p>طبّق المفهوم في المحاكاة، ثم ضع علامة مكتمل بعد نجاح المهمة.</p><div id="lab-slot"></div><div class="lesson-finish"><button id="complete" class="btn success" type="button">وضع علامة «مكتمل»</button> <span id="complete-msg" class="hint" role="status"></span></div></section></article>
 </div>
 </main>
-<div id="site-footer"></div>
+<footer id="site-footer"></footer>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0"></script>
 <script src="assets/js/config.js"></script>
@@ -439,5 +432,6 @@ const QUESTIONS = [
 </script>
 <script src="assets/js/lab.js"></script>
 <script src="assets/js/lesson.js"></script>
+<script src="assets/js/lesson-experience.js" defer></script>
 </body>
 </html>

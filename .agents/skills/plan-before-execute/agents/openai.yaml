@@ -1,0 +1,4 @@
+interface:
+  display_name: "Plan Before Execute"
+  short_description: "Show a clear plan before changing project state"
+  default_prompt: "Use $plan-before-execute to plan this task before making changes."

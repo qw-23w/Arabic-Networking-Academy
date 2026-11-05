@@ -1,0 +1,4 @@
+interface:
+  display_name: "Network Lesson Review"
+  short_description: "Review network lessons and create study exercises"
+  default_prompt: "Use $network-lesson-review to review this networking lesson and prepare study materials."

@@ -3,18 +3,19 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>الدرس 5: بروتوكولات TCP/IP — أكاديمية الشبكات العربية</title>
+<meta name="description" content="افهم بروتوكولات TCP/IP وكيف تتعاون طبقاتها لنقل البيانات.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
 <link rel="icon" type="image/png" href="assets/img/academy-icon.png">
-<script>try{var t=localStorage.getItem("ana_theme")||(matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light");document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<script>try{var t=localStorage.getItem("ana_theme")||"dark";document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 <link rel="stylesheet" href="assets/css/style.css">
 <link rel="stylesheet" href="assets/css/experience.css">
 </head>
 <body>
 <a class="skip" href="#main">تخطَّ إلى المحتوى</a>
-<div id="site-header"></div>
-<main id="main" class="container">
+<header id="site-header"></header>
+<main id="main" class="container lesson-page">
 <div class="lesson-layout">
 <nav class="toc" aria-label="قائمة الدروس والأقسام"><div class="course-sidebar-title">المنهج الدراسي</div><div id="lesson-navigation"></div><div class="original-toc" hidden>
   <strong>محتويات الدرس</strong>
@@ -40,20 +41,13 @@
 
 <section id="intro">
 <h1>الدرس 5: بروتوكولات TCP/IP <span class="en">(TCP/IP)</span></h1>
-<p>عرفنا في الدرس 2 أن TCP يضمن التسليم وأن UDP أسرع بلا ضمان، وفي الدروس 3 إلى 6 تتبّعنا الحزمة عبر العناوين والتوجيه وVLAN والأنفاق. في هذا الدرس ندخل إلى <b>الطبقة 4</b> بعمق: كيف تُبنى المحادثة بين تطبيقين، وكيف يبدأ TCP الاتصال ويضمن وصول البيانات سليمة ومرتبة، وكيف تفرّق الأعراض بين «رُفض الاتصال» و«انتهت المهلة». هذا الدرس هو الأساس لاستكشاف الأخطاء في الدرس 8.</p>
+<p>تحتاج التطبيقات إلى طريقة لإرسال البيانات بين الأجهزة. سنتعرف إلى المنافذ، والفرق بين TCP وUDP، وكيف يبدأ TCP الاتصال ويرتب البيانات.</p>
 </section>
 
 <section id="objectives">
 <h2>أهداف التعلم</h2>
-<ul>
-<li>تحديد موقع البروتوكولات الشائعة في طبقات TCP/IP الأربع ومنافذها.</li>
-<li>شرح المقبس <span class="en">(Socket)</span> وكيف يميّز الجهاز بين آلاف الاتصالات.</li>
-<li>قراءة ترويسة UDP وترويسة TCP وأعلامها.</li>
-<li>شرح المصافحة الثلاثية وإغلاق الاتصال، وأرقام التسلسل والتأكيد.</li>
-<li>فهم النافذة والتحكم بالازدحام، وحساب أثر زمن الرحلة على السرعة.</li>
-<li>ربط MSS بـ MTU (الدرس 6) واستخدام أدوات الفحص وتفسير الأعراض.</li>
-</ul>
-<p><b>المعرفة المسبقة:</b> الدرس 2 (الطبقات وTCP/UDP)، والدرس 3 (العناوين وNAT وDHCP)، والدرس 4 (TTL وICMP).</p>
+<p>بعد هذا الدرس، تستطيع:</p><ul><li>التعرّف إلى طبقات TCP/IP وبعض بروتوكولاتها ومنافذها.</li><li>فهم كيف يميّز المنفذ الاتصال الموجّه إلى التطبيق الصحيح.</li><li>مقارنة TCP وUDP من حيث طريقة نقل البيانات.</li><li>شرح خطوات بدء اتصال TCP ووصول البيانات بالترتيب.</li><li>فهم معنى أرقام التسلسل والتأكيد والنافذة بصورة مبسطة.</li><li>معرفة العلاقة بين MTU وMSS واستخدام أدوات الفحص المناسبة.</li></ul>
+<p><b>المعرفة المسبقة:</b> الدرس 2 (الطبقات وTCP/UDP)، والدرس 4 (العناوين وNAT وDHCP)، والدرس 6 (TTL وICMP).</p>
 </section>
 
 <section id="suite">
@@ -65,19 +59,19 @@
 <tr><td>HTTP / HTTPS</td><td>TCP</td><td><span class="ltr mono">80 / 443</span></td><td>الويب (HTTP/3 يعمل فوق UDP 443)</td></tr>
 <tr><td>SSH</td><td>TCP</td><td><span class="ltr mono">22</span></td><td>إدارة بعيدة مشفّرة</td></tr>
 <tr><td>DNS</td><td>UDP وTCP</td><td><span class="ltr mono">53</span></td><td>تحويل الأسماء إلى عناوين</td></tr>
-<tr><td>DHCP</td><td>UDP</td><td><span class="ltr mono">67 / 68</span></td><td>توزيع العناوين (الدرس 3)</td></tr>
+<tr><td>DHCP</td><td>UDP</td><td><span class="ltr mono">67 / 68</span></td><td>توزيع العناوين (الدرس 4)</td></tr>
 <tr><td>NTP</td><td>UDP</td><td><span class="ltr mono">123</span></td><td>مزامنة الوقت</td></tr>
 <tr><td>BGP</td><td>TCP</td><td><span class="ltr mono">179</span></td><td>توجيه بين الشبكات</td></tr>
-<tr><td>VXLAN</td><td>UDP</td><td><span class="ltr mono">4789</span></td><td>أنفاق الدرس 6</td></tr>
+<tr><td>VXLAN</td><td>UDP</td><td><span class="ltr mono">4789</span></td><td>أنفاق الدرس 8</td></tr>
 <tr><td>ICMP</td><td>فوق IP مباشرة</td><td>لا منافذ</td><td>ping ورسائل الأخطاء</td></tr>
 </tbody></table></div>
-<p><b>DNS</b> يستخدم UDP للاستعلامات الصغيرة لسرعتها، ويعود إلى TCP حين يكبر الرد أو في نقل المناطق. والمستخدم يسأل <b>خادمًا مُحلِّلًا</b> <span class="en">(Resolver)</span> يسأل بدوره الخوادم الجذرية ثم خوادم النطاق العلوي ثم الخادم المخوَّل، ويخزّن الجواب مؤقتًا بحسب قيمة TTL فيه.</p>
+<p><b>DNS</b> يستخدم غالبًا UDP للاستعلامات الصغيرة، ويدعم النقل عبر TCP أيضًا؛ فقد تُرسل الإجابة الكبيرة أو نقل المنطقة عبر TCP، كما يمكن للمحلّل اختيار TCP بحسب الحاجة. والمستخدم يسأل <b>خادمًا مُحلِّلًا</b> <span class="en">(Resolver)</span> يسأل بدوره الخوادم الجذرية ثم خوادم النطاق العلوي ثم الخادم المخوَّل، ويخزّن الجواب مؤقتًا بحسب قيمة TTL فيه.</p>
 </section>
 
 <section id="ports">
 <h2>2. المنافذ وUDP</h2>
 <p>عنوان IP يوصل الحزمة إلى الجهاز، و<b>المنفذ</b> (رقم من 16 بتًا، من 0 إلى 65535) يوصلها إلى التطبيق. تنقسم المنافذ إلى: <b>المعروفة</b> 0 إلى 1023، و<b>المسجّلة</b> 1024 إلى 49151، و<b>الديناميكية</b> 49152 إلى 65535 (يستخدم Linux افتراضيًا المدى 32768 إلى 60999). الخادم ينتظر على منفذ ثابت، والعميل يأخذ منفذ مصدر مؤقتًا عشوائيًا.</p>
-<p>يتعرّف الجهاز على كل اتصال بخماسية: <b>(البروتوكول، IP المصدر، منفذ المصدر، IP الوجهة، منفذ الوجهة)</b>. ولهذا يمكن لمئة نافذة متصفح أن تتصل بالخادم نفسه والمنفذ نفسه دون تداخل. وهذه الخماسية هي ما يحفظه جدول <b>NAT/PAT</b> الذي ذكرناه في الدرس 3: يغيّر الموجّه عنوان المصدر ومنفذه، فيسجّل <span class="ltr mono">192.168.1.20:51514 ⇄ 203.0.113.5:40001</span> ليعيد الرد إلى الجهاز الصحيح.</p>
+<p>يتعرّف الجهاز على كل اتصال بخماسية: <b>(البروتوكول، IP المصدر، منفذ المصدر، IP الوجهة، منفذ الوجهة)</b>. ولهذا يمكن لمئة نافذة متصفح أن تتصل بالخادم نفسه والمنفذ نفسه دون تداخل. وهذه الخماسية هي ما يحفظه جدول <b>NAT/PAT</b> الذي ذكرناه في الدرس 4: يغيّر الموجّه عنوان المصدر ومنفذه، فيسجّل <span class="ltr mono">192.168.1.20:51514 ⇄ 203.0.113.5:40001</span> ليعيد الرد إلى الجهاز الصحيح.</p>
 <p><b>UDP</b> أبسط بروتوكول نقل: ترويسته <b>8 بايتات</b> فقط (منفذ المصدر، منفذ الوجهة، الطول، المجموع الاختباري). لا مصافحة ولا تأكيد ولا ترتيب ولا إعادة إرسال، وعلى التطبيق أن يتدبّر الفقد إن لزم. لذلك يناسب DNS والصوت والفيديو المباشر والألعاب، ويقوم عليه QUIC الذي يبني فوقه موثوقية وتشفيرًا لـ HTTP/3.</p>
 </section>
 
@@ -113,7 +107,7 @@
 
 <section id="mss">
 <h2>4. MTU وMSS</h2>
-<p>MTU هو أكبر حزمة IP يقبلها الرابط (1500 في Ethernet). أما <b>MSS</b> <span class="en">(Maximum Segment Size)</span> فهو أكبر <b>حمولة TCP</b> في المقطع، ويعلنه كل طرف في SYN. في IPv4: <span class="ltr mono">1500 − 20 (IP) − 20 (TCP) = 1460</span>. وفي واجهة VXLAN ذات MTU 1450 (الدرس 6) يصبح MSS نحو <span class="ltr mono">1410</span>. وإذا عُبّر عن MSS خطأً فكبرت الحزم عن المسار وكان علم DF مفعّلًا أُسقطت، فينجح <span class="ltr mono">ping</span> الصغير وتتجمد التحميلات، ويعتمد الكشف على رسالة ICMP نوع 3 (يلزم التجزئة)، فلا تحجب ICMP كلها في الجدار الناري.</p>
+<p>MTU هو أكبر حزمة IP يقبلها الرابط (1500 في Ethernet). أما <b>MSS</b> <span class="en">(Maximum Segment Size)</span> فهو أكبر <b>حمولة TCP</b> في المقطع، ويعلنه كل طرف في SYN. في IPv4: <span class="ltr mono">1500 − 20 (IP) − 20 (TCP) = 1460</span>. وفي واجهة VXLAN ذات MTU 1450 (الدرس 8) يصبح MSS نحو <span class="ltr mono">1410</span>. وإذا عُبّر عن MSS خطأً فكبرت الحزم عن المسار وكان علم DF مفعّلًا أُسقطت، فينجح <span class="ltr mono">ping</span> الصغير وتتجمد التحميلات، ويعتمد الكشف على رسالة ICMP نوع 3 (يلزم التجزئة)، فلا تحجب ICMP كلها في الجدار الناري.</p>
 </section>
 
 <section id="tools">
@@ -161,7 +155,7 @@ sudo tcpdump -nn 'tcp port 443'   # التقاط الحزم</code></pre>
 <h2>8. الملخص</h2>
 <ul>
 <li>IP يوصل الحزمة إلى الجهاز، والمنفذ يوصلها إلى التطبيق، والاتصال تعرّفه الخماسية.</li>
-<li>UDP بسيط وسريع بلا ضمان (ترويسة 8 بايتات)، وTCP موثوق ومرتب (ترويسة 20 بايتًا فأكثر).</li>
+<li>UDP ترويسته 8 بايتات ولا يضمن التسليم أو الترتيب، وTCP يوفّر نقلًا موثوقًا ومرتبًا (ترويسة 20 بايتًا فأكثر).</li>
 <li>يبدأ TCP بمصافحة ثلاثية ويضمن التسليم بالتسلسل والتأكيد وإعادة الإرسال، ويضبط السرعة بنافذتي الاستقبال والازدحام.</li>
 <li>MSS = MTU − 40 في IPv4، ومشاكل MTU تظهر بصورة «الصغير ينجح والكبير يتجمد».</li>
 <li>«رُفض» تعني وصولًا ورفضًا، و«المهلة» تعني صمتًا. ولكل منهما فحص مختلف.</li>
@@ -202,13 +196,13 @@ sudo tcpdump -nn 'tcp port 443'   # التقاط الحزم</code></pre>
 <li><a href="https://www.iana.org/assignments/service-names-port-numbers" rel="noopener">IANA</a> — سجل أرقام المنافذ.</li>
 </ul>
 <h3>التنقل بين الدروس</h3>
-<p><b>المتطلبات السابقة:</b> <a href="lesson-2.html">الدرس 2</a> و<a href="lesson-3.html">الدرس 3</a> و<a href="lesson-4.html">الدرس 4</a> و<a href="lesson-6.html">الدرس 6</a>.<br>
-<b>الدرس التالي:</b> <a href="lesson-8.html">الدرس 8: استكشاف الأخطاء والأمن الأساسي</a> — <a href="curriculum.html">عرض المنهج الكامل</a></p>
+<p><b>المتطلبات السابقة:</b> <a href="lesson-2.html">الدرس 2</a> و<a href="lesson-3.html">الدرس 4</a> و<a href="lesson-4.html">الدرس 6</a> و<a href="lesson-6.html">الدرس 8</a>.<br>
+<b>الدرس التالي:</b> <a href="lesson-4.html">الدرس 6: التوجيه</a> — <a href="curriculum.html">عرض المنهج الكامل</a></p>
 </section>
 <section id="practice"><h2>الحقل التطبيقي وإنهاء الدرس</h2><p>طبّق المفهوم في المحاكاة، ثم ضع علامة مكتمل بعد نجاح المهمة.</p><div id="lab-slot"></div><div class="lesson-finish"><button id="complete" class="btn success" type="button">وضع علامة «مكتمل»</button> <span id="complete-msg" class="hint" role="status"></span></div></section></article>
 </div>
 </main>
-<div id="site-footer"></div>
+<footer id="site-footer"></footer>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0"></script>
 <script src="assets/js/config.js"></script>
@@ -241,5 +235,6 @@ const QUESTIONS = [
 </script>
 <script src="assets/js/lab.js"></script>
 <script src="assets/js/lesson.js"></script>
+<script src="assets/js/lesson-experience.js" defer></script>
 </body>
 </html>

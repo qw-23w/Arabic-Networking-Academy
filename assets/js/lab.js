@@ -212,6 +212,11 @@
     9: { q: "كيف يتعلم السويتش إلى أي منفذ يرسل إطارًا لعنوان MAC؟", o: ["يسجل عنوان MAC المصدر والمنفذ الذي وصل منه الإطار.", "يقرأ عنوان IP الوجهة ويحوّله إلى اسم جهاز.", "يختار منفذًا عشوائيًا في كل مرة."], a: 0, why: "يبني السويتش جدول MAC من عناوين المصدر الواردة؛ تكرار MAC قد يسبب انتقالًا مضطربًا بين المنافذ." }
   };
 
+  const DIFFICULTY = {
+    1: "مبتدئ", 2: "مبتدئ", 3: "مبتدئ", 4: "متوسط", 5: "متوسط",
+    6: "متقدم", 7: "مبتدئ", 8: "متوسط", 9: "مبتدئ"
+  };
+
   /* ============ المحاكاة (الواجهة) ============ */
   function createSim(host, cfg, hooks) {
     let S = cfg.preset();
@@ -219,21 +224,26 @@
     host.innerHTML =
       `<p class="lab-task"><b>مهمتك:</b> ${esc(cfg.task)}</p>
        <div class="lab-tools">
-         <button type="button" class="btn secondary small" data-add="pc">+ جهاز PC</button>
-         <button type="button" class="btn secondary small" data-add="sw">+ سويتش</button>
-         <button type="button" class="btn secondary small" data-add="rt">+ راوتر</button>
-         <button type="button" class="btn small" data-link aria-pressed="false">🔌 وصّل كابل</button>
-         <button type="button" class="btn secondary small" data-hint>💡 تلميح</button>
-         <button type="button" class="btn secondary small" data-reset>↺ إعادة الضبط</button>
-       </div>
+          <button type="button" class="btn small" data-link aria-pressed="false">وصّل كابل</button>
+          <button type="button" class="btn secondary small" data-hint>تلميح</button>
+          <button type="button" class="btn secondary small" data-reset>إعادة الضبط</button>
+          <details class="lab-advanced">
+            <summary>أضف أجهزة أخرى (اختياري)</summary>
+            <div class="lab-advanced-controls">
+              <button type="button" class="btn secondary small" data-add="pc">+ جهاز PC</button>
+              <button type="button" class="btn secondary small" data-add="sw">+ سويتش</button>
+              <button type="button" class="btn secondary small" data-add="rt">+ راوتر</button>
+            </div>
+          </details>
+        </div>
        <p class="hint lab-status" role="status">استخدم Tab للوصول إلى جهاز، Enter لاختياره أو توصيله، والأسهم لتحريكه.</p>
        <svg class="lab-svg" viewBox="0 0 600 300" role="group" aria-label="لوحة أجهزة الشبكة التفاعلية"></svg>
        <div class="lab-dev"></div>
-       <div class="lab-test"><b>جرّب الاتصال:</b>
+       <div class="lab-test"><b>اختبر الاتصال:</b>
          من <select data-src aria-label="الجهاز المرسل"></select>
          إلى <select data-dst aria-label="الجهاز المستقبل"></select>
-         <button type="button" class="btn small" data-ping>Ping</button>
-         ${S.opts.web ? '<button type="button" class="btn small" data-port>اتصال بالمنفذ 80</button>' : ""}
+         <button type="button" class="btn small" data-ping>اختبر الاتصال</button>
+         ${S.opts.web ? '<button type="button" class="btn small" data-port>اختبر خدمة الويب</button>' : ""}
        </div>
        <div class="lab-result" role="status" aria-live="polite"></div>
        <section class="lab-assessment hidden" data-assessment aria-labelledby="lab-assessment-title">
@@ -512,8 +522,8 @@
 
     const card = document.createElement("div");
     card.className = "card lab-card";
-    card.innerHTML = `<div><h3>🧪 الحقل التطبيقي</h3><p>تدرّب على مفهوم الدرس في محاكاة قصيرة، ثم أجب سؤال فهم خاصًا به. <b>إجباري</b> قبل وضع علامة «مكتمل».</p></div>
-      <div class="lab-card-act"><span class="badge soon" data-badge></span><button type="button" class="btn" data-open>افتح الحقل التطبيقي</button></div>`;
+    card.innerHTML = `<div><h3>التطبيق العملي</h3><p>حلّ مهمة قصيرة في المحاكاة، ثم أجب سؤالًا واحدًا لإكمال الدرس.</p></div>
+      <div class="lab-card-act"><span class="badge soon" data-badge></span><button type="button" class="btn" data-open>ابدأ التطبيق العملي</button></div>`;
     const lesson = document.querySelector(".lesson");
     const slot = document.getElementById("lab-slot"); if (slot) slot.append(card); else if (lesson) lesson.append(card); else return null;
 
@@ -521,18 +531,19 @@
     ov.className = "lab-overlay hidden";
     ov.setAttribute("role", "dialog"); ov.setAttribute("aria-modal", "true"); ov.setAttribute("aria-labelledby", "lab-title");
     ov.innerHTML = `<div class="lab-panel">
-      <div class="lab-head"><h2 id="lab-title">🧪 الحقل التطبيقي — الدرس ${{1:1,2:2,9:3,3:4,7:5,4:6,5:7,6:8,8:9}[o.lessonId] || o.lessonId}</h2><button type="button" class="btn secondary small" data-close>إغلاق ✕</button></div>
-      <ul class="lab-checks"><li data-c="u">قرأت الشرح</li><li data-c="g">حللت المهمة وأجبت سؤال الفهم</li></ul>
-      <div class="alert ok hidden" data-win>🎉 أنهيت الحقل التطبيقي. يمكنك الآن إغلاقه ووضع علامة «مكتمل» في آخر الدرس.</div>
+      <div class="lab-head"><h2 id="lab-title">التطبيق العملي — الدرس ${{1:1,2:2,9:3,3:4,7:5,4:6,5:7,6:8,8:9}[o.lessonId] || o.lessonId}</h2><button type="button" class="btn secondary small" data-close>إغلاق ✕</button></div>
+      <ul class="lab-checks"><li data-c="u">قرأت خطوات التجربة</li><li data-c="g">حللت المهمة وأجبت السؤال</li></ul>
+      <div class="alert ok hidden" data-win>أحسنت، أنهيت التطبيق. أغلق النافذة ثم ضع علامة «مكتمل» على الدرس.</div>
       <div class="lab-tabs" role="tablist">
-        <button type="button" role="tab" data-tab="explain" aria-selected="true">① الشرح</button>
-        <button type="button" role="tab" data-tab="sim" aria-selected="false">② المحاكاة</button>
+        <button type="button" role="tab" data-tab="explain" aria-selected="true">١. الشرح</button>
+        <button type="button" role="tab" data-tab="sim" aria-selected="false">٢. التطبيق</button>
       </div>
       <div class="lab-pane" data-pane="explain">
+        <div class="lab-context"><span class="badge">المستوى: ${esc(DIFFICULTY[o.lessonId] || "مبتدئ")}</span><span>محاكاة تعليمية فقط؛ لا تتصل بأجهزة حقيقية.</span></div>
         <div class="alert info"><b>الفكرة:</b> ${esc(cfg.idea)}</div>
-        <h3>كيف يعمل؟</h3><ul>${cfg.how.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>
-        <h3>ماذا ستفعل في المحاكاة؟</h3><ol>${cfg.steps.map((x) => `<li>${esc(x)}</li>`).join("")}</ol>
-        <p><button type="button" class="btn success" data-understood>فهمت الشرح — انتقل إلى المحاكاة ←</button></p>
+        <h3>تذكّر</h3><ul>${cfg.how.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>
+        <h3>خطوات التجربة</h3><ol>${cfg.steps.map((x) => `<li>${esc(x)}</li>`).join("")}</ol>
+        <p><button type="button" class="btn success" data-understood>ابدأ المحاكاة</button></p>
       </div>
       <div class="lab-pane hidden" data-pane="sim"></div>
     </div>`;
@@ -542,7 +553,7 @@
     function paint() {
       card.querySelector("[data-badge]").textContent = isDone() ? "مكتمل ✔" : "إجباري";
       card.querySelector("[data-badge]").className = "badge " + (isDone() ? "done" : "soon");
-      card.querySelector("[data-open]").textContent = isDone() ? "افتح الحقل التطبيقي مرة أخرى" : "افتح الحقل التطبيقي";
+      card.querySelector("[data-open]").textContent = isDone() ? "ابدأ التطبيق العملي مرة أخرى" : "ابدأ التطبيق العملي";
       ov.querySelectorAll(".lab-checks li").forEach((li) => li.classList.toggle("ok", !!prog[li.dataset.c]));
       $("[data-win]").classList.toggle("hidden", !isDone());
     }

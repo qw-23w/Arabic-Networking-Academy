@@ -3,19 +3,20 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>لوحة الإدارة — أكاديمية الشبكات العربية</title>
+<meta name="description" content="لوحة لمراجعة نشاط أكاديمية الشبكات العربية وإحصاءات الدروس والتسجيلات.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
 <link rel="icon" type="image/png" href="assets/img/academy-icon.png">
-<script>try{var t=localStorage.getItem("ana_theme")||(matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light");document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<script>try{var t=localStorage.getItem("ana_theme")||"dark";document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 <link rel="stylesheet" href="assets/css/style.css">
 <link rel="stylesheet" href="assets/css/experience.css">
 </head>
 <body>
 <a class="skip" href="#main">تخطَّ إلى المحتوى</a>
-<div id="site-header"></div>
-<main id="main" class="container section">
-  <h1>لوحة الإدارة</h1>
+<header id="site-header"></header>
+<main id="main" class="container section admin-page">
+  <header class="page-intro admin-intro"><p class="eyebrow">مساحة الأكاديمية</p><h1>لوحة الإدارة</h1><p>مؤشرات النشاط وإدارة المحتوى في مكان واحد.</p></header>
   <div id="share-banner" class="alert warn share-banner hidden">أنت تشاهد نسخة للقراءة فقط عبر رابط مشاركة. تظهر الإحصاءات العامة فقط، ولا تظهر بيانات الطلاب، ولا يمكنك إنشاء روابط مشاركة جديدة.</div>
   <p><button class="btn secondary small" id="refresh" type="button">↻ تحديث البيانات</button> <button class="btn small hidden" id="share-btn" type="button">🔗 مشاركة رابط لوحة الإدارة</button> <span class="hint" id="updated" role="status"></span></p>
   <p id="share-err" class="alert error hidden" role="alert"></p>
@@ -32,6 +33,7 @@
   </div>
   <p id="state" class="loading">جارٍ تحميل الإحصاءات...</p>
   <div id="content" class="hidden">
+    <section id="content-management" class="admin-content-tools card hidden" aria-labelledby="content-management-title"><div><p class="eyebrow">إدارة المحتوى المنشور</p><h2 id="content-management-title">افتح درسًا لتحرير أقسامه</h2><p>تظهر أدوات تعديل أقسام الدرس للمسؤولين داخل صفحات الدروس. تبقى الاختبارات والتصحيح على الخادم كما هما.</p></div><div id="managed-lessons" class="managed-lessons"></div></section>
     <div class="grid cols-3" id="cards"></div>
     <p id="visits-note" class="alert warn hidden">عدّاد الزيارات غير مفعّل في قاعدة البيانات بعد. افتح Supabase ← SQL Editor، والصق محتوى الملف supabase/migrations/20261020000100_public_visits.sql ثم اضغط Run، وبعدها اضغط «تحديث البيانات».</p>
 
@@ -66,7 +68,7 @@
     <p class="hint">لا تعرض هذه اللوحة أي بريد إلكتروني.</p>
   </div>
 </main>
-<div id="site-footer"></div>
+<footer id="site-footer"></footer>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0"></script>
 <script src="assets/js/config.js"></script>
 <script src="assets/js/app.js"></script>
@@ -91,6 +93,10 @@
 
   // UI courtesy only: the database enforces authorization in every RPC below.
   if (!shareMode && profile && profile.role !== "admin") return fail(NOAUTH);
+  if (!shareMode && profile && profile.role === "admin") {
+    document.getElementById("managed-lessons").innerHTML = ANA.LESSONS.filter((lesson) => lesson.published).map((lesson) => `<a class="managed-lesson" href="${lesson.href}"><span>${String(lesson.id).padStart(2,"0")}</span><b>${ANA.esc(lesson.ar)}</b><span aria-hidden="true">فتح الدرس ←</span></a>`).join("");
+    document.getElementById("content-management").classList.remove("hidden");
+  }
   if (shareMode) {
     document.getElementById("share-banner").classList.remove("hidden");
     document.getElementById("students-section").classList.add("hidden");
@@ -114,7 +120,7 @@
     const bars = rows.map((r, i) => {
       const h = (H - pad * 2) * Number(r.registrations) / max;
       const x = W - pad - (i + 1) * bw + 2; // RTL: oldest on the right
-      return `<rect x="${x}" y="${H - pad - h}" width="${bw - 4}" height="${h}" rx="2" fill="#1f6feb"><title>${esc(r.day)}: ${r.registrations}</title></rect>`;
+      return `<rect x="${x}" y="${H - pad - h}" width="${bw - 4}" height="${h}" rx="2" fill="#08717a"><title>${esc(r.day)}: ${r.registrations}</title></rect>`;
     }).join("");
     box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" style="direction:ltr" role="img" aria-label="عدد التسجيلات اليومية">
       <line x1="${pad}" y1="${H - pad}" x2="${W - pad}" y2="${H - pad}" stroke="#aab4c4"/>

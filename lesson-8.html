@@ -3,18 +3,19 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>الدرس 9: استكشاف الأخطاء والأمن الأساسي — أكاديمية الشبكات العربية</title>
+<meta name="description" content="تعلّم استكشاف أخطاء الشبكة ومبادئ الحماية الأساسية.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
 <link rel="icon" type="image/png" href="assets/img/academy-icon.png">
-<script>try{var t=localStorage.getItem("ana_theme")||(matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light");document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<script>try{var t=localStorage.getItem("ana_theme")||"dark";document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 <link rel="stylesheet" href="assets/css/style.css">
 <link rel="stylesheet" href="assets/css/experience.css">
 </head>
 <body>
 <a class="skip" href="#main">تخطَّ إلى المحتوى</a>
-<div id="site-header"></div>
-<main id="main" class="container">
+<header id="site-header"></header>
+<main id="main" class="container lesson-page">
 <div class="lesson-layout">
 <nav class="toc" aria-label="قائمة الدروس والأقسام"><div class="course-sidebar-title">المنهج الدراسي</div><div id="lesson-navigation"></div><div class="original-toc" hidden>
   <strong>محتويات الدرس</strong>
@@ -42,21 +43,14 @@
 
 <section id="intro">
 <h1>الدرس 9: استكشاف الأخطاء والأمن الأساسي <span class="en">(Troubleshooting and Basic Security)</span></h1>
-<p>تعلمنا في الدروس السابقة كيف تعمل الشبكة: الطبقات والعناوين والتوجيه وVLAN والأنفاق وTCP/IP. في هذا الدرس الأخير نستخدم كل ذلك في مهارتين يحتاجهما كل مهندس شبكات يوميًا: <b>تشخيص العطل</b> بطريقة منظمة بدل التجريب العشوائي، و<b>حماية الشبكة</b> بإجراءات أساسية تمنع معظم المشاكل الشائعة قبل وقوعها.</p>
+<p>عندما لا يعمل الاتصال، يساعدنا الفحص المنظم على إيجاد السبب بدل التخمين. سنتتبع عطلًا خطوة خطوة، ثم نراجع إجراءات بسيطة تحمي الشبكة.</p>
 <p>الفكرة التي تجمع الموضوعين: الشبكة المفهومة جيدًا يسهل إصلاحها ويسهل تأمينها، لأنك تعرف ما الذي يجب أن يحدث، فتلاحظ ما لا يجب أن يحدث.</p>
 </section>
 
 <section id="objectives">
 <h2>أهداف التعلم</h2>
-<ul>
-<li>تطبيق منهجية من خطوات واضحة لتحديد العطل وإصلاحه وتوثيقه.</li>
-<li>اختيار أداة الفحص المناسبة لكل طبقة وقراءة نتائجها.</li>
-<li>تتبّع عطل «لا يفتح الموقع» من الجهاز حتى الخدمة وعزل الطبقة المسؤولة.</li>
-<li>قراءة حالة الواجهات والجداول على المبدلات والموجّهات.</li>
-<li>شرح مبادئ الأمن الأساسية: السرية والسلامة والتوافر، وأقل الصلاحيات، والدفاع المتعدد الطبقات.</li>
-<li>تطبيق إجراءات تقوية للأجهزة، وفهم دور الجدار الناري وقوائم التحكم ACL وضوابط الطبقة الثانية.</li>
-</ul>
-<p><b>المعرفة المسبقة:</b> الدروس 2 إلى 7، وخاصة DHCP وNAT (الدرس 3)، والتوجيه (الدرس 4)، وVLAN (الدرس 5)، وTCP/IP وأدوات الفحص (الدرس 7).</p>
+<p>بعد هذا الدرس، تستطيع:</p><ul><li>اتباع خطوات واضحة لتحديد العطل وتسجيل ما وجدته.</li><li>اختيار أداة الفحص المناسبة وقراءة نتيجتها.</li><li>تتبّع مشكلة عدم فتح موقع من الجهاز إلى الخدمة.</li><li>قراءة حالة الواجهات وجداول المبدلات والراوترات.</li><li>شرح مبادئ مثل أقل صلاحية والدفاع على أكثر من مستوى.</li><li>تطبيق أساسيات تقوية الأجهزة والجدار الناري وقوائم التحكم.</li></ul>
+<p><b>المعرفة المسبقة:</b> الدروس 2 إلى 8، وخاصة DHCP وNAT في الدرس 4، والتوجيه في الدرس 6، وVLAN في الدرس 7، وTCP/IP وأدوات الفحص في الدرس 5.</p>
 </section>
 
 <section id="method">
@@ -139,15 +133,15 @@ route print                # جدول التوجيه</code></pre>
 <text x="360" y="24">فشل</text><text x="360" y="94">فشل</text><text x="360" y="164">فشل</text><text x="360" y="234">فشل</text><text x="360" y="304">فشل</text>
 <text x="568" y="72">نجح</text><text x="568" y="142">نجح</text><text x="568" y="212">نجح</text><text x="568" y="282">نجح</text><text x="568" y="352">نجح</text></g>
 </svg>
-<figcaption><b>الشكل 1:</b> سلّم الفحوص من الجهاز إلى الخدمة. العنوان <span class="ltr mono">169.254.x.x</span> يسمى APIPA: يعطيه نظام التشغيل لنفسه حين لا يجد خادم DHCP (الدرس 3).</figcaption>
+<figcaption><b>الشكل 1:</b> سلّم الفحوص من الجهاز إلى الخدمة. العنوان <span class="ltr mono">169.254.x.x</span> يسمى APIPA: يعطيه نظام التشغيل لنفسه حين لا يجد خادم DHCP (الدرس 4).</figcaption>
 </figure>
 <h3>قراءة النتائج</h3>
 <ul>
-<li><b>الفحص 1:</b> إن كان العنوان من نطاق شبكتك فاستمر. وإن كان <span class="ltr mono">169.254.x.x</span> فالجهاز لم يحصل على عنوان: افحص الكابل أو Wi-Fi، ثم VLAN المنفذ، ثم خادم DHCP أو مرحّل DHCP (الدرس 5).</li>
+<li><b>الفحص 1:</b> إن كان العنوان من نطاق شبكتك فاستمر. وإن كان <span class="ltr mono">169.254.x.x</span> فالجهاز لم يحصل على عنوان: افحص الكابل أو Wi-Fi، ثم VLAN المنفذ، ثم خادم DHCP أو مرحّل DHCP (الدرس 7).</li>
 <li><b>الفحص 2:</b> فشل <span class="ltr mono">ping</span> للبوابة مع عنوان صحيح يعني مشكلة محلية في الطبقتين 1 و2: منفذ في VLAN خطأ، أو قناع شبكة خطأ، أو عنوان بوابة خطأ. تحقق من <span class="ltr mono">arp -a</span>: هل ظهر عنوان MAC للبوابة؟</li>
-<li><b>الفحص 3:</b> نجاح البوابة وفشل العنوان الخارجي يعني أن المشكلة بعد البوابة: مسار افتراضي ناقص، أو NAT لا يعمل، أو انقطاع عند المزوّد (الدرس 4).</li>
+<li><b>الفحص 3:</b> نجاح البوابة وفشل العنوان الخارجي يعني أن المشكلة بعد البوابة: مسار افتراضي ناقص (راجع التوجيه في الدرس 6)، أو NAT لا يعمل (من الدرس 4)، أو انقطاع عند المزوّد.</li>
 <li><b>الفحص 4:</b> نجاح العنوان وفشل الاسم هو <b>DNS</b> تقريبًا دائمًا. جرّب <span class="ltr mono">nslookup example.com</span> ثم أعد المحاولة بخادم آخر، مثل <span class="ltr mono">nslookup example.com 1.1.1.1</span>، لتعرف أهو الخادم المضبوط أم الاتصال به.</li>
-<li><b>الفحص 5:</b> إذا نجح كل ما سبق وفشل الموقع، فاقرأ مخرجات <span class="ltr mono">curl -v</span> لتعرف أين توقفت: عند الاتصال (<i>timed out</i> أو <i>refused</i> كما في الدرس 7)، أم عند مصافحة TLS (شهادة منتهية أو وقت خاطئ على الجهاز)، أم عند ردّ HTTP برمز خطأ (4xx من العميل، 5xx من الخادم).</li>
+<li><b>الفحص 5:</b> إذا نجح كل ما سبق وفشل الموقع، فاقرأ مخرجات <span class="ltr mono">curl -v</span> لتعرف أين توقفت: عند الاتصال (<i>timed out</i> أو <i>refused</i> كما في الدرس 5)، أم عند مصافحة TLS (شهادة منتهية أو وقت خاطئ على الجهاز)، أم عند ردّ HTTP برمز خطأ (4xx من العميل، 5xx من الخادم).</li>
 </ul>
 <h3>تمرين</h3>
 <p>في مخبرك (أو جهازين افتراضيين): (1) أوقف خادم DHCP وأعد طلب العنوان وسجّل ما يظهر. (2) غيّر خادم DNS في جهازك إلى عنوان غير موجود وجرّب <span class="ltr mono">ping</span> بالعنوان وبالاسم. (3) انقل منفذ الجهاز إلى VLAN أخرى وأعد السلّم. في كل مرة اكتب أول فحص فشل وما استنتجته منه.</p>
@@ -188,7 +182,7 @@ show cdp neighbors               # الأجهزة المجاورة (أو show ll
 <tr><td>انقطاع متقطع وبطء</td><td>كابل تالف أو عدم توافق ازدواج أو تداخل لاسلكي</td><td>عدّادات الأخطاء في <span class="ltr mono">show interfaces</span></td></tr>
 <tr><td>جهازان يفقدان الاتصال بالتناوب</td><td>تعارض عنوان IP (الجهازان بالعنوان نفسه)</td><td><span class="ltr mono">arp -a</span> وراقب تغيّر MAC لنفس العنوان</td></tr>
 <tr><td>ping بالعنوان ينجح وبالاسم يفشل</td><td>DNS غير مضبوط أو لا يستجيب</td><td><span class="ltr mono">nslookup</span>، <span class="ltr mono">dig</span></td></tr>
-<tr><td>مواقع معينة فقط لا تفتح</td><td>قاعدة جدار ناري أو ACL أو مسار خاص أو MTU</td><td><span class="ltr mono">traceroute</span>، <span class="ltr mono">curl -v</span>، راجع الدرس 7</td></tr>
+<tr><td>مواقع معينة فقط لا تفتح</td><td>قاعدة جدار ناري أو ACL أو مسار خاص أو MTU</td><td><span class="ltr mono">traceroute</span>، <span class="ltr mono">curl -v</span>، راجع الدرس 5</td></tr>
 <tr><td>تحذير شهادة HTTPS</td><td>شهادة منتهية، أو تاريخ ووقت الجهاز خاطئان، أو اعتراض للاتصال</td><td><span class="ltr mono">curl -v</span>، وتحقق من ساعة الجهاز ومن NTP</td></tr>
 <tr><td>منفذ مبدّل توقف فجأة</td><td><span class="ltr mono">err-disabled</span> بسبب أمن المنفذ أو BPDU Guard أو حلقة</td><td><span class="ltr mono">show interfaces status err-disabled</span>، <span class="ltr mono">show logging</span></td></tr>
 <tr><td>عطل بعد تغيير حديث</td><td>التغيير نفسه</td><td>قارن الضبط الحالي بالنسخة الاحتياطية وتراجع إن لزم</td></tr>
@@ -208,7 +202,7 @@ show cdp neighbors               # الأجهزة المجاورة (أو show ll
 <li><b>أقل الصلاحيات</b> <span class="en">(Least Privilege)</span>: امنح كل مستخدم أو خدمة ما يحتاجه فقط، ولا تستخدم حساب المدير في الأعمال اليومية.</li>
 <li><b>الدفاع المتعدد الطبقات</b> <span class="en">(Defense in Depth)</span>: لا تعتمد على ضابط واحد، فإذا سقط بقيت ضوابط أخرى.</li>
 <li><b>الرفض افتراضيًا</b> <span class="en">(Default Deny)</span>: امنع كل شيء ثم اسمح بما يلزم صراحةً.</li>
-<li><b>التقسيم</b> <span class="en">(Segmentation)</span>: فصل الشبكات (VLAN وVRF من الدروس 5 و6) يحصر الضرر إن اخترق أحد الأجهزة.</li>
+<li><b>التقسيم</b> <span class="en">(Segmentation)</span>: فصل الشبكات (VLAN وVRF من الدرسين 7 و8) يحصر الضرر إن اخترق أحد الأجهزة.</li>
 <li><b>البساطة والتحديث:</b> كل خدمة غير ضرورية سطح هجوم إضافي، والثغرات المعروفة تُستغل بعد نشرها بسرعة.</li>
 </ul>
 <figure>
@@ -236,7 +230,7 @@ show cdp neighbors               # الأجهزة المجاورة (أو show ll
 <ul>
 <li><b>غيّر الحسابات وكلمات المرور الافتراضية</b> فورًا. كلمات المرور الافتراضية معروفة للجميع وتُجرَّب أولًا في أي هجوم.</li>
 <li><b>كلمات مرور طويلة وفريدة</b> لكل جهاز، مع مدير كلمات مرور، و<b>مصادقة متعددة العوامل</b> <span class="en">(MFA)</span> حيث تتوفر.</li>
-<li><b>استخدم SSH بدل Telnet</b>، وHTTPS بدل HTTP للإدارة. Telnet يرسل كلمة المرور نصًا مكشوفًا (الدرس 7).</li>
+<li><b>استخدم SSH بدل Telnet</b>، وHTTPS بدل HTTP للإدارة. Telnet يرسل كلمة المرور نصًا مكشوفًا (الدرس 5).</li>
 <li><b>قيّد الإدارة</b> على شبكة أو VLAN إدارة مخصصة، وعلى عناوين مديرين محددين.</li>
 <li><b>عطّل ما لا تستخدمه:</b> المنافذ الفارغة والخدمات غير الضرورية وواجهة الويب إن لم تلزم.</li>
 <li><b>حدّث البرمجيات</b> <span class="en">(Firmware)</span> بانتظام بعد قراءة ملاحظات الإصدار واختباره.</li>
@@ -284,7 +278,7 @@ interface range gi0/10 - 24          ! المنافذ الفارغة
 <tr><td>3</td><td>الشبكة الداخلية</td><td>الإنترنت</td><td>أي منفذ</td><td>سماح (والردود تلقائيًا)</td></tr>
 <tr><td>4</td><td>أي مصدر</td><td>أي وجهة</td><td>أي منفذ</td><td>رفض وتسجيل</td></tr>
 </tbody></table></div>
-<p>لاحظ أن القاعدة الأخيرة تسجّل المحاولات المرفوضة، فتكشف السجلات من يحاول الوصول إلى ما لا يجوز. وكما ذكرنا في الدرس 7، لا تحجب ICMP كله بل اسمح بالأنواع اللازمة لعمل MTU والتشخيص.</p>
+<p>لاحظ أن القاعدة الأخيرة تسجّل المحاولات المرفوضة، فتكشف السجلات من يحاول الوصول إلى ما لا يجوز. وكما ذكرنا في الدرس 5، لا تحجب ICMP كله بل اسمح بالأنواع اللازمة لعمل MTU والتشخيص.</p>
 <h3>ضوابط الطبقة الثانية على المبدلات</h3>
 <p>كثير من الهجمات تحدث داخل الشبكة المحلية نفسها لأن الجهاز المخترق أو الدخيل يصل إلى منفذ في المبدّل. هذه ميزات شائعة تحميك:</p>
 <div class="table-wrap"><table>
@@ -292,7 +286,7 @@ interface range gi0/10 - 24          ! المنافذ الفارغة
 <tbody>
 <tr><td>أمن المنفذ <span class="en">(Port Security)</span></td><td>تحديد عدد عناوين MAC المسموح بها على المنفذ، فيُقيَّد توصيل أجهزة غير مرخصة</td></tr>
 <tr><td><span class="en">DHCP Snooping</span></td><td>خادم DHCP مزيّف يوزّع بوابة أو DNS خبيثين؛ يسمح بردود DHCP من المنافذ الموثوقة فقط</td></tr>
-<tr><td><span class="en">Dynamic ARP Inspection</span></td><td>انتحال ARP (الدرس 2)؛ يتحقق من ردود ARP بمقارنتها بجدول DHCP Snooping</td></tr>
+<tr><td><span class="en">Dynamic ARP Inspection</span></td><td>انتحال ARP (الدرس 3)؛ يتحقق من ردود ARP بمقارنتها بجدول DHCP Snooping</td></tr>
 <tr><td><span class="en">BPDU Guard</span></td><td>جهاز دخيل يرسل رسائل STP أو حلقة على منفذ طرفي؛ يعطّل المنفذ</td></tr>
 <tr><td>تعطيل المنافذ الفارغة وإبقاؤها في VLAN غير مستخدمة</td><td>توصيل جهاز غريب بمنفذ منسي</td></tr>
 </tbody></table></div>
@@ -321,7 +315,7 @@ interface range gi0/10 - 24          ! المنافذ الفارغة
 <tr><td>تخمين كلمات المرور</td><td>تجربة كلمات مرور كثيرة على خدمة مكشوفة (SSH مثلًا)</td><td>كلمات مرور قوية، قفل الحساب مؤقتًا، تقييد الوصول بالعنوان، المفاتيح بدل كلمات المرور</td></tr>
 <tr><td>انتحال ARP / الوسيط <span class="en">(MITM)</span></td><td>جهاز يوهم الآخرين أنه البوابة ليمرّ الاتصال عبره</td><td>Dynamic ARP Inspection، والتشفير (HTTPS وSSH) ليبقى المحتوى محميًا حتى لو اعتُرض</td></tr>
 <tr><td>خادم DHCP مزيّف</td><td>جهاز يوزّع إعدادات شبكة خبيثة</td><td>DHCP Snooping</td></tr>
-<tr><td>حجب الخدمة <span class="en">(DoS / DDoS)</span></td><td>إغراق الخدمة بالطلبات حتى لا تستجيب (راجع الدرس 7)</td><td>تحديد المعدل، SYN cookies، خدمات التخفيف لدى المزوّد</td></tr>
+<tr><td>حجب الخدمة <span class="en">(DoS / DDoS)</span></td><td>إغراق الخدمة بالطلبات حتى لا تستجيب (راجع الدرس 5)</td><td>تحديد المعدل، SYN cookies، خدمات التخفيف لدى المزوّد</td></tr>
 <tr><td>البرمجيات الخبيثة وفدية التشفير</td><td>برمجية تنفّذ أوامر المهاجم أو تشفّر الملفات وتطلب فدية</td><td>التحديثات، التقسيم، أقل الصلاحيات، نسخ احتياطية غير متصلة بالشبكة الرئيسية</td></tr>
 <tr><td>بيانات الدخول الافتراضية</td><td>أجهزة تُركت بكلمة المرور الأصلية</td><td>تغييرها عند التركيب وجرد دوري للأجهزة</td></tr>
 </tbody></table></div>
@@ -386,13 +380,13 @@ interface range gi0/10 - 24          ! المنافذ الفارغة
 <h3>خاتمة المنهج والخطوات التالية</h3>
 <p>بإكمالك هذا الدرس تكون قد أنهيت دروس المنهج الثمانية: من الشبكات المحلية والواسعة، إلى OSI والعنونة والتوجيه وVLAN وVXLAN وTCP/IP، وصولًا إلى التشخيص والأمن. أفضل ما تفعله الآن هو <b>التطبيق</b>: ابنِ مخبرًا بمحاكٍ مجاني أو أجهزة افتراضية، وأعد ما تعلمته بنفسك، وتعمّد إحداث أعطال لتتدرب على السلّم. ومن أراد التوسع فالشهادات المهنية العامة في الشبكات والأمن تنظّم المسار وتغطي ما بعد هذا المنهج.</p>
 <h3>التنقل بين الدروس</h3>
-<p><b>المتطلبات السابقة:</b> <a href="lesson-3.html">الدرس 3</a> و<a href="lesson-5.html">الدرس 5</a> و<a href="lesson-7.html">الدرس 7</a>.<br>
-<b>هذا آخر دروس المنهج.</b> <a href="lesson-7.html">الدرس السابق</a> — <a href="curriculum.html">عرض المنهج الكامل</a></p>
+<p><b>المتطلبات السابقة:</b> <a href="lesson-3.html">الدرس 4: عنونة IP</a> و<a href="lesson-5.html">الدرس 7: VLAN</a> و<a href="lesson-7.html">الدرس 5: TCP/IP</a>.<br>
+<b>هذا آخر دروس المنهج.</b> <a href="lesson-6.html">الدرس السابق: VXLAN وVRF</a> — <a href="curriculum.html">عرض المنهج الكامل</a></p>
 </section>
 <section id="practice"><h2>الحقل التطبيقي وإنهاء الدرس</h2><p>طبّق المفهوم في المحاكاة، ثم ضع علامة مكتمل بعد نجاح المهمة.</p><div id="lab-slot"></div><div class="lesson-finish"><button id="complete" class="btn success" type="button">وضع علامة «مكتمل»</button> <span id="complete-msg" class="hint" role="status"></span></div></section></article>
 </div>
 </main>
-<div id="site-footer"></div>
+<footer id="site-footer"></footer>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0"></script>
 <script src="assets/js/config.js"></script>
@@ -428,5 +422,6 @@ const QUESTIONS = [
 </script>
 <script src="assets/js/lab.js"></script>
 <script src="assets/js/lesson.js"></script>
+<script src="assets/js/lesson-experience.js" defer></script>
 </body>
 </html>

@@ -3,18 +3,19 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>الدرس 2: نموذج OSI — أكاديمية الشبكات العربية</title>
+<meta name="description" content="افهم طبقات نموذج OSI ووظائفها من خلال شرح عربي مبسط ومخططات الشبكات.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
 <link rel="icon" type="image/png" href="assets/img/academy-icon.png">
-<script>try{var t=localStorage.getItem("ana_theme")||(matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light");document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<script>try{var t=localStorage.getItem("ana_theme")||"dark";document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 <link rel="stylesheet" href="assets/css/style.css">
 <link rel="stylesheet" href="assets/css/experience.css">
 </head>
 <body>
 <a class="skip" href="#main">تخطَّ إلى المحتوى</a>
-<div id="site-header"></div>
-<main id="main" class="container">
+<header id="site-header"></header>
+<main id="main" class="container lesson-page">
 <div class="lesson-layout">
 <nav class="toc" aria-label="قائمة الدروس والأقسام"><div class="course-sidebar-title">المنهج الدراسي</div><div id="lesson-navigation"></div><div class="original-toc" hidden>
   <strong>محتويات الدرس</strong>
@@ -42,19 +43,12 @@
 
 <section id="intro">
 <h1>الدرس 2: نموذج OSI <span class="en">(The OSI Model)</span></h1>
-<p>عندما تفتح صفحة ويب يحدث أمر معقّد: تطبيق يطلب بيانات، وعناوين تُحسب، وكابلات تنقل إشارات، وأجهزة تقرر المسار. لو حاولنا فهم كل ذلك دفعة واحدة لضعنا. الحل الذي اعتمده المهندسون هو <b>تقسيم المشكلة إلى طبقات</b>، لكل طبقة مهمة واحدة واضحة. هذا الدرس يعطيك «الخريطة» التي ستستخدمها في كل ما بعده: عنونة IP والتوجيه وVLAN وTCP وحتى الأمن.</p>
+<p>يتعاون التطبيق والعناوين والكابل والسويتش والراوتر عندما تفتح موقعًا. يقسم نموذج OSI هذه الرحلة إلى سبع طبقات، لتسهيل فهم الشبكة ومعرفة موضع المشكلة.</p>
 </section>
 
 <section id="objectives">
 <h2>أهداف التعلم</h2>
-<ul>
-<li>شرح سبب تقسيم الشبكات إلى طبقات وفوائد ذلك.</li>
-<li>تعداد الطبقات السبع بترتيبها ومهمة كل منها وبروتوكولات وأجهزة تنتمي إليها.</li>
-<li>شرح عملية <b>التغليف</b> <span class="en">(Encapsulation)</span> وفكّه، وتسمية وحدة البيانات في كل طبقة.</li>
-<li>التفريق بين ما يتغير في كل قفزة (MAC) وما يبقى ثابتًا (IP).</li>
-<li>مقارنة OSI بنموذج TCP/IP العملي، وفهم الفرق بين TCP وUDP.</li>
-<li>استخدام الطبقات كخطة منظّمة لاستكشاف الأعطال.</li>
-</ul>
+<p>بعد هذا الدرس، تستطيع:</p><ul><li>شرح فائدة تقسيم الاتصال إلى طبقات.</li><li>ترتيب طبقات OSI السبع وذكر وظيفة كل طبقة.</li><li>تتبّع انتقال البيانات من التطبيق إلى الشبكة ثم عودتها.</li><li>التمييز بين عنوان MAC المحلي وعنوان IP.</li><li>مقارنة OSI بنموذج TCP/IP والتمييز بين TCP وUDP.</li><li>استخدام الطبقات لتحديد مكان عطل الشبكة.</li></ul>
 <h3>المعرفة المسبقة</h3>
 <p>الدرس الأول (الشبكات المحلية والواسعة، المحوّل والموجّه، وعنوان MAC). لا شيء غير ذلك.</p>
 </section>
@@ -112,11 +106,11 @@
 <h3>الطبقة 5: الجلسة <span class="en">(Session)</span></h3>
 <p>تفتح «الحوار» بين طرفين وتديره وتغلقه، وتتيح نقاط استئناف. في معظم الشبكات اليوم تتولى التطبيقات والبروتوكولات هذا العمل بنفسها، فلن تتعامل معها كثيرًا، لكنها تفسّر فكرة أن الاتصال له بداية ونهاية.</p>
 <h3>الطبقة 4: النقل <span class="en">(Transport)</span></h3>
-<p>مسؤولة عن الاتصال بين <b>تطبيقين</b> (لا بين جهازين فقط). تقسم البيانات الكبيرة إلى <b>مقاطع</b> <span class="en">(Segments)</span>، وتستخدم <b>أرقام المنافذ</b> <span class="en">(Ports)</span> لتعرف أي تطبيق يستقبل: المنفذ 443 لـHTTPS و53 لـDNS و22 لـSSH. وهنا يُقرَّر هل التسليم مضمون (TCP) أم سريع بلا ضمان (UDP). سنتوسع فيها في القسم 7.</p>
+<p>مسؤولة عن الاتصال بين <b>تطبيقين</b> (لا بين جهازين فقط). تقسم البيانات الكبيرة إلى <b>مقاطع</b> <span class="en">(Segments)</span>، وتستخدم <b>أرقام المنافذ</b> <span class="en">(Ports)</span> لتعرف أي تطبيق يستقبل: المنفذ 443 لـHTTPS و53 لـDNS و22 لـSSH. ويختار التطبيق بين نقل موثوق ومرتب مثل TCP، أو نقل لا يضمن التسليم والترتيب مثل UDP. سنتوسع فيها في القسم 7.</p>
 <h3>الطبقة 3: الشبكة <span class="en">(Network)</span></h3>
 <p>تعطي كل جهاز <b>عنوانًا منطقيًا</b> (IP) وتحدد <b>المسار</b> عبر الشبكات المختلفة. وحدتها <b>الحزمة</b> <span class="en">(Packet)</span>. جهازها النموذجي <b>الموجّه</b>. وتتبع بروتوكول ICMP الذي يعمل خلف الأمر <code>ping</code>.</p>
 <h3>الطبقة 2: ربط البيانات <span class="en">(Data Link)</span></h3>
-<p>تنقل البيانات بين <b>جهازين متجاورين</b> على الوصلة نفسها، وتستخدم عناوين <b>MAC</b>. وحدتها <b>الإطار</b> <span class="en">(Frame)</span>، وفي نهايته حقل <span class="en">FCS</span> لكشف الأخطاء. جهازها النموذجي <b>المحوّل</b>. هنا أيضًا تعمل الشبكات المحلية الافتراضية VLAN (الدرس 5).</p>
+<p>تنقل البيانات بين <b>جهازين متجاورين</b> على الوصلة نفسها، وتستخدم عناوين <b>MAC</b>. وحدتها <b>الإطار</b> <span class="en">(Frame)</span>، وفي نهايته حقل <span class="en">FCS</span> لكشف الأخطاء. جهازها النموذجي <b>المحوّل</b>. هنا أيضًا تعمل الشبكات المحلية الافتراضية VLAN (الدرس 7).</p>
 <h3>الطبقة 1: الفيزيائية <span class="en">(Physical)</span></h3>
 <p>تحوّل البتات (0 و1) إلى <b>إشارات</b> كهربائية أو ضوئية أو راديوية، وتحدد الكابلات والموصلات والجهد والتردد. أعطالها «ملموسة»: كابل مفكوك، منفذ تالف، ضعف إشارة.</p>
 <div class="tip">تذكّر: <b>كلما نزلنا في الطبقات اقتربنا من العتاد، وكلما صعدنا اقتربنا من المستخدم.</b></div>
@@ -218,10 +212,10 @@
 <tbody>
 <tr><td>الاتصال</td><td>يبدأ بمصافحة ثلاثية (SYN، SYN-ACK، ACK)</td><td>بلا اتصال، يرسل مباشرة</td></tr>
 <tr><td>الضمان</td><td>يؤكد الاستلام ويعيد إرسال المفقود ويرتّب المقاطع</td><td>لا ضمان ولا ترتيب</td></tr>
-<tr><td>السرعة والحمل</td><td>أبطأ قليلًا وأثقل</td><td>أخف وأسرع</td></tr>
+<tr><td>الخصائص والكلفة</td><td>آليات للترتيب والتأكيد وإعادة الإرسال</td><td>ترويسة 8 بايتات، ولا يوفّر موثوقية أو ترتيبًا بذاته</td></tr>
 <tr><td>الاستخدام</td><td>الويب، البريد، نقل الملفات، SSH</td><td>DNS، المكالمات، البث، الألعاب</td></tr>
 </tbody></table></div>
-<p><b>لماذا يستخدم الصوت UDP؟</b> لو ضاعت حزمة صوت فإعادة إرسالها بعد فوات وقتها لا تفيد، والأفضل تجاوزها والمتابعة. أما تنزيل ملف فلا يحتمل نقص بايت واحد.</p>
+<p><b>لماذا قد يستخدم الصوت UDP؟</b> إذا تأخرت حزمة صوت أو ضاعت، فقد يكون تجاوزها والاستمرار أنسب من انتظار إعادة إرسالها. لكن UDP لا يكون أسرع دائمًا؛ فالسرعة الفعلية تتأثر بالتطبيق والشبكة، وقد تبني التطبيقات موثوقية إضافية فوقه.</p>
 <p>ورقم المنفذ مع عنوان IP يكوّنان <b>«المقبس»</b> <span class="en">(Socket)</span>، مثل <code>93.184.216.34:443</code>. ولهذا يمكنك فتح عدة مواقع معًا: كل اتصال له منفذ مصدر مختلف.</p>
 </section>
 
@@ -298,7 +292,7 @@ traceroute example.com           # (Windows: tracert) أين ينقطع المس
 <dt>Port / منفذ</dt><dd>رقم يحدد التطبيق المقصود على الجهاز.</dd>
 <dt>Socket / مقبس</dt><dd>عنوان IP مع رقم منفذ.</dd>
 <dt>TCP</dt><dd>بروتوكول نقل موثوق يعتمد الاتصال.</dd>
-<dt>UDP</dt><dd>بروتوكول نقل سريع بلا ضمان.</dd>
+<dt>UDP</dt><dd>بروتوكول نقل لا يضمن التسليم أو ترتيب البيانات بذاته.</dd>
 <dt>Hop / قفزة</dt><dd>انتقال الحزمة من جهاز إلى الجهاز التالي.</dd>
 <dt>FCS</dt><dd>حقل في نهاية الإطار لكشف الأخطاء.</dd>
 <dt>Defense in Depth / دفاع متعدد الطبقات</dt><dd>حماية الشبكة بعدة ضوابط مستقلة.</dd>
@@ -324,12 +318,12 @@ traceroute example.com           # (Windows: tracert) أين ينقطع المس
 </ul>
 <h3>التنقل بين الدروس</h3>
 <p><b>المتطلبات السابقة:</b> <a href="lesson-1.html">الدرس 1: الشبكات المحلية والواسعة</a>.<br>
-<b>الدرس التالي:</b> الدرس 3: عنونة IP <a href="lesson-3.html">ابدأ الدرس 3</a> — <a href="curriculum.html">عرض المنهج الكامل</a></p>
+<b>الدرس التالي:</b> الدرس 3: عنوان MAC <a href="lesson-9.html">ابدأ الدرس 3</a> — <a href="curriculum.html">عرض المنهج الكامل</a></p>
 </section>
 <section id="practice"><h2>الحقل التطبيقي وإنهاء الدرس</h2><p>طبّق المفهوم في المحاكاة، ثم ضع علامة مكتمل بعد نجاح المهمة.</p><div id="lab-slot"></div><div class="lesson-finish"><button id="complete" class="btn success" type="button">وضع علامة «مكتمل»</button> <span id="complete-msg" class="hint" role="status"></span></div></section></article>
 </div>
 </main>
-<div id="site-footer"></div>
+<footer id="site-footer"></footer>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0"></script>
 <script src="assets/js/config.js"></script>
@@ -351,7 +345,7 @@ const QUESTIONS = [
     e: "الوصول بالعنوان يعني أن الطبقات من 1 إلى 4 سليمة. العطل في تحويل الاسم إلى عنوان، وهي وظيفة DNS على مستوى التطبيق." },
   { q: "ما الذي يميّز TCP عن UDP؟",
     o: ["TCP أسرع دائمًا", "TCP يتحقق من التسليم ويعيد المفقود ويرتّب المقاطع", "UDP يستخدم عناوين MAC فقط", "لا فرق بينهما"],
-    e: "TCP يوفّر موثوقية مقابل حمل أكبر. UDP أخف وأسرع بلا ضمان، ولذلك يناسب الصوت والبث." },
+    e: "يوفّر TCP ترتيبًا وتأكيدًا وإعادة إرسال. أما UDP فلا يضمن التسليم أو الترتيب، وقد تختاره تطبيقات الزمن الحقيقي لتجاوز انتظار الحزم المتأخرة؛ وليس أسرع دائمًا." },
   { q: "ping إلى الخادم ينجح، لكن صفحة الويب لا تفتح لأن جدار الحماية يمنع المنفذ 443. أي طبقة تشير إليها المشكلة؟",
     o: ["الطبقة 1", "الطبقة 2", "الطبقة 3", "الطبقة 4"],
     e: "ping يؤكد سلامة الطبقات 1 إلى 3. المنع على مستوى المنفذ هو من اختصاص طبقة النقل (4)." }
@@ -359,5 +353,6 @@ const QUESTIONS = [
 </script>
 <script src="assets/js/lab.js"></script>
 <script src="assets/js/lesson.js"></script>
+<script src="assets/js/lesson-experience.js" defer></script>
 </body>
 </html>

@@ -3,18 +3,19 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>الدرس 7: الشبكات المحلية الافتراضية VLAN — أكاديمية الشبكات العربية</title>
+<meta name="description" content="تعلّم تقسيم الشبكة إلى شبكات VLAN وأسباب استخدامها.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;500;700;800&display=swap" rel="stylesheet">
 <link rel="icon" type="image/png" href="assets/img/academy-icon.png">
-<script>try{var t=localStorage.getItem("ana_theme")||(matchMedia("(prefers-color-scheme:dark)").matches?"dark":"light");document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
+<script>try{var t=localStorage.getItem("ana_theme")||"dark";document.documentElement.setAttribute("data-theme",t)}catch(e){}</script>
 <link rel="stylesheet" href="assets/css/style.css">
 <link rel="stylesheet" href="assets/css/experience.css">
 </head>
 <body>
 <a class="skip" href="#main">تخطَّ إلى المحتوى</a>
-<div id="site-header"></div>
-<main id="main" class="container">
+<header id="site-header"></header>
+<main id="main" class="container lesson-page">
 <div class="lesson-layout">
 <nav class="toc" aria-label="قائمة الدروس والأقسام"><div class="course-sidebar-title">المنهج الدراسي</div><div id="lesson-navigation"></div><div class="original-toc" hidden>
   <strong>محتويات الدرس</strong>
@@ -42,23 +43,14 @@
 
 <section id="intro">
 <h1>الدرس 7: الشبكات المحلية الافتراضية <span class="en">(VLANs)</span></h1>
-<p>في الدرس السابق رأينا أن الموجّه هو الذي يربط الشبكات ببعضها، وأن كل واجهة فيه تقع على شبكة منفصلة. لكن كيف نصنع شبكتين منفصلتين إذا كان عندنا محوّل واحد فقط؟ الحل التقليدي أن نشتري محوّلًا لكل شبكة، وهذا مكلف ومتعب. الحل الحديث أن نجعل المحوّل الواحد <b>يتصرف كأنه عدة محوّلات منفصلة</b>. هذا ما تفعله <b>الشبكات المحلية الافتراضية</b> (VLAN). في هذا الدرس نفهم لماذا نقسّم الشبكة المحلية، وكيف يفرّق المحوّل بين الشبكات داخل سلك واحد، وكيف نضبط ذلك عمليًا، وكيف تتواصل الشبكات المقسّمة عند الحاجة، وما المخاطر الأمنية التي ينبغي الانتباه لها.</p>
+<p>يمكن لقسمين مشاركة السويتش مع بقائهما على شبكتين منفصلتين. تنشئ VLAN هذا الفصل داخل السويتش نفسه؛ سنتعلم إعدادها وربطها بالشبكات الأخرى.</p>
 </section>
 
 <section id="objectives">
 <h2>أهداف التعلم</h2>
-<ul>
-<li>شرح <b>نطاق البث</b> <span class="en">(Broadcast Domain)</span> ولماذا يؤدي كبره إلى مشكلات.</li>
-<li>تعريف VLAN، وشرح كيف يفصل المحوّل بين الشبكات المنطقية على جهاز مادي واحد.</li>
-<li>التفريق بين <b>منفذ الوصول</b> <span class="en">(Access Port)</span> و<b>منفذ الجذع</b> <span class="en">(Trunk Port)</span>.</li>
-<li>قراءة وسم <b>802.1Q</b> وفهم حقوله، ولماذا عدد المعرّفات 4094 وليس 4096.</li>
-<li>ضبط VLAN ومنافذ وصول وجذع على أجهزة Cisco وعلى Linux.</li>
-<li>شرح كيف تتواصل شبكتا VLAN عبر موجّه (Router-on-a-Stick) أو محوّل طبقة 3 (SVI).</li>
-<li>ربط كل VLAN بشبكة IP فرعية خاصة بها وفق ما تعلمناه في الدرس 3.</li>
-<li>تشخيص أعطال VLAN الشائعة، وفهم هجمات <b>VLAN Hopping</b> وسبل الوقاية منها.</li>
-</ul>
+<p>بعد هذا الدرس، تستطيع:</p><ul><li>شرح لماذا نقسم شبكة محلية إلى VLANs.</li><li>التمييز بين منفذ Access ومنفذ Trunk.</li><li>فهم دور وسم 802.1Q في نقل أكثر من VLAN على وصلة واحدة.</li><li>إعداد VLAN وربط منفذ بها في أمثلة الدرس.</li><li>شرح كيف يوجّه الراوتر أو محوّل الطبقة الثالثة بين VLANs.</li><li>ربط كل VLAN بشبكة IP مناسبة.</li><li>فحص أخطاء VLAN الشائعة وتقليل مخاطرها.</li></ul>
 <h3>المعرفة المسبقة</h3>
-<p>الدرس 1 (المحوّل والموجّه)، والدرس 2 (الطبقة 2 وعنوان MAC والإطار)، والدرس 3 (العنوان والقناع والشبكة الفرعية)، والدرس 4 (الموجّه والبوابة والمسارات المتصلة). سنعتمد على هذه الدروس كثيرًا، خاصة أن المحوّل يعمل في الطبقة 2 والموجّه في الطبقة 3.</p>
+<p>الدرس 1 (المحوّل والموجّه)، والدرس 2 (الطبقة 2 وعنوان MAC والإطار)، والدرس 4 (العنوان والقناع والشبكة الفرعية)، والدرس 6 (الموجّه والبوابة والمسارات المتصلة). سنعتمد على هذه الدروس كثيرًا، خاصة أن المحوّل يعمل في الطبقة 2 والموجّه في الطبقة 3.</p>
 </section>
 
 <section id="why">
@@ -285,7 +277,7 @@ R1(config-subif)# ip address 192.168.10.1 255.255.255.0
 R1(config)# interface GigabitEthernet0/0.20
 R1(config-subif)# encapsulation dot1Q 20
 R1(config-subif)# ip address 192.168.20.1 255.255.255.0</code></pre>
-<p>ولا نحتاج إلى أي مسار ساكن، فالشبكتان <b>متصلتان مباشرة</b> بالموجّه (المصدر C في جدول التوجيه) كما رأينا في الدرس 4. وعلى حواسيب VLAN 10 تكون البوابة <span class="ltr mono">192.168.10.1</span>، وعلى حواسيب VLAN 20 تكون <span class="ltr mono">192.168.20.1</span>.</p>
+<p>ولا نحتاج إلى أي مسار ساكن، فالشبكتان <b>متصلتان مباشرة</b> بالموجّه (المصدر C في جدول التوجيه) كما رأينا في الدرس 6. وعلى حواسيب VLAN 10 تكون البوابة <span class="ltr mono">192.168.10.1</span>، وعلى حواسيب VLAN 20 تكون <span class="ltr mono">192.168.20.1</span>.</p>
 <p>العيب الأساسي أن <b>الرابط الواحد يحمل كل الحركة بين VLAN في الاتجاهين</b>، فيكون عنق الزجاجة. لذلك يصلح هذا الأسلوب للمكاتب الصغيرة والمختبرات.</p>
 <h3>الخيار الثاني: محوّل الطبقة 3 (SVI)</h3>
 <p><b>محوّل الطبقة 3</b> <span class="en">(Layer 3 Switch)</span> جهاز واحد يجمع التحويل والتوجيه. نعرّف عليه <b>واجهة VLAN افتراضية</b> <span class="en">(SVI: Switch Virtual Interface)</span> لكل VLAN وتحمل عنوان البوابة، ويجري التوجيه بين VLAN داخل المحوّل نفسه بسرعة الأجهزة المتخصصة ودون رابط خارجي يحدّ من السرعة. وهذا هو الأسلوب الشائع في المؤسسات.</p>
@@ -428,13 +420,13 @@ SW1(config-if)# no shutdown</code></pre>
 <li><a href="https://www.netacad.com" rel="noopener">Cisco Networking Academy</a> — مقررات مجانية وبرنامج Packet Tracer.</li>
 </ul>
 <h3>التنقل بين الدروس</h3>
-<p><b>المتطلبات السابقة:</b> <a href="lesson-2.html">الدرس 2: نموذج OSI</a> و<a href="lesson-3.html">الدرس 3: عنونة IP</a> و<a href="lesson-4.html">الدرس 4: التوجيه</a>.<br>
-<b>الدرس التالي:</b> <a href="lesson-6.html">الدرس 6: VXLAN وVRF</a> — <a href="curriculum.html">عرض المنهج الكامل</a></p>
+<p><b>المتطلبات السابقة:</b> <a href="lesson-2.html">الدرس 2: نموذج OSI</a> و<a href="lesson-3.html">الدرس 4: عنونة IP</a> و<a href="lesson-4.html">الدرس 6: التوجيه</a>.<br>
+<b>الدرس التالي:</b> <a href="lesson-6.html">الدرس 8: VXLAN وVRF</a> — <a href="curriculum.html">عرض المنهج الكامل</a></p>
 </section>
 <section id="practice"><h2>الحقل التطبيقي وإنهاء الدرس</h2><p>طبّق المفهوم في المحاكاة، ثم ضع علامة مكتمل بعد نجاح المهمة.</p><div id="lab-slot"></div><div class="lesson-finish"><button id="complete" class="btn success" type="button">وضع علامة «مكتمل»</button> <span id="complete-msg" class="hint" role="status"></span></div></section></article>
 </div>
 </main>
-<div id="site-footer"></div>
+<footer id="site-footer"></footer>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0"></script>
 <script src="assets/js/config.js"></script>
@@ -470,5 +462,6 @@ const QUESTIONS = [
 </script>
 <script src="assets/js/lab.js"></script>
 <script src="assets/js/lesson.js"></script>
+<script src="assets/js/lesson-experience.js" defer></script>
 </body>
 </html>

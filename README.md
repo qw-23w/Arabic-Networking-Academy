@@ -40,7 +40,7 @@ Free, open-source Arabic networking course site. Static HTML/CSS/JS front end + 
    ```
 5. Email confirmation is **unchanged**. The site handles both modes; see the Authentication → Providers → Email page in the dashboard if you want to change it.
 
-Local UI tests (no network needed, mock backend): `python3 tests/ui_tests.py <path-to-site>` and `python3 tests/gfx.py`. They check interface logic only — not Supabase itself.
+Static source review (no network requests or database writes): `powershell -ExecutionPolicy Bypass -File .\tools\Audit-AnaAcademy.ps1`. This checks lesson/security wiring, not live Supabase behavior. Browser UI verification should be performed through a local HTTP server.
 
 ## Features added
 - Logo (`assets/img`), help page with the contact email (`SUPPORT_EMAIL` in `config.js`), dark mode toggle in the nav (saved in the browser).
@@ -54,8 +54,14 @@ Local UI tests (no network needed, mock backend): `python3 tests/ui_tests.py <pa
 
 ## Files
 
-`help.html`, `assets/js/lesson.js` (shared lesson logic), `assets/img/` (logo), `index.html`, `register.html`, `login.html`, `reset.html`, `curriculum.html`, `my-learning.html`, `about.html`, `admin.html`, `lesson-1.html` through `lesson-9.html`, `assets/`, `supabase/schema.sql`, `SECURITY-REVIEW.md`, and `tools/Audit-AnaAcademy.ps1`.
+`help.html`, `assets/js/app.js` (shared layout), `assets/js/lesson.js`, `assets/js/lesson-experience.js`, `assets/js/curriculum.js`, `assets/js/network-scene.js`, `assets/css/experience.css`, `assets/img/`, `index.html`, `register.html`, `login.html`, `reset.html`, `curriculum.html`, `my-learning.html`, `about.html`, `admin.html`, `lesson-1.html` through `lesson-9.html`, `supabase/schema.sql`, `SECURITY-REVIEW.md`, `DESIGN-BRIEF.md`, `DESIGN.md`, and `tools/Audit-AnaAcademy.ps1`.
 
+## Product transformation 2026-11-04
+- Premium navy/cyan/orange art direction, responsive SVG network globe, dark/light themes and a searchable/filterable catalog for the existing nine lessons.
+- The curriculum displays text-derived approximate reading time (190 words/minute; excludes quiz and lab), editorial level, topic, objective and prerequisite.
+- The authenticated student page highlights the next lesson and uses saved lesson progress and the latest ten server-graded quiz attempts.
+- Lesson pages add mobile course navigation, reading progress, text-derived reading time and copy buttons for existing code examples. The original lesson explanations, quizzes, lab, completion gate and Supabase roles/RLS are retained.
+- No database migration or new runtime dependency was added. See `DESIGN-BRIEF.md`, `DESIGN.md` and `TRANSFORMATION-NOTES.md` for scope and deployment review.
 ## Status
 
 Platform includes 9 lessons. The final lesson covers MAC addressing; the lesson files and `supabase/schema.sql` include all nine lessons.

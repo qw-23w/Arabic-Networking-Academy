@@ -9,6 +9,16 @@
   if(l.id===current && original){const list=original.cloneNode(true);list.className='nav-sections';group.append(list);list.querySelectorAll('a').forEach(link=>link.addEventListener('click',()=>{list.querySelectorAll('a').forEach(x=>x.classList.remove('active'));link.classList.add('active')}));}
   host.append(group);
  });
+ const sidebar=host.parentElement;
+ const mobileQuery=window.matchMedia('(max-width:959px)');
+ const details=document.createElement('details'); details.className='lesson-index'; details.open=!mobileQuery.matches;
+ const summary=document.createElement('summary'); summary.textContent='فهرس المنهج والدرس';
+ const content=document.createElement('div'); content.className='lesson-index-content';
+ const title=sidebar.querySelector('.course-sidebar-title');
+ const source=document.querySelector('.original-toc');
+ sidebar.insertBefore(details,title); details.append(summary,content); content.append(title,host); if(source)content.append(source);
+ let wasMobile=mobileQuery.matches;
+ mobileQuery.addEventListener('change',()=>{if(wasMobile!==mobileQuery.matches){details.open=!mobileQuery.matches;wasMobile=mobileQuery.matches;}});
  const links=[...host.querySelectorAll('.nav-sections a')];
  if('IntersectionObserver' in window){const obs=new IntersectionObserver(entries=>{entries.forEach(e=>{if(e.isIntersecting){links.forEach(a=>{const active=a.hash==='#'+e.target.id;a.classList.toggle('active',active);if(active)a.setAttribute('aria-current','location');else a.removeAttribute('aria-current')})}})},{rootMargin:'-100px 0px -65% 0px'});document.querySelectorAll('.lesson > section[id]').forEach(s=>obs.observe(s));}
 })();
